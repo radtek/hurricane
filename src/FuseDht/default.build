@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<project name="FuseDht" default="build" basedir=".">
+  <description> Build FuseDht </description>
+  <property name="debug" value="true" />
+  <property name="lib.dir" value="../../lib"/>
+  <property name="build.dir" value="build" />
+
+  <target name="build" description="build FuseDht">
+    <mkdir dir="${build.dir}" failonerror="true"/>
+    <copy todir="${build.dir}">
+      <fileset basedir="${lib.dir}">
+        <include name="*.dll" />
+      </fileset>
+    </copy>
+    <csc unsafe="true" 
+         target="exe"
+         output="${build.dir}/FuseDht.exe"
+         define="FUSE_DEBUG">
+      <sources failonempty="true">
+        <include name="LocalHT.cs"/>
+        <include name="Constants.cs"/>
+        <include name="FuseDhtConfig.cs"/>
+        <include name="RedirectFS-FH.cs"/>
+        <include name="FuseDht.cs"/>
+      </sources>
+      <references>
+        <include name="System.Runtime.Remoting.dll"/>
+        <include name="${build.dir}/NUnit.Framework.dll" />
+        <include name="${build.dir}/Brunet.dll" />
+        <include name="${build.dir}/Brunet.Dht.dll" />
+        <include name="${build.dir}/DhtServiceClient.dll" />
+        <include name="${build.dir}/Mono.Fuse.dll" />        
+        <include name ="Mono.Posix.dll" />
+      </references>
+    </csc>
+  </target>
+</project>
