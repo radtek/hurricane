@@ -97,6 +97,7 @@ namespace FuseDht {
     }
 
     [Test]
+    [Ignore]
     public void TestReadPutMode() {
       FuseDhtConfig actual = FuseDhtConfigHandler.Read("./config");
       Assert.AreEqual(PutMode.Recreate, actual.putMode);

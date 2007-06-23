@@ -19,15 +19,15 @@ namespace FuseDht {
     public LocalHT() {
       AHAddress addr = new AHAddress(new RNGCryptoServiceProvider());
       Node brunetNode = new StructuredNode(addr);
-      EntryFactory factory = EntryFactory.GetInstance(brunetNode, EntryFactory.Media.Memory);
-      this._ts = new TableServer(factory, brunetNode);
+      RpcManager rpc = RpcManager.GetInstance(brunetNode);
+      this._ts = new TableServer(brunetNode, rpc);
     }
 
     /**
      * We don't use password anymore
      */
     public bool Create(string key, string value, int ttl) {
-      return this._ts.Create(Encoding.UTF8.GetBytes(key), ttl, Encoding.UTF8.GetBytes(value));
+      return this._ts.PutHandler(Encoding.UTF8.GetBytes(key), Encoding.UTF8.GetBytes(value), ttl, true);
     }
 
     public DhtGetResult[] Get(string key) {
@@ -41,7 +41,7 @@ namespace FuseDht {
     }
 
     public bool Put(string key, string value, int ttl) {
-      return this._ts.Put(Encoding.UTF8.GetBytes(key), ttl, Encoding.UTF8.GetBytes(value));
+      return this._ts.PutHandler(Encoding.UTF8.GetBytes(key), Encoding.UTF8.GetBytes(value), ttl, false);
     }
 
     public string BeginGet(string key) {

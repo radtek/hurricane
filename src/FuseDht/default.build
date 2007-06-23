@@ -14,6 +14,7 @@
     </copy>
     <csc unsafe="true" 
          target="exe"
+         debug="${debug}"
          output="${build.dir}/FuseDht.exe"
          define="FUSE_DEBUG">
       <sources failonempty="true">
@@ -22,6 +23,8 @@
         <include name="FuseDhtConfig.cs"/>
         <include name="RedirectFS-FH.cs"/>
         <include name="FuseDht.cs"/>
+        <include name="FuseDhtHelper.cs"/>
+        <include name="FuseDhtHelperFactory.cs"/>
       </sources>
       <references>
         <include name="System.Runtime.Remoting.dll"/>
@@ -29,9 +32,22 @@
         <include name="${build.dir}/Brunet.dll" />
         <include name="${build.dir}/Brunet.Dht.dll" />
         <include name="${build.dir}/DhtServiceClient.dll" />
-        <include name="${build.dir}/Mono.Fuse.dll" />        
+        <include name="${build.dir}/Mono.Fuse.dll" />
+        <include name="${build.dir}/CookComputing.XmlRpcV2.dll" />
         <include name ="Mono.Posix.dll" />
       </references>
     </csc>
+    <csc target="library"
+         output="${build.dir}/LocalHT.dll">
+      <sources failonempty="true">
+        <include name="LocalHT.cs"/>
+      </sources>
+      <references>
+        <include name="${build.dir}/Brunet.dll" />
+        <include name="${build.dir}/Brunet.Dht.dll" />
+        <include name="${build.dir}/NUnit.Framework.dll" />
+        <include name="${build.dir}/DhtServiceClient.dll" />
+      </references>
+    </csc>         
   </target>
 </project>
