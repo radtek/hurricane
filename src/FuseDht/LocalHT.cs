@@ -16,11 +16,14 @@ namespace FuseDht {
   class LocalHT : Ipop.IDht {
     private TableServer _ts;
 
+    private Node _node;
+
     public LocalHT() {
       AHAddress addr = new AHAddress(new RNGCryptoServiceProvider());
       Node brunetNode = new StructuredNode(addr);
       RpcManager rpc = RpcManager.GetInstance(brunetNode);
       this._ts = new TableServer(brunetNode, rpc);
+      this._node = brunetNode;
     }
 
     /**
@@ -42,6 +45,12 @@ namespace FuseDht {
 
     public bool Put(string key, string value, int ttl) {
       return this._ts.PutHandler(Encoding.UTF8.GetBytes(key), Encoding.UTF8.GetBytes(value), ttl, false);
+    }
+
+    public IDictionary GetDhtInfo() {
+      Hashtable ht = new Hashtable();
+      ht.Add("address", _node.Address.ToString());
+      return ht;
     }
 
     public string BeginGet(string key) {

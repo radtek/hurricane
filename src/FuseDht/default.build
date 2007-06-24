@@ -25,6 +25,7 @@
         <include name="FuseDht.cs"/>
         <include name="FuseDhtHelper.cs"/>
         <include name="FuseDhtHelperFactory.cs"/>
+        <include name="FuseDhtUtil.cs"/>
       </sources>
       <references>
         <include name="System.Runtime.Remoting.dll"/>

@@ -74,9 +74,16 @@ namespace FuseDht {
       return _instance;
     }
 
-    /// <summary>
-    /// Used by Handler to refresh the singleton instance from file 
-    /// </summary>
+    public FuseDhtConfig() {
+      this.ttl = Constants.DEFAULT_TTL;
+      this.lifespan = Constants.DEFAULT_LIFESPAN;
+      this.putMode = Constants.DEFAULT_PUT_MODE.ToString();
+      this.invalidate = Constants.DEFAULT_INVALIDATE;
+    }
+
+    /**
+     * Used by Handler to refresh the singleton instance from file 
+     */
     internal static void Refresh(FuseDhtConfig c) {
       _instance = c;
     }
@@ -87,7 +94,7 @@ namespace FuseDht {
     [Test]
     [Ignore]
     public void TestWriteAndRead() {
-      FuseDhtConfig config = new FuseDhtConfig();
+      FuseDhtConfig config = FuseDhtConfig.GetInstance();
       config.ttl = 5000;
       config.lifespan = 5000;
       config.putMode = PutMode.Recreate.ToString();

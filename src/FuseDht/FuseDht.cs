@@ -20,22 +20,22 @@ namespace FuseDht {
     
     private FuseDhtHelper _helper;
 
-    private string basedir;
+    private FuseDhtUtil _util;
+
+    private string _shadowdir;
 
     private RedirectFHFSHelper _rfs;
     
     public static void Main(string[] args) {
 
       using (FuseDht fs = new FuseDht()) {
-        //Debug.Listeners.Add(new ConsoleTraceListener());
         string[] unhandled = fs.ParseFuseArguments(args);
         foreach (string key in fs.FuseOptions.Keys) {
           Console.WriteLine("Option: {0}={1}", key, fs.FuseOptions[key]);
         }
         if (!fs.ParseArguments(unhandled))
-          return;   
-
-        //FuseDhtUtil.InitDhtRootFileStructure(fs.basedir);
+          return;
+        fs.InitFuseDhtSystem();
         fs.Start();
       }
     }
@@ -61,17 +61,22 @@ namespace FuseDht {
             if (string.IsNullOrEmpty(base.MountPoint)) {
               base.MountPoint = args[i];
               Console.WriteLine("MountPoint: {0}", args[i]);
-            } else if (string.IsNullOrEmpty(this.basedir)) {
-              basedir = args[i];
+            } else if (string.IsNullOrEmpty(this._shadowdir)) {
+              _shadowdir = args[i];
               Console.WriteLine("Shadow: {0}", args[i]);
             }
             break;
         }
       }
-
-      this._rfs = new RedirectFHFSHelper(this.basedir);
-      this._helper = FuseDhtHelperFactory.GetFuseDhtHelper(FuseDhtHelperFactory.HelperType.Local, this.basedir);
       return true;
+    }
+
+    void InitFuseDhtSystem() {
+      this._rfs = new RedirectFHFSHelper(this._shadowdir);
+      this._util = new FuseDhtUtil(this._shadowdir);
+      this._helper = FuseDhtHelperFactory.GetFuseDhtHelper(FuseDhtHelperFactory.HelperType.Local, this._shadowdir);
+      this._util.InitDhtRootFileStructure();
+      this._util.CreateSelfBaseDir(this._helper.DhtAddress);
     }
 
     protected override Errno OnRenamePath(string from, string to) {
@@ -84,7 +89,7 @@ namespace FuseDht {
       //  string[] topaths = FuseDhtUtil.ParsePath(to);
       //  if (topaths.Length == 1) {
       //    //key2
-      //    DirectoryInfo cache = new DirectoryInfo(this.basedir + from + "/" + Constants.DIR_CACHE);
+      //    DirectoryInfo cache = new DirectoryInfo(this._shadowdir + from + "/" + Constants.DIR_CACHE);
       //    if (cache.Exists && cache.GetFiles().Length == 0) {
       //      //rename allowed
       //      return this._rfs.OnRenamePath(from, to);
@@ -100,25 +105,29 @@ namespace FuseDht {
 
       Debug.WriteLine(string.Format("OnCreateDirectory, path={0}, mode={1}: {2}", path, mode, System.DateTime.Now));
 
-      ////only allow dir creation on "/"
-      //if (FuseDhtUtil.ParsePath(path).Length != 1) {
-      //  return Errno.EACCES;
-      //}
-
-      //int r = Syscall.mkdir(basedir + path, mode);
-      //if (r == -1)
-      //  return Stdlib.GetLastError();
-
-      ////sucessfully created. Initialize the directory structure
-      //try {
-      //  FuseDhtUtil.InitKeyDirStructure(basedir, Encoding.UTF8.GetBytes(path));
-      //} catch {
-      //  Console.WriteLine("Key File structure is not successfully created. undo the dir creation");
-      //  Directory.Delete(basedir + path, true);
-      //  return Errno.EACCES;
-      //}
-      //return 0;
-      return this._rfs.OnCreateDirectory(path, mode);
+      //dht/basedir or dht/basedir/keydir
+      string[] paths = FuseDhtUtil.ParsePath(path);
+      if (paths.Length > Constants.LVL_KEY_DIR + 1) {
+        return Errno.EACCES;
+      }
+      this._rfs.OnCreateDirectory(path, mode);
+      
+      //sucessfully created. Initialize the directory structure
+      if(paths.Length == Constants.LVL_KEY_DIR + 1) {
+        string s_path = Path.Combine(_shadowdir, path);
+        DirectoryInfo keydir = new DirectoryInfo(s_path);
+        DirectoryInfo basedir = keydir.Parent;
+        string basedirName = basedir.Name;
+        try {
+          _util.InitKeyDirStructure(basedirName, keydir.Name);
+        } catch (Exception e) {
+          Debug.WriteLine(e);
+          Console.Error.WriteLine("Init key dir failed. Removing dir...");
+          Directory.Delete(s_path, true);
+          return Errno.EACCES;
+        }
+      }
+      return 0;
     }
 
     protected override Errno OnReadDirectory(string path, OpenedPathInfo fi,
@@ -132,12 +141,12 @@ namespace FuseDht {
       //  string dir = parsedpath[parsedpath.Length - 1];
       //  if (dir.Equals(Constants.DIR_CACHE)) {
       //    //remote or local?
-      //    DirectoryInfo cache = new DirectoryInfo(this.basedir + path);
+      //    DirectoryInfo cache = new DirectoryInfo(this._shadowdir + path);
       //    string finvalidate = cache.Parent.FullName + "/" + Constants.DIR_ETC + "/" + Constants.FILE_INVALIDATE;
       //    //					if(File.Exists(finvalidate))
       //    //					{
       //    //						int invalidate = Int32.Parse(Encoding.UTF8.GetString(File.ReadAllBytes(finvalidate)));
-      //    int invalidate = (int)FuseDhtUtil.ReadParam(basedir, parsedpath[0], Constants.FILE_INVALIDATE);
+      //    int invalidate = (int)FuseDhtUtil.ReadParam(_shadowdir, parsedpath[0], Constants.FILE_INVALIDATE);
       //    Console.WriteLine("Invalidate={0}", invalidate);
       //    int lifespan;
       //    if (invalidate == 0) {
@@ -150,9 +159,9 @@ namespace FuseDht {
       //      //							catch
       //      //							{
       //      //								Console.WriteLine("Invalid lifespan or file not found, use value in conf file");
-      //      //								lifespan = Int32.Parse(FuseDhtUtil.GetValueFromConf(this.basedir, Constants.FILE_LIFESPAN)); 
+      //      //								lifespan = Int32.Parse(FuseDhtUtil.GetValueFromConf(this._shadowdir, Constants.FILE_LIFESPAN)); 
       //      //							}
-      //      lifespan = (int)FuseDhtUtil.ReadParam(basedir, parsedpath[0], Constants.FILE_LIFESPAN);
+      //      lifespan = (int)FuseDhtUtil.ReadParam(_shadowdir, parsedpath[0], Constants.FILE_LIFESPAN);
       //      TimeSpan ts = new TimeSpan(0, 0, lifespan);
       //      bool stale = false;
 
@@ -170,7 +179,7 @@ namespace FuseDht {
       //      if (stale) {
       //        Console.WriteLine("Stale. Calling DhtGet");
       //        //get remote data
-      //        this._helper.DhtGet(this.basedir, path);
+      //        this._helper.DhtGet(this._shadowdir, path);
       //      }
       //    } else if (invalidate == 1) {
       //      Console.WriteLine("Invalidated");
@@ -189,7 +198,7 @@ namespace FuseDht {
       //      }
       //      if (shouldCallDht) {
       //        Console.WriteLine("Calling DhtGet");
-      //        this._helper.DhtGet(this.basedir, path);
+      //        this._helper.DhtGet(this._shadowdir, path);
       //        using (StreamWriter wr = File.CreateText(finvalidate)) {
       //          wr.WriteLine("0");
       //        }
@@ -246,9 +255,9 @@ namespace FuseDht {
       //      if ((OpenFlags.O_WRONLY == (info.OpenFlags & OpenFlags.O_WRONLY)
       //          || OpenFlags.O_RDWR == (info.OpenFlags & OpenFlags.O_RDWR))
       //        && FuseDhtUtil.IsValidMyFileName(filename)
-      //        && FuseDhtUtil.IsPutAllowed(basedir, key)) {
+      //        && FuseDhtUtil.IsPutAllowed(_shadowdir, key)) {
       //        Console.WriteLine("Calling DhtPut");
-      //        _helper.DhtPut(basedir, path);
+      //        _helper.DhtPut(_shadowdir, path);
       //      }
       //    }
       //    break;
@@ -257,7 +266,7 @@ namespace FuseDht {
       //    string dir = paths[Constants.LVL_KEY_DIR_GENTR];
       //    if (dir.Equals(Constants.DIR_KEY_DIR_GENERATOR)) {
       //      byte[] b = File.ReadAllBytes(path);
-      //      FuseDhtUtil.InitKeyDirStructure(this.basedir, b);
+      //      FuseDhtUtil.InitKeyDirStructure(this._shadowdir, b);
       //    }
       //    break;
       //  default:
@@ -274,9 +283,9 @@ namespace FuseDht {
     //  string[] paths = FuseDhtUtil.ParsePath(path);
     //  switch (paths.Length) {
     //    case 4:	///keydir/key1/my(cache)/sample.txt
-    //      if (!File.Exists(this.basedir + "/" + paths[0] + "/" + Constants.FILE_OFFLINE)) {
+    //      if (!File.Exists(this._shadowdir + "/" + paths[0] + "/" + Constants.FILE_OFFLINE)) {
     //        //only block deletes in online folders
-    //        bool dhtCalled = this._helper.DhtDelete(this.basedir, path);
+    //        bool dhtCalled = this._helper.DhtDelete(this._shadowdir, path);
     //        if (!dhtCalled) {
     //          return Errno.EACCES;
     //        }
@@ -289,9 +298,9 @@ namespace FuseDht {
     //        bool ifput;
     //        try {
     //          string filename;
-    //          ifput = FuseDhtUtil.DeleteOfflineFile(this.basedir, paths[0], out filename);
+    //          ifput = FuseDhtUtil.DeleteOfflineFile(this._shadowdir, paths[0], out filename);
     //          if (ifput) {
-    //            this._helper.DhtPut(this.basedir, "/" + paths[0] + "/" + Constants.DIR_MY + "/" + filename);
+    //            this._helper.DhtPut(this._shadowdir, "/" + paths[0] + "/" + Constants.DIR_MY + "/" + filename);
     //          }
     //        } catch {
     //          return Errno.EACCES;
@@ -299,7 +308,7 @@ namespace FuseDht {
     //      }
     //      break;
     //    default:
-    //      int r = Syscall.unlink(basedir + path);
+    //      int r = Syscall.unlink(_shadowdir + path);
     //      if (r == -1)
     //        return Stdlib.GetLastError();
     //      return 0;
