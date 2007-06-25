@@ -19,6 +19,7 @@ namespace FuseDht {
     
     //some file names have prefix "dot" but no variable has. The visibility of files is controlled here.
     public const string FILE_OFFLINE = ".offline";
+    public const string FILE_UPLOADED = ".uploaded";
     public const string FILE_TTL = "ttl";
     public const string FILE_PUT_MODE = "put_mode";
     public const string FILE_CONF = "fusedht.conf";
@@ -34,7 +35,6 @@ namespace FuseDht {
     public const PutMode DEFAULT_PUT_MODE = PutMode.Put;
     public const bool DEFAULT_INVALIDATE = true;
 
-    public const int DEFAULT_FN_LENGTH = 20;
     public const int DEFAULT_DN_LENGTH = 20;
 
     /**

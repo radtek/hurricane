@@ -106,14 +106,15 @@ namespace FuseDht {
       Debug.WriteLine(string.Format("OnCreateDirectory, path={0}, mode={1}: {2}", path, mode, System.DateTime.Now));
 
       //dht/basedir or dht/basedir/keydir
+      //or dht/KeyDirGenerator/basedir
       string[] paths = FuseDhtUtil.ParsePath(path);
-      if (paths.Length > Constants.LVL_KEY_DIR + 1) {
+      if (paths.Length > Constants.LVL_KEY_DIR + 1) { //3
         return Errno.EACCES;
       }
       this._rfs.OnCreateDirectory(path, mode);
       
       //sucessfully created. Initialize the directory structure
-      if(paths.Length == Constants.LVL_KEY_DIR + 1) {
+      if(paths.Length == Constants.LVL_KEY_DIR + 1 && !paths[paths.Length -1].Equals(Constants.DIR_KEY_DIR_GENERATOR)) {
         string s_path = Path.Combine(_shadowdir, path);
         DirectoryInfo keydir = new DirectoryInfo(s_path);
         DirectoryInfo basedir = keydir.Parent;
@@ -131,92 +132,82 @@ namespace FuseDht {
     }
 
     protected override Errno OnReadDirectory(string path, OpenedPathInfo fi,
-        out IEnumerable<DirectoryEntry> paths) {
+        out IEnumerable<DirectoryEntry> subPaths) {
       
-      Debug.WriteLine(string.Format("OnReadDirectory, path={0}, handle={1}: {2}", path, fi.Handle, System.DateTime.Now));                 
+      Debug.WriteLine(string.Format("OnReadDirectory, path={0}, handle={1}: {2}", path, fi.Handle, System.DateTime.Now));
 
-      ////only block read of "cache"
-      //string[] parsedpath = FuseDhtUtil.ParsePath(path);
-      //if (parsedpath.Length == 2) {
-      //  string dir = parsedpath[parsedpath.Length - 1];
-      //  if (dir.Equals(Constants.DIR_CACHE)) {
-      //    //remote or local?
-      //    DirectoryInfo cache = new DirectoryInfo(this._shadowdir + path);
-      //    string finvalidate = cache.Parent.FullName + "/" + Constants.DIR_ETC + "/" + Constants.FILE_INVALIDATE;
-      //    //					if(File.Exists(finvalidate))
-      //    //					{
-      //    //						int invalidate = Int32.Parse(Encoding.UTF8.GetString(File.ReadAllBytes(finvalidate)));
-      //    int invalidate = (int)FuseDhtUtil.ReadParam(_shadowdir, parsedpath[0], Constants.FILE_INVALIDATE);
-      //    Console.WriteLine("Invalidate={0}", invalidate);
-      //    int lifespan;
-      //    if (invalidate == 0) {
-      //      //							try
-      //      //							{
-      //      //								//check whether stale
-      //      //								string flifespan = cache.Parent.FullName + "/" + Constants.DIR_ETC + "/" + Constants.FILE_LIFESPAN;
-      //      //								lifespan = Int32.Parse(Encoding.UTF8.GetString(File.ReadAllBytes(flifespan)));
-      //      //							}
-      //      //							catch
-      //      //							{
-      //      //								Console.WriteLine("Invalid lifespan or file not found, use value in conf file");
-      //      //								lifespan = Int32.Parse(FuseDhtUtil.GetValueFromConf(this._shadowdir, Constants.FILE_LIFESPAN)); 
-      //      //							}
-      //      lifespan = (int)FuseDhtUtil.ReadParam(_shadowdir, parsedpath[0], Constants.FILE_LIFESPAN);
-      //      TimeSpan ts = new TimeSpan(0, 0, lifespan);
-      //      bool stale = false;
+      //only block read of "cache"
+      string[] paths = FuseDhtUtil.ParsePath(path);
+      if (paths.Length == Constants.LVL_SUB_KEY_FOLDERS + 1) {
+        string dir = paths[paths.Length - 1];
+        if (dir.Equals(Constants.DIR_CACHE)) {
+          //remote or local?
+          DirectoryInfo cache = new DirectoryInfo(this._shadowdir + path);
+          string key = cache.Parent.Name;
+          string basedirName = cache.Parent.Parent.Name;
 
-      //      if (cache.GetFiles().Length == 0) {
-      //        stale = true;
-      //      } else {
-      //        foreach (FileInfo finfo in cache.GetFiles()) {
-      //          if (finfo.CreationTime.Add(ts) < System.DateTime.Now) {
-      //            stale = true;
-      //            break;
-      //          }
-      //        }
-      //      }
-      //      Console.WriteLine("Stale={0}", stale);
-      //      if (stale) {
-      //        Console.WriteLine("Stale. Calling DhtGet");
-      //        //get remote data
-      //        this._helper.DhtGet(this._shadowdir, path);
-      //      }
-      //    } else if (invalidate == 1) {
-      //      Console.WriteLine("Invalidated");
-      //      FileInfo[] fdone = cache.GetFiles(Constants.FILE_DONE);
-      //      bool shouldCallDht = false;
-      //      if (fdone.Length != 0) {
-      //        int done = Int32.Parse(Encoding.UTF8.GetString(File.ReadAllBytes(fdone[0].FullName)));
-      //        if (done == 1) {
-      //          //the last dhtread already completed
-      //          Console.WriteLine(".done found and equals 1");
-      //          shouldCallDht = true;
-      //        }
-      //      } else {
-      //        Console.WriteLine("No .done");
-      //        shouldCallDht = true;
-      //      }
-      //      if (shouldCallDht) {
-      //        Console.WriteLine("Calling DhtGet");
-      //        this._helper.DhtGet(this._shadowdir, path);
-      //        using (StreamWriter wr = File.CreateText(finvalidate)) {
-      //          wr.WriteLine("0");
-      //        }
-      //      } else {
-      //        Console.WriteLine("DhtGet not called because of on-going read on the same key");
-      //      }
-      //    }
-      //    //					}
-      //  }
-      //}
+          bool? invalidate = (bool?)_util.ReadParam(basedirName, key, Constants.FILE_INVALIDATE);
+          if (invalidate == null) {
+            subPaths = null;
+            return Errno.EACCES;
+          }
+          int? lifespan;
+          if (!invalidate) {
+            lifespan = (int?)_util.ReadParam(basedirName, key, Constants.FILE_LIFESPAN);
+            if(lifespan == null) {
+              subPaths = null;
+              return Errno.EACCES;
+            }
 
-      //IntPtr dp = (IntPtr)fi.Handle;
+            TimeSpan ts = new TimeSpan(0, 0, lifespan.GetValueOrDefault());
+            bool stale = false;
 
-      //paths = ReadDirectory(dp);
+            if (cache.GetFiles().Length == 0) {
+              stale = true;
+            } else {
+              foreach (FileInfo finfo in cache.GetFiles()) {
+                if (finfo.CreationTimeUtc.Add(ts) < System.DateTime.UtcNow) {
+                  stale = true;
+                  break;
+                }
+              }
+            }
+            
+            if (stale) {
+              Console.WriteLine("Stale. Calling DhtGet");
+              _helper.AsDhtGet(basedirName, key);
+            }
+          } else {
+            Console.WriteLine("Invalidated");
+            FileInfo[] fdone = cache.GetFiles(Constants.FILE_DONE);
+            bool shouldCallDht = false;
+            if (fdone.Length != 0) {
+              int done;
+              bool succ = Int32.TryParse(File.ReadAllText(fdone[0].FullName), out done);
+              if (succ && done == 1) {
+                Debug.WriteLine(".done found and equals 1");
+                shouldCallDht = true;
+              } else {
+                /*
+                 * If done == 0, there is an ongoing read, so don't start another one
+                 */
+              }
+            } else {
+              Console.WriteLine("No .done found");
+              shouldCallDht = true;
+            }
+            if (shouldCallDht) {
+              _util.WriteToParamFile(basedirName, key, Constants.FILE_INVALIDATE, "0");
+              Debug.WriteLine("Calling DhtGet");
+              _helper.AsDhtGet(basedirName, key);
+            } else {
+              Console.WriteLine("DhtGet not called because of on-going read on the same key");
+            }
+          }
+        }
+      }
 
-      //return 0;
-
-      return this._rfs.OnReadDirectory(path, fi, out paths);
+      return this._rfs.OnReadDirectory(path, fi, out subPaths);
     }
 
     private IEnumerable<DirectoryEntry> ReadDirectory(IntPtr dp) {
@@ -232,88 +223,53 @@ namespace FuseDht {
     protected override Errno OnReleaseHandle(string path, OpenedPathInfo info) {
 
       Debug.WriteLine(string.Format("OnReleaseHandle, path={0}, handle={1}, openflags={2}: {3}", path, info.Handle, info.OpenFlags, System.DateTime.Now));
+      Errno ret = this._rfs.OnReleaseHandle(path, info);
+      //successful closed.
+      string[] paths = FuseDhtUtil.ParsePath(path);
+      switch (paths.Length - 1) {
+        case Constants.LVL_DATA_FILE:
+          //i.e dht/basedir/key/my/p2paddr1.txt
+          //On write of this file
+          string filename = paths[Constants.LVL_DATA_FILE];
+          string folder = paths[Constants.LVL_SUB_KEY_FOLDERS];
+          string key = paths[Constants.LVL_KEY_DIR];
+          string basedir = paths[Constants.LVL_BASE_DIR];
 
-      //int r = Syscall.close((int)info.Handle);
-      //if (r == -1)
-      //  return Stdlib.GetLastError();
-
-      ////successful closed.
-      //string[] paths = FuseDhtUtil.ParsePath(path);
-      //switch (paths.Length) {
-      //  case 4:
-      //    //i.e /keydir/key/my/p2paddr1.txt
-      //    //On write of this file
-      //    string filename = paths[Constants.LVL_DATA_FILE];
-      //    string folder = paths[Constants.LVL_FOLDER];
-      //    string key = paths[Constants.LVL_KEY];
-      //    string keydir = paths[Constants.LVL_KEY_DIR];
-
-      //    if (folder.Equals(Constants.DIR_MY)) {
-      //      Console.WriteLine("Written in MY");
-      //      //Release of a write and only in "my" folder
-      //      //O_RDONLY == 0
-      //      if ((OpenFlags.O_WRONLY == (info.OpenFlags & OpenFlags.O_WRONLY)
-      //          || OpenFlags.O_RDWR == (info.OpenFlags & OpenFlags.O_RDWR))
-      //        && FuseDhtUtil.IsValidMyFileName(filename)
-      //        && FuseDhtUtil.IsPutAllowed(_shadowdir, key)) {
-      //        Console.WriteLine("Calling DhtPut");
-      //        _helper.DhtPut(_shadowdir, path);
-      //      }
-      //    }
-      //    break;
-      //  case 1:
-      //    //i.e. /KeyDirGenerator/binkey1.txt
-      //    string dir = paths[Constants.LVL_KEY_DIR_GENTR];
-      //    if (dir.Equals(Constants.DIR_KEY_DIR_GENERATOR)) {
-      //      byte[] b = File.ReadAllBytes(path);
-      //      FuseDhtUtil.InitKeyDirStructure(this._shadowdir, b);
-      //    }
-      //    break;
-      //  default:
-      //    break;
-      //}
-      //return 0;
-      return this._rfs.OnReleaseHandle(path, info);
+          if (folder.Equals(Constants.DIR_MY)) {
+            //Release of a write and only in "my" folder
+            //O_RDONLY == 0
+            if ((OpenFlags.O_WRONLY == (info.OpenFlags & OpenFlags.O_WRONLY)
+                || OpenFlags.O_RDWR == (info.OpenFlags & OpenFlags.O_RDWR))
+              && FuseDhtUtil.IsValidMyFileName(filename)) {
+              byte[] value = File.ReadAllBytes(Path.Combine(_shadowdir, path.Remove(0, 1)));
+              int? ttl = (int?)_util.ReadParam(basedir, key, Constants.FILE_TTL);
+              PutMode? put_mode = (PutMode?)_util.ReadParam(basedir, key, Constants.FILE_PUT_MODE);
+              if (ttl == null || put_mode == null) {
+                return Errno.EACCES;
+              }
+              Debug.WriteLine("Calling DhtPut");
+              _helper.AsDhtPut(basedir, key, value,ttl.GetValueOrDefault(), 
+                  put_mode.GetValueOrDefault(), Path.Combine(_shadowdir, path.Remove(0, 1))); //remove the first "/" of path
+            }
+          }
+          break;
+        case 1:
+          ////i.e. /KeyDirGenerator/binkey1.txt
+          //string dir = paths[Constants.LVL_KEY_DIR_GENTR];
+          //if (dir.Equals(Constants.DIR_KEY_DIR_GENERATOR)) {
+          //  byte[] b = File.ReadAllBytes(path);
+          //  FuseDhtUtil.InitKeyDirStructure(this._shadowdir, b);
+          //}
+          break;
+        default:
+          break;
+      }
+      return 0;
     }
 
     protected override Errno OnRemoveFile(string path) {
 
       Debug.WriteLine(string.Format("OnRemoveFile, path={0}: {1}", path, System.DateTime.Now));
-
-    //  string[] paths = FuseDhtUtil.ParsePath(path);
-    //  switch (paths.Length) {
-    //    case 4:	///keydir/key1/my(cache)/sample.txt
-    //      if (!File.Exists(this._shadowdir + "/" + paths[0] + "/" + Constants.FILE_OFFLINE)) {
-    //        //only block deletes in online folders
-    //        bool dhtCalled = this._helper.DhtDelete(this._shadowdir, path);
-    //        if (!dhtCalled) {
-    //          return Errno.EACCES;
-    //        }
-    //      } else {
-    //        goto default;
-    //      }
-    //      break;
-    //    case 3:	///keydir/key1/.offline or /keydir/key1/.conf
-    //      if (path[1].Equals(Constants.FILE_OFFLINE)) {
-    //        bool ifput;
-    //        try {
-    //          string filename;
-    //          ifput = FuseDhtUtil.DeleteOfflineFile(this._shadowdir, paths[0], out filename);
-    //          if (ifput) {
-    //            this._helper.DhtPut(this._shadowdir, "/" + paths[0] + "/" + Constants.DIR_MY + "/" + filename);
-    //          }
-    //        } catch {
-    //          return Errno.EACCES;
-    //        }
-    //      }
-    //      break;
-    //    default:
-    //      int r = Syscall.unlink(_shadowdir + path);
-    //      if (r == -1)
-    //        return Stdlib.GetLastError();
-    //      return 0;
-    //  }
-    //  return 0;
       return this._rfs.OnRemoveFile(path);
     }
 
