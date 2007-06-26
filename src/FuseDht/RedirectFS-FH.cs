@@ -367,19 +367,6 @@ namespace FuseDht {
 				return Stdlib.GetLastError ();
 			return 0;
 		}
-
-		private static void ShowHelp ()
-		{
-			FileSystem.ShowFuseHelp ("redirectfs-fh");
-			Console.Error.WriteLine ("redirectfs-fh options");
-			Console.Error.WriteLine ("    basedir                Directory to mirror");
-		}
-
-		private static bool Error (string message)
-		{
-			Console.Error.WriteLine ("redirectfs-fh: error: {0}", message);
-			return false;
-		}
 	}
 }
 

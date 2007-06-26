@@ -64,7 +64,10 @@ namespace FuseDht {
                            + base_dir_name + Path.DirectorySeparatorChar
                            + key + Path.DirectorySeparatorChar
                            + Constants.DIR_CACHE;
+
+      Debug.WriteLine(string.Format("Getting {0}", dht_key));
       DhtGetResult[] results = _dht.Get(dht_key);
+      Debug.WriteLine(string.Format("Got {0} items", results.Length));
       foreach (DhtGetResult result in results) {
         DhtDataFile file = new DhtDataFile(s_parent_path, result);
         file.WriteToFile();
@@ -98,8 +101,10 @@ namespace FuseDht {
 
       bool result;
       if (put_mode == PutMode.Create) {
+        Debug.WriteLine(string.Format("Creating {0}", dht_key));
         result = _dht.Create(dht_key, value, ttl);
       } else {
+        Debug.WriteLine(string.Format("Putting {0}", dht_key));
         result = _dht.Put(dht_key, value, ttl);
       }
       Debug.WriteLine(string.Format("Put/Create returned: {0}", result));

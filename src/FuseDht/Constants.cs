@@ -36,6 +36,8 @@ namespace FuseDht {
     public const bool DEFAULT_INVALIDATE = true;
 
     public const int DEFAULT_DN_LENGTH = 20;
+    //
+    public const int MAX_KEY_LENGTH = 150;  //keydir string length
 
     /**
      * level in directory structure
@@ -43,7 +45,7 @@ namespace FuseDht {
      *                   /cache/data_files
      *                   /my/file_upload
      *    /fusedht.conf
-     *    /KeyGenDir
+     *    /KeyGenDir/basedir/bin_file
      */
     public const int LVL_DHT = 0;
     public const int LVL_CONF_FILE = 1;
@@ -54,7 +56,7 @@ namespace FuseDht {
     public const int LVL_ETC = 3;
     public const int LVL_MY = 3;
     public const int LVL_SUB_KEY_FOLDERS = 3;
-    public const int LVL_OFFLINE = 3;
+    public const int LVL_BIN_KEY_FILE = 3;
     public const int LVL_DATA_FILE = 4;
     public const int LVL_ARG_FILE = 4;
 
@@ -65,6 +67,7 @@ namespace FuseDht {
     /// <exception cref="ArgumentException">Invalid argument</exception>
     public static PutMode GetPutMode(string pm) {
       PutMode putmode;
+      pm = pm.Trim();
       pm = pm.ToLower();
       switch (pm) {
         case "0":

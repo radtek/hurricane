@@ -56,6 +56,7 @@ namespace FuseDht {
     }
 
     public void InitKeyDirStructure(string basedirName, string key) {
+      Debug.WriteLine(string.Format("Initializing keydir: {0}/{1}", basedirName, key));
       string s_key_path = Path.Combine(_s_dht_root, Path.Combine(basedirName, key));
 
       DirectoryInfo di = new DirectoryInfo(s_key_path);
@@ -133,23 +134,19 @@ namespace FuseDht {
         brunetID = basedirName;
       }
 
-      BigInteger bi;
       try {
         MemBlock decoded = MemBlock.Reference(Base32.Decode(brunetID));
-        bi = new BigInteger(decoded);
+        //try to parse, not intended to be assigned to anyone
+        AddressParser.Parse(decoded);
         /* 
-         * Can be parsed as brunetID-like thing (though it might not be strickly valid)
-         * We don't have to be that strick.
+         * Can be parsed as brunetID
          */
         ret = basedirName + ":" + key;
       } catch (Exception) {
         /*
          * Not a valid 160 bit BigInteger
          */
-        string s = basedirName + ":" + key + ":" + "ipop_ns"; //replace this with real ns
-        HashAlgorithm algo = HashAlgorithm.Create();
-        byte[] b = algo.ComputeHash(Encoding.UTF8.GetBytes(s));
-        ret = Encoding.UTF8.GetString(b);
+        ret = basedirName + ":" + key + ":" + "ipop_ns"; //replace this with real ns
       }
 
       return ret;
@@ -161,30 +158,49 @@ namespace FuseDht {
 
       Regex reg;
       try {
-        reg = new Regex("[A-Za-z0-9]*.[A-Za-z]*");
+        //reg = new Regex(@"^[A-Za-z0-9]*\.*[A-Za-z]*$");
+        reg = new Regex(@"^[^.~].*[^.~]$");
       } catch {
         Debug.WriteLine("invalid regular expression");
         return false;
       }
       ret = reg.IsMatch(filename);
 
-      Console.WriteLine("IsValidName={0}", ret);
+      Debug.WriteLine(string.Format("{0} IsValidName={1}", filename, ret));
       return ret;
+    }
+
+    public string GetShadowPath(string fusePath) {
+      if (fusePath.StartsWith(Path.DirectorySeparatorChar.ToString())) {
+        //rooted
+        fusePath = fusePath.Remove(0, 1);
+      }
+
+      if(fusePath.StartsWith(Constants.DIR_DHT_ROOT)) {
+        fusePath = fusePath.Remove(0, Constants.DIR_DHT_ROOT.Length);
+      }
+      return Path.Combine(_s_dht_root, fusePath);
     }
   }
 
   [TestFixture]
   public class FuseDhtUtilTest {
     [Test]
-    [Ignore]
     public void TestGenDhtKey() {
       string s2 = "brunet:node:4S3VFIJBYEC2BAADOTYHMDFYNU4MO3UM";
       string dk2 = FuseDhtUtil.GenDhtKey(s2, "key");
-      Console.WriteLine(dk2);
-
-      string s1 = "A Common BaseDir";
+      Assert.AreEqual("brunet:node:4S3VFIJBYEC2BAADOTYHMDFYNU4MO3UM:key", dk2);
+      string s1 = "basedir";
       string dk1 = FuseDhtUtil.GenDhtKey(s1, "key");
-      Console.WriteLine(dk1);
+      Assert.IsTrue(dk1.EndsWith("ipop_ns"), "no ipop_ns");
+    }
+
+    [Test]
+    public void TestIsValidFileName() {
+      bool ret = FuseDhtUtil.IsValidMyFileName("ipaddress.txt");
+      Assert.IsTrue(ret, "1st");
+      ret = FuseDhtUtil.IsValidMyFileName("ipaddress.txt.swp");
+      Assert.IsFalse(ret, "2nd");
     }
   }
 }

@@ -25,38 +25,50 @@ namespace FuseDht {
     private string _shadowdir;
 
     private RedirectFHFSHelper _rfs;
+
+    private FuseDhtHelperFactory.HelperType _helpe_type = FuseDhtHelperFactory.HelperType.Dht;
     
     public static void Main(string[] args) {
 
-      using (FuseDht fs = new FuseDht()) {
-        string[] unhandled = fs.ParseFuseArguments(args);
-        foreach (string key in fs.FuseOptions.Keys) {
-          Console.WriteLine("Option: {0}={1}", key, fs.FuseOptions[key]);
+      try {
+        using (FuseDht fs = new FuseDht()) {
+          string[] unhandled = fs.ParseFuseArguments(args);
+          foreach (string key in fs.FuseOptions.Keys) {
+            Console.WriteLine("Option: {0}={1}", key, fs.FuseOptions[key]);
+          }
+          if (!fs.ParseArguments(unhandled))
+            return;
+          fs.InitFuseDhtSystem();
+          fs.Start();
         }
-        if (!fs.ParseArguments(unhandled))
-          return;
-        fs.InitFuseDhtSystem();
-        fs.Start();
+      } catch (System.Net.WebException) {
+        Console.Error.WriteLine("Soap/XmlRpc Dht interface not started. Please start it first");
+      } catch (Exception e) {
+        Console.WriteLine("System cannot started");
+        Debug.WriteLine(e);
+        //if caught unhandled exception, terminates.
+        Thread.CurrentThread.Abort();
       }
     }
 
     private bool ParseArguments(string[] args) {
-      if (args.Length != 2 && args.Length != 1) {
-        Console.Error.WriteLine("Invalid number of arguments.");
-        Console.Error.WriteLine("Use -h|--help for help");
-        return false;
-      }
       for (int i = 0; i < args.Length; ++i) {
         switch (args[i]) {
           case "-h":
           case "--help":
             FileSystem.ShowFuseHelp("FuseDht");
             Console.Error.WriteLine("FuseDht Arguments:");
-            string help = "1.\t" + "Mounting Point"
-                        + "2.\t" + "Shadow Path";
+            string help = "1.\t" + "Mounting Point\n"
+                        + "2.\t" + "Shadow Path"
+                        +"options:\n"
+                        + "-l[ocal]:\tUse LocalHT instead of Dht";
             Console.WriteLine("FuseDht Options");
             Console.Error.WriteLine(help);
             return false;
+          case "-l":
+            //if not specified, use Dht
+            _helpe_type = FuseDhtHelperFactory.HelperType.Local;
+            break;
           default:
             if (string.IsNullOrEmpty(base.MountPoint)) {
               base.MountPoint = args[i];
@@ -74,7 +86,8 @@ namespace FuseDht {
     void InitFuseDhtSystem() {
       this._rfs = new RedirectFHFSHelper(this._shadowdir);
       this._util = new FuseDhtUtil(this._shadowdir);
-      this._helper = FuseDhtHelperFactory.GetFuseDhtHelper(FuseDhtHelperFactory.HelperType.Local, this._shadowdir);
+      Console.WriteLine("Connecting to {0}", _helpe_type);
+      this._helper = FuseDhtHelperFactory.GetFuseDhtHelper(_helpe_type, this._shadowdir);
       this._util.InitDhtRootFileStructure();
       this._util.CreateSelfBaseDir(this._helper.DhtAddress);
     }
@@ -82,23 +95,31 @@ namespace FuseDht {
     protected override Errno OnRenamePath(string from, string to) {
 
       Debug.WriteLine(string.Format("OnRenamePath, from={0}, to={1}: {2}", from, to, System.DateTime.Now));
-
-      //string[] frompaths = FuseDhtUtil.ParsePath(from);
-      //if (frompaths.Length == 1) {
-      //  //key1
-      //  string[] topaths = FuseDhtUtil.ParsePath(to);
-      //  if (topaths.Length == 1) {
-      //    //key2
-      //    DirectoryInfo cache = new DirectoryInfo(this._shadowdir + from + "/" + Constants.DIR_CACHE);
-      //    if (cache.Exists && cache.GetFiles().Length == 0) {
-      //      //rename allowed
-      //      return this._rfs.OnRenamePath(from, to);
-      //    }
-      //  }
-      //}
-      ////otherwise, permission denied.
-      //return Errno.EACCES;
-      return this._rfs.OnRenamePath(from, to);
+      
+      //Don't allow renaming of keydir and basedir
+      string[] paths = FuseDhtUtil.ParsePath(from);
+      switch (paths.Length - 1) {
+        case Constants.LVL_BASE_DIR:
+          if (paths[Constants.LVL_KEY_DIR_GENTR].Equals(Constants.DIR_KEY_DIR_GENERATOR)) {
+            //could also be KeyGenerateor
+            return Errno.EACCES;
+          } else {
+            //basedir
+            DirectoryInfo di = new DirectoryInfo(_util.GetShadowPath(from));
+            if (di.GetDirectories().Length > 0) {
+              //not empty
+              return Errno.EACCES;
+            }
+            //all right, allow you to rename, but only on the same lvl
+            if(FuseDhtUtil.ParsePath(to).Length - 1 != Constants.LVL_BASE_DIR) {
+              return Errno.EACCES;
+            }
+            //ok
+            return this._rfs.OnRenamePath(from, to);
+          }
+        default :
+          return Errno.EACCES;
+      }
     }
 
     protected override Errno OnCreateDirectory(string path, FilePermissions mode) {
@@ -114,7 +135,7 @@ namespace FuseDht {
       this._rfs.OnCreateDirectory(path, mode);
       
       //sucessfully created. Initialize the directory structure
-      if(paths.Length == Constants.LVL_KEY_DIR + 1 && !paths[paths.Length -1].Equals(Constants.DIR_KEY_DIR_GENERATOR)) {
+      if(paths.Length == Constants.LVL_KEY_DIR + 1 && !paths[Constants.LVL_BASE_DIR].Equals(Constants.DIR_KEY_DIR_GENERATOR)) {
         string s_path = Path.Combine(_shadowdir, path);
         DirectoryInfo keydir = new DirectoryInfo(s_path);
         DirectoryInfo basedir = keydir.Parent;
@@ -224,6 +245,11 @@ namespace FuseDht {
 
       Debug.WriteLine(string.Format("OnReleaseHandle, path={0}, handle={1}, openflags={2}: {3}", path, info.Handle, info.OpenFlags, System.DateTime.Now));
       Errno ret = this._rfs.OnReleaseHandle(path, info);
+      
+      if(ret != 0) {
+        return ret;
+      }
+
       //successful closed.
       string[] paths = FuseDhtUtil.ParsePath(path);
       switch (paths.Length - 1) {
@@ -253,13 +279,21 @@ namespace FuseDht {
             }
           }
           break;
-        case 1:
-          ////i.e. /KeyDirGenerator/binkey1.txt
-          //string dir = paths[Constants.LVL_KEY_DIR_GENTR];
-          //if (dir.Equals(Constants.DIR_KEY_DIR_GENERATOR)) {
-          //  byte[] b = File.ReadAllBytes(path);
-          //  FuseDhtUtil.InitKeyDirStructure(this._shadowdir, b);
-          //}
+        case Constants.LVL_BIN_KEY_FILE:
+          //i.e. dht/KeyDirGenerator/basedir/binkey1.bin
+          string s_file_path = Path.Combine(_shadowdir, path.Remove(0, 1));
+          FileInfo fi = new FileInfo(s_file_path);
+          DirectoryInfo bd = fi.Directory;
+          DirectoryInfo generator = bd.Parent;
+
+          if (generator.Name.Equals(Constants.DIR_KEY_DIR_GENERATOR)) {
+            byte[] b = File.ReadAllBytes(s_file_path);
+            string k = Base32.Encode(b);
+            if(k.Length > Constants.MAX_KEY_LENGTH) {
+              k = k.Substring(0, Constants.MAX_KEY_LENGTH);
+            }
+            _util.InitKeyDirStructure(bd.Name, k);
+          }
           break;
         default:
           break;
@@ -267,13 +301,48 @@ namespace FuseDht {
       return 0;
     }
 
+    protected override Errno OnReadSymbolicLink(string path, out string target) {
+
+      Debug.WriteLine(string.Format("OnReadSymbolicLink, path={0}: {1}", path, System.DateTime.Now));
+
+      Errno err = this._rfs.OnReadSymbolicLink(path, out target);
+
+      /*
+       * Here it will return a real path which cause us losing control of the user operations
+       * So we modify it with a relative path
+       */
+      string[] paths = FuseDhtUtil.ParsePath(path);
+
+      switch (paths.Length - 1) {
+        case Constants.LVL_BASE_DIR:
+          //dht/myself
+          string basedir = paths[Constants.LVL_BASE_DIR];
+          if (basedir.Equals(Constants.LN_SELF_BASEDIR)) {
+            target = target.Remove(0, Path.Combine(_shadowdir, Constants.DIR_DHT_ROOT).Length);
+            if (target.StartsWith(Path.DirectorySeparatorChar.ToString()))
+              target = target.Remove(0, 1);
+          }
+          break;
+        default:
+          break;
+      }
+      Debug.WriteLine(string.Format("Linked to {0}", target));
+
+      return err;
+    }
+
+    #region UnmodifiedMethods
     protected override Errno OnRemoveFile(string path) {
 
       Debug.WriteLine(string.Format("OnRemoveFile, path={0}: {1}", path, System.DateTime.Now));
       return this._rfs.OnRemoveFile(path);
     }
 
-    #region UnmodifiedMethods
+    protected override Errno OnRemoveDirectory(string path) {
+
+      Debug.WriteLine(string.Format("OnRemoveDirectory, path={0}: {1}", path, System.DateTime.Now));
+      return this._rfs.OnRemoveDirectory(path);
+    }
 
     protected override unsafe Errno OnWriteHandle(string path, OpenedPathInfo info,
         byte[] buf, long offset, out int bytesWritten) {
@@ -281,13 +350,6 @@ namespace FuseDht {
       Debug.WriteLine(string.Format("OnWriteHandle, path={0}, handle={1}, buflength={2}, offset={3}: {4}", path, info.Handle, buf.Length, offset, System.DateTime.Now));
 
       return this._rfs.OnWriteHandle(path, info, buf, offset, out bytesWritten);
-    }
-
-    protected override Errno OnRemoveDirectory(string path) {
-
-      Debug.WriteLine(string.Format("OnRemoveDirectory, path={0}: {1}", path, System.DateTime.Now));
-
-      return this._rfs.OnRemoveDirectory(path);
     }
 
     protected override unsafe Errno OnReadHandle(string path, OpenedPathInfo info, byte[] buf,
@@ -338,13 +400,6 @@ namespace FuseDht {
       Debug.WriteLine(string.Format("OnGetPathStatus, path={0}: {1}", path, System.DateTime.Now));      
 
       return this._rfs.OnGetPathStatus(path, out buf);
-    }
-
-    protected override Errno OnReadSymbolicLink(string path, out string target) {
-
-      Debug.WriteLine(string.Format("OnReadSymbolicLink, path={0}: {1}", path, System.DateTime.Now));
-
-      return this._rfs.OnReadSymbolicLink(path, out target);
     }
 
     protected override Errno OnOpenDirectory(string path, OpenedPathInfo info) {
