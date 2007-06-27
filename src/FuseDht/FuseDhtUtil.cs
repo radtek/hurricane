@@ -36,7 +36,8 @@ namespace FuseDht {
       Directory.CreateDirectory(Path.Combine(_s_dht_root, Constants.DIR_KEY_DIR_GENERATOR));
 
       //conf file
-      FuseDhtConfigHandler.Write(Path.Combine(_s_dht_root, Constants.FILE_CONF), FuseDhtConfig.GetInstance());
+      FuseDhtConfigHandler.cfgPath = Path.Combine(_s_dht_root, Constants.FILE_CONF);
+      FuseDhtConfigHandler.Write(FuseDhtConfig.GetInstance());
     }
 
     public void CreateSelfBaseDir(string brunetAddr) {
@@ -181,6 +182,12 @@ namespace FuseDht {
       if(fusePath.StartsWith(Constants.DIR_DHT_ROOT)) {
         fusePath = fusePath.Remove(0, Constants.DIR_DHT_ROOT.Length);
       }
+
+      if (fusePath.StartsWith(Path.DirectorySeparatorChar.ToString())) {
+        //rooted
+        fusePath = fusePath.Remove(0, 1);
+      }
+
       return Path.Combine(_s_dht_root, fusePath);
     }
   }
@@ -202,7 +209,7 @@ namespace FuseDht {
     public void TestIsValidFileName() {
       bool ret = FuseDhtUtil.IsValidMyFileName("ipaddress.txt");
       Assert.IsTrue(ret, "1st");
-      ret = FuseDhtUtil.IsValidMyFileName("ipaddress.txt.swp");
+      ret = FuseDhtUtil.IsValidMyFileName(".ipaddress.txt.swp");
       Assert.IsFalse(ret, "2nd");
     }
   }

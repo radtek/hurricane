@@ -29,9 +29,9 @@ namespace FuseDht {
     //links
     public const string LN_SELF_BASEDIR = "myself";
     //default values
-    public const int DEFAULT_TTL = 300;	//seconds
+    public const int DEFAULT_TTL = 5000;	//seconds
     public const int DEFAULT_MAX_BYTES = 1000;	//bytes
-    public const int DEFAULT_LIFESPAN = 300;
+    public const int DEFAULT_LIFESPAN = 1000;
     public const PutMode DEFAULT_PUT_MODE = PutMode.Put;
     public const bool DEFAULT_INVALIDATE = true;
 

@@ -233,16 +233,6 @@ namespace FuseDht {
       return this._rfs.OnReadDirectory(path, fi, out subPaths);
     }
 
-    private IEnumerable<DirectoryEntry> ReadDirectory(IntPtr dp) {
-      Dirent de;
-      while ((de = Syscall.readdir(dp)) != null) {
-        DirectoryEntry e = new DirectoryEntry(de.d_name);
-        e.Stat.st_ino = de.d_ino;
-        e.Stat.st_mode = (FilePermissions)(de.d_type << 12);
-        yield return e;
-      }
-    }
-
     protected override Errno OnReleaseHandle(string path, OpenedPathInfo info) {
 
       Debug.WriteLine(string.Format("OnReleaseHandle, path={0}, handle={1}, openflags={2}: {3}", path, info.Handle, info.OpenFlags, System.DateTime.Now));
@@ -254,51 +244,68 @@ namespace FuseDht {
 
       //successful closed.
       string[] paths = FuseDhtUtil.ParsePath(path);
-      switch (paths.Length - 1) {
-        case Constants.LVL_DATA_FILE:
-          //i.e dht/basedir/key/my/p2paddr1.txt
-          //On write of this file
-          string filename = paths[Constants.LVL_DATA_FILE];
-          string folder = paths[Constants.LVL_SUB_KEY_FOLDERS];
-          string key = paths[Constants.LVL_KEY_DIR];
-          string basedir = paths[Constants.LVL_BASE_DIR];
+      try {
+        switch (paths.Length - 1) {
+          case Constants.LVL_DATA_FILE:
+            //i.e dht/basedir/key/my/p2paddr1.txt
+            //On write of this file
+            string filename = paths[Constants.LVL_DATA_FILE];
+            string folder = paths[Constants.LVL_SUB_KEY_FOLDERS];
+            string key = paths[Constants.LVL_KEY_DIR];
+            string basedir = paths[Constants.LVL_BASE_DIR];
 
-          if (folder.Equals(Constants.DIR_MY)) {
-            //Release of a write and only in "my" folder
-            //O_RDONLY == 0
-            if ((OpenFlags.O_WRONLY == (info.OpenFlags & OpenFlags.O_WRONLY)
-                || OpenFlags.O_RDWR == (info.OpenFlags & OpenFlags.O_RDWR))
-              && FuseDhtUtil.IsValidMyFileName(filename)) {
-              byte[] value = File.ReadAllBytes(Path.Combine(_shadowdir, path.Remove(0, 1)));
-              int? ttl = (int?)_util.ReadParam(basedir, key, Constants.FILE_TTL);
-              PutMode? put_mode = (PutMode?)_util.ReadParam(basedir, key, Constants.FILE_PUT_MODE);
-              if (ttl == null || put_mode == null) {
-                return Errno.EACCES;
+            if (folder.Equals(Constants.DIR_MY)) {
+              //Release of a write and only in "my" folder
+              //O_RDONLY == 0
+              if ((OpenFlags.O_WRONLY == (info.OpenFlags & OpenFlags.O_WRONLY)
+                  || OpenFlags.O_RDWR == (info.OpenFlags & OpenFlags.O_RDWR))
+                && FuseDhtUtil.IsValidMyFileName(filename)) {
+                byte[] value = File.ReadAllBytes(Path.Combine(_shadowdir, path.Remove(0, 1)));
+                int? ttl = (int?)_util.ReadParam(basedir, key, Constants.FILE_TTL);
+                PutMode? put_mode = (PutMode?)_util.ReadParam(basedir, key, Constants.FILE_PUT_MODE);
+                if (ttl == null || put_mode == null) {
+                  return Errno.EACCES;
+                }
+                Debug.WriteLine("Calling DhtPut");
+                _helper.AsDhtPut(basedir, key, value, ttl.GetValueOrDefault(),
+                    put_mode.GetValueOrDefault(), Path.Combine(_shadowdir, path.Remove(0, 1))); //remove the first "/" of path
               }
-              Debug.WriteLine("Calling DhtPut");
-              _helper.AsDhtPut(basedir, key, value,ttl.GetValueOrDefault(), 
-                  put_mode.GetValueOrDefault(), Path.Combine(_shadowdir, path.Remove(0, 1))); //remove the first "/" of path
             }
-          }
-          break;
-        case Constants.LVL_BIN_KEY_FILE:
-          //i.e. dht/KeyDirGenerator/basedir/binkey1.bin
-          string s_file_path = Path.Combine(_shadowdir, path.Remove(0, 1));
-          FileInfo fi = new FileInfo(s_file_path);
-          DirectoryInfo bd = fi.Directory;
-          DirectoryInfo generator = bd.Parent;
+            break;
+          case Constants.LVL_BIN_KEY_FILE:
+            //i.e. dht/KeyDirGenerator/basedir/binkey1.bin
+            string s_file_path = Path.Combine(_shadowdir, path.Remove(0, 1));
+            FileInfo fi = new FileInfo(s_file_path);
+            DirectoryInfo bd = fi.Directory;
+            DirectoryInfo generator = bd.Parent;
 
-          if (generator.Name.Equals(Constants.DIR_KEY_DIR_GENERATOR)) {
-            byte[] b = File.ReadAllBytes(s_file_path);
-            string k = Base32.Encode(b);
-            if(k.Length > Constants.MAX_KEY_LENGTH) {
-              k = k.Substring(0, Constants.MAX_KEY_LENGTH);
+            if (generator.Name.Equals(Constants.DIR_KEY_DIR_GENERATOR)) {
+              byte[] b = File.ReadAllBytes(s_file_path);
+              string k = Base32.Encode(b);
+              if (k.Length > Constants.MAX_KEY_LENGTH) {
+                k = k.Substring(0, Constants.MAX_KEY_LENGTH);
+              }
+              _util.InitKeyDirStructure(bd.Name, k);
             }
-            _util.InitKeyDirStructure(bd.Name, k);
-          }
-          break;
-        default:
-          break;
+            break;
+          case Constants.LVL_CONF_FILE:
+            //.ie. /dht/fusedht.config
+            Console.WriteLine(FuseDhtConfigHandler.cfgPath);
+            Console.WriteLine(_util.GetShadowPath(path));
+            if (FuseDhtConfigHandler.cfgPath.Equals(_util.GetShadowPath(path))) {
+              FuseDhtConfigHandler.Refresh();
+              Debug.Write(FuseDhtConfig.GetInstance().ToString());
+            }
+            break;
+          default:
+            break;
+        }
+      } catch (Exception e) {
+        /*
+         * if things caught in here. We just log the message but still return 0 because the release of
+         * the handle succeeded.
+         */
+        Debug.WriteLine(e);
       }
       return 0;
     }

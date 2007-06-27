@@ -52,8 +52,14 @@ namespace FuseDht {
     }
 
     public static void Refresh() {
-      FuseDhtConfig cfg = FuseDhtConfigHandler.Read();
-      FuseDhtConfig.Refresh(cfg);
+      try {
+        FuseDhtConfig cfg = FuseDhtConfigHandler.Read();
+        FuseDhtConfig.Refresh(cfg);
+      } catch (Exception) {
+        /*
+         * If read failed, just don't update FuseDhtConfig
+         */
+      }
     }
   }
 
@@ -88,6 +94,17 @@ namespace FuseDht {
      */
     internal static void Refresh(FuseDhtConfig c) {
       _instance = c;
+    }
+
+    public string ToString() {
+      StringBuilder sb = new StringBuilder();
+      sb.Append(base.ToString());
+      sb.Append("\n");
+      sb.Append(string.Format("ttl={0}\n", ttl));
+      sb.Append(string.Format("lifespan={0}\n", lifespan));
+      sb.Append(string.Format("putMode={0}\n", putMode));
+      sb.Append(string.Format("invalidate={0}", invalidate));
+      return sb.ToString();
     }
   }
 
