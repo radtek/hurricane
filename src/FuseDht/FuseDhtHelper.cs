@@ -17,9 +17,13 @@ namespace FuseDht {
   /// Deal with Dht operations for FuseDht class
   /// </summary>
   public class FuseDhtHelper {
+    public const int DHT_PUT_RETRY_TIMES = 3;
+    
     private IDht _dht;
     private string _shadowdir;
     private readonly string _dht_addr;
+    private readonly string _ipop_ns;
+    private IXmlRpcManager _rpc;
 
     public string DhtAddress {
       get { return _dht_addr; }
@@ -30,13 +34,27 @@ namespace FuseDht {
       this._shadowdir = shadowdir;
 
       this._dht_addr = _dht.GetDhtInfo()["address"] as string;
+
+      this._rpc = XmlRpcManagerClient.GetXmlRpcManager();
+      try {
+        object[] rs = _rpc.localproxy("ipop.GetState", new object[0]);
+        if (rs != null && rs.Length > 0) {
+          IDictionary dic = (IDictionary)rs[0];
+          _ipop_ns = dic["ipop_namespace"] as string;
+        } else {
+          _ipop_ns = string.Empty;
+        }
+      } catch (Exception e) {
+        Debug.WriteLine(e);
+        _ipop_ns = string.Empty;
+      }
     }
 
     /**
      * Achieve non-blocking by using ThreadPool
      */
     public void AsDhtGet(string basedirName, string key) {
-      string dht_key = FuseDhtUtil.GenDhtKey(basedirName, key);
+      string dht_key = FuseDhtUtil.GenDhtKey(basedirName, key, _ipop_ns);
       string s_cache = _shadowdir + Path.DirectorySeparatorChar
                      + Constants.DIR_DHT_ROOT + Path.DirectorySeparatorChar
                      + basedirName + Path.DirectorySeparatorChar
@@ -77,7 +95,7 @@ namespace FuseDht {
     }
 
     public void AsDhtPut(string basedirName, string key, byte[] value, int ttl, PutMode putMode, string s_filePath) {
-      string dht_key = FuseDhtUtil.GenDhtKey(basedirName, key);
+      string dht_key = FuseDhtUtil.GenDhtKey(basedirName, key, _ipop_ns);
       ArrayList state = new ArrayList();
       state.Add(dht_key);
       state.Add(basedirName);
@@ -100,22 +118,44 @@ namespace FuseDht {
       PutMode put_mode = (PutMode)state[6];
 
       bool result;
-      if (put_mode == PutMode.Create) {
-        Debug.WriteLine(string.Format("Creating {0}", dht_key));
-        result = _dht.Create(dht_key, value, ttl);
-      } else {
-        Debug.WriteLine(string.Format("Putting {0}", dht_key));
-        result = _dht.Put(dht_key, value, ttl);
-      }
-      Debug.WriteLine(string.Format("Put/Create returned: {0}", result));
 
-      FileInfo fi = new FileInfo(s_file_path);
-      if (!result) {
-        //add a suffix .offline to the file
-        fi.MoveTo(s_file_path + Constants.FILE_OFFLINE);
-      } else {
-        //suffix .uploaded
-        fi.MoveTo(s_file_path + Constants.FILE_UPLOADED);
+      for (int i = 0; i < DHT_PUT_RETRY_TIMES; i++) {
+        if (put_mode == PutMode.Create) {
+          Debug.WriteLine(string.Format("Creating {0}", dht_key));
+          result = _dht.Create(dht_key, value, ttl);
+        } else {
+          Debug.WriteLine(string.Format("Putting {0}", dht_key));
+          result = _dht.Put(dht_key, value, ttl);
+        }
+        Debug.WriteLine(string.Format("Put/Create returned: {0}", result));
+
+        FileInfo fi = new FileInfo(s_file_path);
+        if (!result) {
+          //add a suffix .offline to the file
+          if (s_file_path.EndsWith(Constants.FILE_OFFLINE)) {
+            //file.offline -> file.offline.1
+            s_file_path += "." + i.ToString();
+          } else if(s_file_path.Remove(s_file_path.Length - 2).EndsWith(Constants.FILE_OFFLINE)) {
+            s_file_path = s_file_path.Remove(s_file_path.Length - 2) + "." + i.ToString();
+          } else {
+            //file -> file.offline
+            s_file_path += Constants.FILE_OFFLINE;
+          }
+          fi.MoveTo(s_file_path);
+        } else {
+          //suffix .uploaded
+          if (s_file_path.EndsWith(Constants.FILE_OFFLINE)) {
+            //file.offline
+            s_file_path = s_file_path.Remove(s_file_path.Length - 1 - Constants.FILE_OFFLINE.Length, 
+                Constants.FILE_OFFLINE.Length);
+          } else if(s_file_path.Remove(s_file_path.Length - 2).EndsWith(Constants.FILE_OFFLINE)) {
+            //file.offline.1
+            s_file_path = s_file_path.Remove(s_file_path.Length - 3 - Constants.FILE_OFFLINE.Length);
+          }
+          //append .uploaded
+          fi.MoveTo(s_file_path + Constants.FILE_UPLOADED);
+          break;
+        } 
       }
     }
   }

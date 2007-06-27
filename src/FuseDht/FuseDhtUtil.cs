@@ -124,7 +124,7 @@ namespace FuseDht {
     /**
      * Generate the real key to put in dht from the baseDir and keyDir
      */
-    public static string GenDhtKey(string basedirName, string key) {
+    public static string GenDhtKey(string basedirName, string key, string ipopNS) {
       string ret;
 
       string brunetID;
@@ -146,7 +146,7 @@ namespace FuseDht {
         /*
          * Not a valid 160 bit BigInteger
          */
-        ret = basedirName + ":" + key + ":" + "ipop_ns"; //replace this with real ns
+        ret = basedirName + ":" + key + ":" + ipopNS; //replace this with real ns
       }
 
       return ret;
@@ -188,10 +188,10 @@ namespace FuseDht {
     [Test]
     public void TestGenDhtKey() {
       string s2 = "brunet:node:4S3VFIJBYEC2BAADOTYHMDFYNU4MO3UM";
-      string dk2 = FuseDhtUtil.GenDhtKey(s2, "key");
+      string dk2 = FuseDhtUtil.GenDhtKey(s2, "key", "ipop_ns");
       Assert.AreEqual("brunet:node:4S3VFIJBYEC2BAADOTYHMDFYNU4MO3UM:key", dk2);
       string s1 = "basedir";
-      string dk1 = FuseDhtUtil.GenDhtKey(s1, "key");
+      string dk1 = FuseDhtUtil.GenDhtKey(s1, "key", "ipop_ns");
       Assert.IsTrue(dk1.EndsWith("ipop_ns"), "no ipop_ns");
     }
 

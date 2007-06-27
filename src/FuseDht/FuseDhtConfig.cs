@@ -12,7 +12,7 @@ namespace FuseDht {
 
     /// <summary>
     /// Set cfgPath before using this method
-    /// </summary>    
+    /// </summary>
     public static FuseDhtConfig Read() {
       if (string.IsNullOrEmpty(cfgPath)) {
         throw new Exception("You haven't set the config path yet");

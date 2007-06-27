@@ -37,7 +37,7 @@ namespace FuseDht {
 
 #if FUSE_DEBUG
       //Having some init data isn't bad
-      string key = FuseDhtUtil.GenDhtKey("testbasedir", "testkey1");
+      string key = FuseDhtUtil.GenDhtKey("testbasedir", "testkey1", "ipop_ns");
       this.Put(key, "testvalue1", 5000);
       this.Put(key, "testvalue2", 3000);
 #endif
