@@ -10,7 +10,9 @@ using Brunet;
 using Brunet.Dht;
 using System.Diagnostics;
 using System.Security.Cryptography;
+#if FUSE_NUNIT
 using NUnit.Framework;
+#endif
 
 namespace FuseDht {  
   /// <summary>
@@ -34,9 +36,8 @@ namespace FuseDht {
       this._shadowdir = shadowdir;
 
       this._dht_addr = _dht.GetDhtInfo()["address"] as string;
-
-      this._rpc = XmlRpcManagerClient.GetXmlRpcManager();
       try {
+        this._rpc = XmlRpcManagerClient.GetXmlRpcManager();
         object[] rs = _rpc.localproxy("ipop.GetState", new object[0]);
         if (rs != null && rs.Length > 0) {
           IDictionary dic = (IDictionary)rs[0];
@@ -160,8 +161,9 @@ namespace FuseDht {
     }
   }
 
+#if FUSE_NUNIT
   [TestFixture]
   public class FuseDhtHelperTest {
   }
-
+#endif
 }

@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using System.Diagnostics;
+#if FUSE_NUNIT
 using NUnit.Framework;
+#endif
 using Mono.Unix;
 using Brunet;
 using Brunet.Dht;
@@ -183,6 +185,7 @@ namespace FuseDht {
     }
   }
 
+#if FUSE_NUNIT
   [TestFixture]
   public class FuseDhtUtilTest {
     [Test]
@@ -203,4 +206,5 @@ namespace FuseDht {
       Assert.IsFalse(ret, "2nd");
     }
   }
+#endif
 }

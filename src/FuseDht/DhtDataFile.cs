@@ -4,7 +4,9 @@ using System.Text;
 using System.IO;
 using Brunet.Dht;
 using Brunet;
+#if FUSE_NUNIT
 using NUnit.Framework;
+#endif
 
 namespace FuseDht {
   /**
@@ -88,6 +90,7 @@ namespace FuseDht {
     }
   }
 
+#if FUSE_NUNIT
   [TestFixture]
   public class DhtDataFileTest {
     [Test]
@@ -103,4 +106,5 @@ namespace FuseDht {
       Assert.AreEqual(expected, File.GetCreationTimeUtc(ddf.FullName));
     }
   }
+#endif
 }

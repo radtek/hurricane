@@ -4,7 +4,9 @@ using System.Text;
 using Brunet;
 using System.Xml.Serialization;
 using System.IO;
+#if FUSE_NUNIT
 using NUnit.Framework;
+#endif
 
 namespace FuseDht {
   public class FuseDhtConfigHandler {
@@ -89,6 +91,7 @@ namespace FuseDht {
     }
   }
 
+#if FUSE_NUNIT
   [TestFixture]
   public class FuseDhtConfigTest {
     [Test]
@@ -110,4 +113,5 @@ namespace FuseDht {
       Assert.AreEqual(PutMode.Recreate, actual.putMode);
     }
   }
+#endif
 }

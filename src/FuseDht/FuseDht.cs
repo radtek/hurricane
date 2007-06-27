@@ -9,7 +9,9 @@ using System.Threading;
 using Brunet;
 using System.Runtime.Remoting.Messaging;
 using System.IO;
+#if FUSE_NUNIT
 using NUnit.Framework;
+#endif
 
 
 namespace FuseDht {
@@ -517,10 +519,12 @@ namespace FuseDht {
     #endregion
   }
 
+#if FUSE_NUNIT 
   [TestFixture]
   /**
    * Just test some Mono.Fuse system and Main class features in here
    */
   public class FuseDhtTest {
   }
+#endif
 }

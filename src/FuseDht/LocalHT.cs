@@ -5,7 +5,9 @@ using System.Text;
 using Brunet.Dht;
 using Brunet;
 using System.Security.Cryptography;
+#if FUSE_NUNIT
 using NUnit.Framework;
+#endif
 using System.Diagnostics;
 using Ipop;
 
@@ -88,6 +90,7 @@ namespace FuseDht {
     }
   }
 
+#if FUSE_NUNIT
   [TestFixture]
   public class LocalHTTest {
     [Test]
@@ -105,4 +108,5 @@ namespace FuseDht {
       }
     }
   }
+#endif
 }

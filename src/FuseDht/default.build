@@ -1,22 +1,46 @@
 <?xml version="1.0"?>
 <project name="FuseDht" default="build" basedir=".">
   <description> Build FuseDht </description>
-  <property name="debug" value="true" />
+  <property name="debug" value="false" />
+  <property name="define" value="" />
   <property name="lib.dir" value="../../lib"/>
   <property name="build.dir" value="build" />
+  <property name="exe" value="FuseDht.exe" />
+  <property name="dll" value="LocalHT.dll" />
 
-  <target name="build" description="build FuseDht">
+  <target name="build">
+    <call target="buildFuseDht" />
+  </target>
+
+  <target name="debug">
+    <property name="debug" value="true" />
+    <call target="buildFuseDht" />
+  </target>
+
+  <target name="test">
+    <property name="debug" value="true" />
+    <property name="define" value="FUSE_DEBUG,FUSE_NUNIT" />
+    <call target="buildFuseDht" />
+  </target>
+
+  <target name="clean" description="Deletes the current configuration">
+    <delete dir="${build.dir}/" failonerror="false"/>
+    <delete dir="${build.dir}/${exe}" failonerror="false"/>
+    <delete dir="${build.dir}/${dll}" failonerror="false"/>
+  </target>
+  
+  <target name="buildFuseDht" description="build FuseDht">
     <mkdir dir="${build.dir}" failonerror="true"/>
     <copy todir="${build.dir}">
       <fileset basedir="${lib.dir}">
         <include name="*.dll" />
       </fileset>
     </copy>
-    <csc unsafe="true" 
+    <csc unsafe="true"
          target="exe"
          debug="${debug}"
          output="${build.dir}/FuseDht.exe"
-         define="FUSE_DEBUG">
+         define="${define}">
       <sources failonempty="true">
         <include name="LocalHT.cs"/>
         <include name="Constants.cs"/>
@@ -51,6 +75,11 @@
         <include name="${build.dir}/NUnit.Framework.dll" />
         <include name="${build.dir}/DhtServiceClient.dll" />
       </references>
-    </csc>         
+    </csc>
+    <copy todir="${lib.dir}">
+      <fileset basedir="${build.dir}">
+        <include name="LocalHT.dll" />
+      </fileset>
+    </copy>
   </target>
 </project>
