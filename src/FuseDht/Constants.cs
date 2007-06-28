@@ -60,6 +60,9 @@ namespace FuseDht {
     public const int LVL_DATA_FILE = 4;
     public const int LVL_ARG_FILE = 4;
 
+    public const string DHT_VALUE_ATTR_FN = "filename";
+    public const string DHT_VALUE_ATTR_VAL = "value";
+
     /// <summary>
     /// Convert string to PutMode
     /// </summary>

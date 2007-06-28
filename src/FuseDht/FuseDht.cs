@@ -261,13 +261,15 @@ namespace FuseDht {
                   || OpenFlags.O_RDWR == (info.OpenFlags & OpenFlags.O_RDWR))
                 && FuseDhtUtil.IsValidMyFileName(filename)) {
                 byte[] value = File.ReadAllBytes(Path.Combine(_shadowdir, path.Remove(0, 1)));
+                byte[] dht_val = FuseDhtUtil.GenerateDhtValue(filename, value);
+
                 int? ttl = (int?)_util.ReadParam(basedir, key, Constants.FILE_TTL);
                 PutMode? put_mode = (PutMode?)_util.ReadParam(basedir, key, Constants.FILE_PUT_MODE);
                 if (ttl == null || put_mode == null) {
                   return Errno.EACCES;
                 }
                 Debug.WriteLine("Calling DhtPut");
-                _helper.AsDhtPut(basedir, key, value, ttl.GetValueOrDefault(),
+                _helper.AsDhtPut(basedir, key, dht_val, ttl.GetValueOrDefault(),
                     put_mode.GetValueOrDefault(), Path.Combine(_shadowdir, path.Remove(0, 1))); //remove the first "/" of path
               }
             }
