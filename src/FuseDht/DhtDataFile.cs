@@ -20,6 +20,7 @@ namespace FuseDht {
     private string _parent_dir_path;
     private DhtGetResult _dgr;
     private string _filename;
+    private byte[] _content;
     /*
      * For FuseDht inserted values
      */
@@ -32,8 +33,10 @@ namespace FuseDht {
       if (val != null) {
         _fuse_value = val;
         _filename = (string)_fuse_value[Constants.DHT_VALUE_ATTR_FN];
+        _content = _fuse_value[Constants.DHT_VALUE_ATTR_VAL] as byte[];
       } else {
         this._filename = GenFileName();
+        _content = dgr.value;
       }
     }
 
@@ -66,7 +69,7 @@ namespace FuseDht {
           s_path += ".1";
         }
       }
-      File.WriteAllBytes(s_path, _dgr.value);
+      File.WriteAllBytes(s_path, _content);
       TimeSpan ts = new TimeSpan(0, 0, _dgr.age);
       DateTime c_time = DateTime.UtcNow - ts;
       File.SetCreationTimeUtc(s_path, c_time);
