@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using System.Diagnostics;
@@ -222,6 +223,27 @@ namespace FuseDht {
         return null;
       }
     }
+
+    public static bool IsIgnoredFilename(string filename) {
+      bool ret = false;
+
+      if (new List<string>((ICollection<string>)Constants.SPECIAL_PATHS).Contains(filename)) {
+        return true;
+      }
+
+      Regex reg;
+      try {
+        //reg = new Regex(@"^[A-Za-z0-9]*\.*[A-Za-z]*$");
+        reg = new Regex(@".*\.so[.]*.*");
+      } catch {
+        Debug.WriteLine("invalid regular expression");
+        return false;
+      }
+      ret = reg.IsMatch(filename);
+
+      Debug.WriteLine(string.Format("{0} IsIgnoredFilename={1}", filename, ret));
+      return ret;
+    }
   }
 
 #if FUSE_NUNIT
@@ -247,12 +269,19 @@ namespace FuseDht {
     }
 
     [Test]
+    [Ignore]
     public void TestValueSerializationAndDeserialiazation() {
       byte[] b = Encoding.UTF8.GetBytes("testing value~~~~~");
       byte[] val = FuseDhtUtil.GenerateDhtValue("file1.txt", b);
       IDictionary dic = FuseDhtUtil.ParseDhtValue(val);
       Assert.AreEqual("testing value~~~~~", Encoding.UTF8.GetString((byte[])dic[Constants.DHT_VALUE_ATTR_VAL]));
       Assert.AreEqual("file1.txt", (string)dic[Constants.DHT_VALUE_ATTR_FN]);
+    }
+
+    [Test]
+    public void TestIgnoredFilename() {
+      string fn = "sdfds.so.1"
+      FuseDhtUtil.IsIgnoredFilename();
     }
   }
 #endif

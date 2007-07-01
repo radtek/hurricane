@@ -145,6 +145,8 @@ namespace FuseDht {
           break;
         }
       }
+      //set again in case no such filename in Dht
+      _expectedFileArrived.Set();
       File.WriteAllText(Path.Combine(s_parent_path, Constants.FILE_DONE), "1"); //done
     }
 

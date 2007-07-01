@@ -32,7 +32,7 @@ namespace FuseDht {
     //default values
     public const int DEFAULT_TTL = 5000;	//seconds
     public const int DEFAULT_MAX_BYTES = 1000;	//bytes
-    public const int DEFAULT_LIFESPAN = 1000;
+    public const int DEFAULT_LIFESPAN = 3000;
     public const PutMode DEFAULT_PUT_MODE = PutMode.Put;
     public const bool DEFAULT_INVALIDATE = true;
     public const bool DEFAULT_BLOCKING_RD = true;
@@ -64,6 +64,12 @@ namespace FuseDht {
 
     public const string DHT_VALUE_ATTR_FN = "filename";
     public const string DHT_VALUE_ATTR_VAL = "value";
+
+    //
+    public static readonly string[] SPECIAL_PATHS = new string[] 
+        { "tls", "i686", "sse2", "cmov", "librt.so.1", "tls", "libselinux.so.1", 
+          "libattr.so.1", "libsepol.so.1", "libdl.so.2", "libthread.so.0", "libc.so.6",
+          "libacl.so.1", "libsepol.so.1", "libpthread.so.0", "libnss_nis.so.2", "libnsl.so.1" };
 
     /// <summary>
     /// Convert string to PutMode

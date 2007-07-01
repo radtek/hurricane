@@ -174,8 +174,10 @@ namespace FuseDht {
             subPaths = null;
             return Errno.EACCES;
           }
+
           int? lifespan;
-          if (!invalidate) {
+          if (!invalidate.GetValueOrDefault() && cache.GetFiles().Length > 0) {
+            //if cache directory is empty, we still consider it as invalidated
             lifespan = (int?)_util.ReadParam(basedirName, key, Constants.FILE_LIFESPAN);
             if(lifespan == null) {
               subPaths = null;
@@ -359,7 +361,8 @@ namespace FuseDht {
           Errno rs = this._rfs.OnGetPathStatus(path, out buf);
           if (dir.Name.Equals(Constants.DIR_CACHE)) {
             // in cache dir
-            if (rs == Errno.ENOENT) {
+            if (rs == Errno.ENOENT && 
+                !FuseDhtUtil.IsIgnoredFilename(finfo.Name)) {
               //currently there is no such file
               DirectoryInfo keydir = dir.Parent;
               DirectoryInfo basedir = keydir.Parent;
