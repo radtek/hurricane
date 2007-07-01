@@ -62,6 +62,7 @@ namespace FuseDht {
         int int_suffix;
         bool succ = Int32.TryParse(ss[ss.Length - 1], out int_suffix);
         if (succ) {
+          //This file has an numeric extension (name after the last dot)
           int_suffix++;
           s_path = s_path.Substring(0, s_path.Length - ss[ss.Length - 1].Length)
                  + "." + int_suffix.ToString();

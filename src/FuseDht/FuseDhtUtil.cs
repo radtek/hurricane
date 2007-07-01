@@ -72,8 +72,9 @@ namespace FuseDht {
       FuseDhtConfig config = FuseDhtConfig.GetInstance();
       File.WriteAllText(Path.Combine(s_etcpath, Constants.FILE_INVALIDATE), config.invalidate.ToString());
       File.WriteAllText(Path.Combine(s_etcpath, Constants.FILE_LIFESPAN), config.lifespan.ToString());
-      File.WriteAllText(Path.Combine(s_etcpath, Constants.FILE_PUT_MODE), config.putMode);
+      File.WriteAllText(Path.Combine(s_etcpath, Constants.FILE_PUT_MODE), config.put_mode.ToString());
       File.WriteAllText(Path.Combine(s_etcpath, Constants.FILE_TTL), config.ttl.ToString());
+      File.WriteAllText(Path.Combine(s_etcpath, Constants.FILE_BLOCKING_RD), config.blocking_read.ToString());
     }
 
     /**
@@ -94,6 +95,7 @@ namespace FuseDht {
           case Constants.FILE_TTL:
             return Int32.Parse(p);
           case Constants.FILE_INVALIDATE:
+          case Constants.FILE_BLOCKING_RD:
             int int_invalidate;
             bool succ = Int32.TryParse(p, out int_invalidate);
             if (succ) {

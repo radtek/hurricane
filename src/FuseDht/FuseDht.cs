@@ -198,7 +198,8 @@ namespace FuseDht {
             
             if (stale) {
               Console.WriteLine("Stale. Calling DhtGet");
-              _helper.AsDhtGet(basedirName, key);
+              //_helper.AsDhtGet(basedirName, key);
+              _helper.DhtGet(basedirName, key, FuseDhtHelper.OpMode.BQ);
             }
           } else {
             Console.WriteLine("Invalidated");
@@ -222,7 +223,8 @@ namespace FuseDht {
             if (shouldCallDht) {
               _util.WriteToParamFile(basedirName, key, Constants.FILE_INVALIDATE, "0");
               Debug.WriteLine("Calling DhtGet");
-              _helper.AsDhtGet(basedirName, key);
+              //_helper.AsDhtGet(basedirName, key);
+              _helper.DhtGet(basedirName, key, FuseDhtHelper.OpMode.BQ);
             } else {
               Console.WriteLine("DhtGet not called because of on-going read on the same key");
             }
@@ -342,6 +344,54 @@ namespace FuseDht {
       return err;
     }
 
+
+    protected override Errno OnGetPathStatus(string path, out Stat buf) {
+
+      Debug.WriteLine(string.Format("OnGetPathStatus, path={0}: {1}", path, System.DateTime.Now));
+
+      string[] paths = FuseDhtUtil.ParsePath(path);
+
+      switch (paths.Length - 1) {
+        case Constants.LVL_DATA_FILE:
+          //i.e. /dht/basedir/key1/cache/file1.txt
+          FileInfo finfo = new FileInfo(_util.GetShadowPath(path));
+          DirectoryInfo dir = finfo.Directory;
+          Errno rs = this._rfs.OnGetPathStatus(path, out buf);
+          if (dir.Name.Equals(Constants.DIR_CACHE)) {
+            // in cache dir
+            if (rs == Errno.ENOENT) {
+              //currently there is no such file
+              DirectoryInfo keydir = dir.Parent;
+              DirectoryInfo basedir = keydir.Parent;
+              bool? blocking = (bool?)_util.ReadParam(basedir.Name, keydir.Name, Constants.FILE_BLOCKING_RD);
+              if (blocking == null) {
+                return Errno.EACCES;
+              } else if (blocking.GetValueOrDefault()) {
+                //blocking, get the file and then return
+                _helper.DhtGet(basedir.Name, keydir.Name, FuseDhtHelper.OpMode.BQ, finfo.Name);
+                _helper._expectedFileArrived.WaitOne();
+                //the file arrived, so we do this again
+                return this._rfs.OnGetPathStatus(path, out buf);
+              } else {
+                //non blocking, return the result of the shadow
+                return rs;
+              }
+            } else {
+              //the file is already there
+              return rs;
+            }
+          }
+          break;
+        default:
+          break;
+      }
+
+      
+      Errno ret = this._rfs.OnGetPathStatus(path, out buf);
+      Debug.WriteLine(string.Format("\tFilePermission of the path: {0}", buf.st_mode));
+      return ret;
+    }
+
     #region UnmodifiedMethods
     protected override Errno OnRemoveFile(string path) {
 
@@ -404,13 +454,6 @@ namespace FuseDht {
       Debug.WriteLine(string.Format("OnGetHandleStatus, path={0}, handle={1}: {2}", path, info.Handle, System.DateTime.Now));
 
       return this._rfs.OnGetHandleStatus(path, info, out buf);
-    }
-
-    protected override Errno OnGetPathStatus(string path, out Stat buf) {
-
-      Debug.WriteLine(string.Format("OnGetPathStatus, path={0}: {1}", path, System.DateTime.Now));      
-
-      return this._rfs.OnGetPathStatus(path, out buf);
     }
 
     protected override Errno OnOpenDirectory(string path, OpenedPathInfo info) {

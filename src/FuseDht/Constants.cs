@@ -26,6 +26,7 @@ namespace FuseDht {
     public const string FILE_INVALIDATE = "invalidate";
     public const string FILE_LIFESPAN = "lifespan";
     public const string FILE_DONE = ".done";
+    public const string FILE_BLOCKING_RD = "blocking_read";
     //links
     public const string LN_SELF_BASEDIR = "myself";
     //default values
@@ -34,6 +35,7 @@ namespace FuseDht {
     public const int DEFAULT_LIFESPAN = 1000;
     public const PutMode DEFAULT_PUT_MODE = PutMode.Put;
     public const bool DEFAULT_INVALIDATE = true;
+    public const bool DEFAULT_BLOCKING_RD = true;
 
     public const int DEFAULT_DN_LENGTH = 20;
     //

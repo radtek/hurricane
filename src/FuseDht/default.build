@@ -57,8 +57,9 @@
         <include name="${build.dir}/NUnit.Framework.dll" />
         <include name="${build.dir}/Brunet.dll" />
         <include name="${build.dir}/Brunet.Dht.dll" />
-        <include name="${build.dir}/XmlRpcManager.dll" />
-        <include name="${build.dir}/DhtServiceClient.dll" />
+        <include name="${build.dir}/Brunet.XmlRpc.dll" />
+        <include name="${build.dir}/Ipop.DhtServiceClient.dll" />
+        <include name="${build.dir}/Ipop.IBlockingQueue.dll" />
         <include name="${build.dir}/Mono.Fuse.dll" />
         <include name="${build.dir}/CookComputing.XmlRpcV2.dll" />
         <include name ="Mono.Posix.dll" />
@@ -73,7 +74,7 @@
         <include name="${build.dir}/Brunet.dll" />
         <include name="${build.dir}/Brunet.Dht.dll" />
         <include name="${build.dir}/NUnit.Framework.dll" />
-        <include name="${build.dir}/DhtServiceClient.dll" />
+        <include name="${build.dir}/Ipop.DhtServiceClient.dll" />
       </references>
     </csc>
     <copy todir="${lib.dir}">

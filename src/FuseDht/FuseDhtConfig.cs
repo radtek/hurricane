@@ -69,9 +69,11 @@ namespace FuseDht {
     [XmlElement(ElementName = Constants.FILE_LIFESPAN)]
     public int lifespan;
     [XmlElement(ElementName = Constants.FILE_PUT_MODE)]
-    public string putMode;
+    public string put_mode;
     [XmlElement(ElementName = Constants.FILE_INVALIDATE)]
     public bool invalidate;
+    [XmlElement(ElementName = Constants.FILE_BLOCKING_RD)]
+    public bool blocking_read;
 
     private static FuseDhtConfig _instance;
     
@@ -85,8 +87,9 @@ namespace FuseDht {
     public FuseDhtConfig() {
       this.ttl = Constants.DEFAULT_TTL;
       this.lifespan = Constants.DEFAULT_LIFESPAN;
-      this.putMode = Constants.DEFAULT_PUT_MODE.ToString();
+      this.put_mode = Constants.DEFAULT_PUT_MODE.ToString();
       this.invalidate = Constants.DEFAULT_INVALIDATE;
+      this.blocking_read = Constants.DEFAULT_BLOCKING_RD;
     }
 
     /**
@@ -96,14 +99,14 @@ namespace FuseDht {
       _instance = c;
     }
 
-    public string ToString() {
+    public override string ToString() {
       StringBuilder sb = new StringBuilder();
-      sb.Append(base.ToString());
-      sb.Append("\n");
-      sb.Append(string.Format("ttl={0}\n", ttl));
-      sb.Append(string.Format("lifespan={0}\n", lifespan));
-      sb.Append(string.Format("putMode={0}\n", putMode));
-      sb.Append(string.Format("invalidate={0}", invalidate));
+      sb.AppendLine(base.ToString());
+      sb.AppendLine(string.Format("{0}={1}",Constants.FILE_TTL, ttl));
+      sb.AppendLine(string.Format("{0}={1}",Constants.FILE_LIFESPAN, lifespan));
+      sb.AppendLine(string.Format("{0}={1}", Constants.FILE_PUT_MODE, put_mode));
+      sb.AppendLine(string.Format("{0}={1}", Constants.FILE_INVALIDATE, invalidate));
+      sb.AppendLine(string.Format("{0}={1}", Constants.FILE_BLOCKING_RD, blocking_read));
       return sb.ToString();
     }
   }

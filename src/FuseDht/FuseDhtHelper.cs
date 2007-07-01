@@ -27,9 +27,20 @@ namespace FuseDht {
     private readonly string _ipop_ns;
     private IXmlRpcManager _rpc;
 
+    /**
+     * Sync : Block until all results retrieved
+     * Async: Non-Blocking
+     * BQ: Block util the next result retrieved
+     */
+    public enum OpMode {
+      Sync, Async, BQ
+    }
+
     public string DhtAddress {
       get { return _dht_addr; }
     }
+
+    public AutoResetEvent _expectedFileArrived = new AutoResetEvent(false);
     
     public FuseDhtHelper(IDht dht, string shadowdir) {
       _dht = dht;
@@ -55,6 +66,14 @@ namespace FuseDht {
      * Achieve non-blocking by using ThreadPool
      */
     public void AsDhtGet(string basedirName, string key) {
+      DhtGet(basedirName, key, OpMode.Async);
+    }
+
+    public void DhtGet(string basedirName, string key, OpMode mode) {
+      DhtGet(basedirName, key, mode, null);
+    }
+
+    public void DhtGet(string basedirName, string key, OpMode mode, string expectedFileName) {
       string dht_key = FuseDhtUtil.GenDhtKey(basedirName, key, _ipop_ns);
       string s_cache = _shadowdir + Path.DirectorySeparatorChar
                      + Constants.DIR_DHT_ROOT + Path.DirectorySeparatorChar
@@ -64,12 +83,69 @@ namespace FuseDht {
       DirectoryInfo cache = new DirectoryInfo(s_cache);
       cache.Delete(true);
       cache.Create();
-      File.WriteAllText(Path.Combine(s_cache, Constants.FILE_DONE),"0");
+      File.WriteAllText(Path.Combine(s_cache, Constants.FILE_DONE), "0");
       ArrayList state = new ArrayList();
       state.Add(dht_key);
       state.Add(basedirName);
       state.Add(key);
-      ThreadPool.QueueUserWorkItem(new WaitCallback(this.GetProc), state);
+      switch (mode) {
+        case OpMode.Async:
+          ThreadPool.QueueUserWorkItem(new WaitCallback(this.GetProc), state);
+          break;
+        case OpMode.Sync:
+          this.GetProc(state);
+          break;
+        case OpMode.BQ:
+          if (expectedFileName != null) {
+            state.Add(expectedFileName);
+          }
+          ThreadPool.QueueUserWorkItem(new WaitCallback(this.BQGetProc), state);
+          break;
+        default:
+          break;
+      }
+    }
+
+    public void BQGetProc(object ostate) {
+      IList state = (IList)ostate;
+      string dht_key = state[0] as string;
+      string base_dir_name = state[1] as string;
+      string key = state[2] as string;
+      string waitingFileName = null;
+      if (state.Count > 3) {
+        waitingFileName = state[3] as string;
+      }
+
+      string s_parent_path = _shadowdir + Path.DirectorySeparatorChar
+                           + Constants.DIR_DHT_ROOT + Path.DirectorySeparatorChar
+                           + base_dir_name + Path.DirectorySeparatorChar
+                           + key + Path.DirectorySeparatorChar
+                           + Constants.DIR_CACHE;
+
+      //Handle the exception if this casting fails
+      ISoapDht dht = (ISoapDht)_dht;
+      Debug.WriteLine(string.Format("Getting {0}", dht_key));
+      IBlockingQueue bq = dht.GetAsBlockingQueue(dht_key);
+      int i = 0;
+      while (true) {
+        // Still a chance for Dequeue to execute on an empty closed queue 
+        // so we'll do this instead.
+        try {
+          DhtGetResult result = (DhtGetResult)bq.Dequeue();
+          Debug.WriteLine(string.Format("Got #{0} item", i++));
+          DhtDataFile file = new DhtDataFile(s_parent_path, result);
+          file.WriteToFile();
+          if(waitingFileName != null && file.Name.Equals(waitingFileName)) {
+            //notify the waiting thread that the expected file arrives
+            Debug.WriteLine(string.Format("Got the expected file"));
+            _expectedFileArrived.Set();
+          }
+        } catch (Exception e) {
+          Debug.WriteLine(e);
+          break;
+        }
+      }
+      File.WriteAllText(Path.Combine(s_parent_path, Constants.FILE_DONE), "1"); //done
     }
 
     public void GetProc(object ostate) {
@@ -92,7 +168,7 @@ namespace FuseDht {
         file.WriteToFile();
       }
       
-      File.WriteAllText(Path.Combine(s_parent_path, Constants.FILE_DONE), "1");
+      File.WriteAllText(Path.Combine(s_parent_path, Constants.FILE_DONE), "1"); //done
     }
 
     public void AsDhtPut(string basedirName, string key, byte[] value, int ttl, PutMode putMode, string s_filePath) {
