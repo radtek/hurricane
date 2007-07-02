@@ -39,8 +39,6 @@ namespace FuseDht {
     public string DhtAddress {
       get { return _dht_addr; }
     }
-
-    public AutoResetEvent _expectedFileArrived = new AutoResetEvent(false);
     
     public FuseDhtHelper(IDht dht, string shadowdir) {
       _dht = dht;
@@ -70,10 +68,10 @@ namespace FuseDht {
     }
 
     public void DhtGet(string basedirName, string key, OpMode mode) {
-      DhtGet(basedirName, key, mode, null);
+      DhtGet(basedirName, key, mode, null, null);
     }
 
-    public void DhtGet(string basedirName, string key, OpMode mode, string expectedFileName) {
+    public void DhtGet(string basedirName, string key, OpMode mode, string expectedFileName, AutoResetEvent re) {
       string dht_key = FuseDhtUtil.GenDhtKey(basedirName, key, _ipop_ns);
       string s_cache = _shadowdir + Path.DirectorySeparatorChar
                      + Constants.DIR_DHT_ROOT + Path.DirectorySeparatorChar
@@ -98,6 +96,7 @@ namespace FuseDht {
         case OpMode.BQ:
           if (expectedFileName != null) {
             state.Add(expectedFileName);
+            state.Add(re);
           }
           ThreadPool.QueueUserWorkItem(new WaitCallback(this.BQGetProc), state);
           break;
@@ -106,14 +105,20 @@ namespace FuseDht {
       }
     }
 
+    /**
+     * This is method uses the method that is only included in ISoapDht. So if other
+     * interfaces are used here, a casting exception will be thrown.
+     */
     public void BQGetProc(object ostate) {
       IList state = (IList)ostate;
       string dht_key = state[0] as string;
       string base_dir_name = state[1] as string;
       string key = state[2] as string;
       string waitingFileName = null;
-      if (state.Count > 3) {
+      AutoResetEvent re = null;
+      if (state.Count > 4) {
         waitingFileName = state[3] as string;
+        re = state[4] as AutoResetEvent;
       }
 
       string s_parent_path = _shadowdir + Path.DirectorySeparatorChar
@@ -127,6 +132,7 @@ namespace FuseDht {
       Debug.WriteLine(string.Format("Getting {0}", dht_key));
       IBlockingQueue bq = dht.GetAsBlockingQueue(dht_key);
       int i = 0;
+      bool set = false;
       while (true) {
         // Still a chance for Dequeue to execute on an empty closed queue 
         // so we'll do this instead.
@@ -138,7 +144,8 @@ namespace FuseDht {
           if(waitingFileName != null && file.Name.Equals(waitingFileName)) {
             //notify the waiting thread that the expected file arrives
             Debug.WriteLine(string.Format("Got the expected file"));
-            _expectedFileArrived.Set();
+            re.Set();
+            set = true;
           }
         } catch (Exception e) {
           Debug.WriteLine(e);
@@ -146,8 +153,11 @@ namespace FuseDht {
         }
       }
       //set again in case no such filename in Dht
-      _expectedFileArrived.Set();
       File.WriteAllText(Path.Combine(s_parent_path, Constants.FILE_DONE), "1"); //done
+      if (!set) {
+        //no filename matched. So I release the waiting thread at the end
+        re.Set(); 
+      }
     }
 
     public void GetProc(object ostate) {

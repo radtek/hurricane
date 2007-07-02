@@ -165,76 +165,96 @@ namespace FuseDht {
         string dir = paths[paths.Length - 1];
         if (dir.Equals(Constants.DIR_CACHE)) {
           //remote or local?
-          DirectoryInfo cache = new DirectoryInfo(this._shadowdir + path);
+          DirectoryInfo cache = new DirectoryInfo(_util.GetShadowPath(path));
           string key = cache.Parent.Name;
           string basedirName = cache.Parent.Parent.Name;
-
-          bool? invalidate = (bool?)_util.ReadParam(basedirName, key, Constants.FILE_INVALIDATE);
-          if (invalidate == null) {
+          bool shouldCallDht = false;
+          try {
+            shouldCallDht = ShouldCallDhtGet(path);
+          } catch (Exception) {
             subPaths = null;
             return Errno.EACCES;
           }
-
-          int? lifespan;
-          if (!invalidate.GetValueOrDefault() && cache.GetFiles().Length > 0) {
-            //if cache directory is empty, we still consider it as invalidated
-            lifespan = (int?)_util.ReadParam(basedirName, key, Constants.FILE_LIFESPAN);
-            if(lifespan == null) {
-              subPaths = null;
-              return Errno.EACCES;
-            }
-
-            TimeSpan ts = new TimeSpan(0, 0, lifespan.GetValueOrDefault());
-            bool stale = false;
-
-            if (cache.GetFiles().Length == 0) {
-              stale = true;
-            } else {
-              foreach (FileInfo finfo in cache.GetFiles()) {
-                if (finfo.CreationTimeUtc.Add(ts) < System.DateTime.UtcNow) {
-                  stale = true;
-                  break;
-                }
-              }
-            }
-            
-            if (stale) {
-              Console.WriteLine("Stale. Calling DhtGet");
-              //_helper.AsDhtGet(basedirName, key);
-              _helper.DhtGet(basedirName, key, FuseDhtHelper.OpMode.BQ);
-            }
+          if (shouldCallDht) {
+            //write to invalidate file even if it's already false/0
+            _util.WriteToParamFile(basedirName, key, Constants.FILE_INVALIDATE, "0");
+            Debug.WriteLine("Calling DhtGet");
+            //_helper.AsDhtGet(basedirName, key);
+            _helper.DhtGet(basedirName, key, FuseDhtHelper.OpMode.BQ);
           } else {
-            Console.WriteLine("Invalidated");
-            FileInfo[] fdone = cache.GetFiles(Constants.FILE_DONE);
-            bool shouldCallDht = false;
-            if (fdone.Length != 0) {
-              int done;
-              bool succ = Int32.TryParse(File.ReadAllText(fdone[0].FullName), out done);
-              if (succ && done == 1) {
-                Debug.WriteLine(".done found and equals 1");
-                shouldCallDht = true;
-              } else {
-                /*
-                 * If done == 0, there is an ongoing read, so don't start another one
-                 */
-              }
-            } else {
-              Console.WriteLine("No .done found");
-              shouldCallDht = true;
-            }
-            if (shouldCallDht) {
-              _util.WriteToParamFile(basedirName, key, Constants.FILE_INVALIDATE, "0");
-              Debug.WriteLine("Calling DhtGet");
-              //_helper.AsDhtGet(basedirName, key);
-              _helper.DhtGet(basedirName, key, FuseDhtHelper.OpMode.BQ);
-            } else {
-              Console.WriteLine("DhtGet not called because of on-going read on the same key");
-            }
+            Debug.WriteLine("DhtGet not called because of on-going read on the same key or cached files are still new");
           }
         }
       }
-
       return this._rfs.OnReadDirectory(path, fi, out subPaths);
+    }
+
+    /**
+     * @return true if we should call DhtGet
+     * @exception if arg files have invalid values
+     */
+    private bool ShouldCallDhtGet(string f_cachePath) {
+      DirectoryInfo cache = new DirectoryInfo(_util.GetShadowPath(f_cachePath));
+      string key = cache.Parent.Name;
+      string basedirName = cache.Parent.Parent.Name;
+
+      bool shouldCallDht = false;
+      bool? invalidate = (bool?)_util.ReadParam(basedirName, key, Constants.FILE_INVALIDATE);
+      if (invalidate == null) {
+        //subPaths = null;
+        //return Errno.EACCES;
+        throw new FuseDhtStructureException();
+      }
+
+      /*
+       * .done file should be the first condition to check. if there is another ongoing thread, then
+       *  there is no need to see if anything else should be done
+       */
+      FileInfo[] fdone = cache.GetFiles(Constants.FILE_DONE);
+      if (fdone.Length != 0) {
+        int done;
+        bool succ = Int32.TryParse(File.ReadAllText(fdone[0].FullName), out done);
+        
+        if (succ && done == 0) {
+          Debug.WriteLine(".done found and equals 0");
+          return false;
+        }
+      }
+
+      int? lifespan;
+      if (!invalidate.GetValueOrDefault() && cache.GetFiles().Length > 1) {
+        //if cache directory is empty (only contains .done file), we still consider it as invalidated
+        lifespan = (int?)_util.ReadParam(basedirName, key, Constants.FILE_LIFESPAN);
+        if (lifespan == null) {
+          //subPaths = null;
+          //return Errno.EACCES;
+          throw new FuseDhtStructureException();
+        }
+
+        TimeSpan ts = new TimeSpan(0, 0, lifespan.GetValueOrDefault());
+        bool stale = false;
+
+        if (cache.GetFiles().Length == 0) {
+          stale = true;
+        } else {
+          foreach (FileInfo finfo in cache.GetFiles()) {
+            if (finfo.CreationTimeUtc.Add(ts) < System.DateTime.UtcNow) {
+              stale = true;
+              break;
+            }
+          }
+        }
+
+        if (stale) {
+          Debug.WriteLine("Stale. Calling DhtGet");
+          shouldCallDht = true;
+        }
+      } else {
+        Debug.WriteLine("Invalidated");
+        shouldCallDht = true;
+      }
+      Debug.WriteLine(string.Format("ShouldCallDht={0}", shouldCallDht));
+      return shouldCallDht;
     }
 
     protected override Errno OnReleaseHandle(string path, OpenedPathInfo info) {
@@ -358,30 +378,62 @@ namespace FuseDht {
           //i.e. /dht/basedir/key1/cache/file1.txt
           FileInfo finfo = new FileInfo(_util.GetShadowPath(path));
           DirectoryInfo dir = finfo.Directory;
+          DirectoryInfo keydir = dir.Parent;
+          DirectoryInfo basedir = keydir.Parent;
           Errno rs = this._rfs.OnGetPathStatus(path, out buf);
           if (dir.Name.Equals(Constants.DIR_CACHE)) {
             // in cache dir
-            if (rs == Errno.ENOENT && 
+            bool shouldCallDht = false;
+            /*
+             * if there is another ongoing thread reading?
+             * User console should be blocked by the 1st read but FUSE really could read twice.
+             */
+            FileInfo[] fdone = dir.GetFiles(Constants.FILE_DONE);
+            if (fdone.Length != 0) {
+              int done;
+              bool succ = Int32.TryParse(File.ReadAllText(fdone[0].FullName), out done);
+
+              if (succ && done == 0) {
+                Debug.WriteLine(".done found and equals 0");
+                return rs;
+              }
+            }
+
+            //otherwise
+            if (rs == Errno.ENOENT &&
                 !FuseDhtUtil.IsIgnoredFilename(finfo.Name)) {
               //currently there is no such file
-              DirectoryInfo keydir = dir.Parent;
-              DirectoryInfo basedir = keydir.Parent;
               bool? blocking = (bool?)_util.ReadParam(basedir.Name, keydir.Name, Constants.FILE_BLOCKING_RD);
               if (blocking == null) {
                 return Errno.EACCES;
               } else if (blocking.GetValueOrDefault()) {
-                //blocking, get the file and then return
-                _helper.DhtGet(basedir.Name, keydir.Name, FuseDhtHelper.OpMode.BQ, finfo.Name);
-                _helper._expectedFileArrived.WaitOne();
-                //the file arrived, so we do this again
-                return this._rfs.OnGetPathStatus(path, out buf);
+                shouldCallDht = true;
               } else {
                 //non blocking, return the result of the shadow
                 return rs;
               }
-            } else {
-              //the file is already there
-              return rs;
+            } else if (!FuseDhtUtil.IsIgnoredFilename(finfo.Name)) {
+              //the file is already there, is it stale?
+              try {
+                shouldCallDht = this.ShouldCallDhtGet(_util.GetFusePath(dir.FullName));
+              } catch (Exception e) {
+                Debug.WriteLine(e);
+                return Errno.EACCES;
+              }
+            }
+            if (shouldCallDht) {
+              //blocking, get the file and then return
+              AutoResetEvent re = new AutoResetEvent(false);
+              _helper.DhtGet(basedir.Name, keydir.Name, FuseDhtHelper.OpMode.BQ, finfo.Name, re);
+              DateTime t = DateTime.UtcNow;
+              re.WaitOne();
+              Debug.WriteLine(string.Format("Waited on expectedFileArrived Event for {0}", 
+                  Convert.ToString((DateTime.UtcNow - t).TotalMilliseconds)));
+              //the file arrived, so we do this again
+              _util.WriteToParamFile(basedir.Name, keydir.Name, Constants.FILE_INVALIDATE, "0");
+              Errno e = this._rfs.OnGetPathStatus(path, out buf);
+              Debug.WriteLine(string.Format("\tFilePermission of the path: {0}", buf.st_mode));
+              return e;
             }
           }
           break;

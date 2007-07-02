@@ -15,9 +15,11 @@ using System.Text.RegularExpressions;
 
 namespace FuseDht {
   class FuseDhtUtil {
-    string _s_dht_root;
+    readonly string _s_dht_root;
+    readonly string _shadowdir;
 
     public FuseDhtUtil(string shadowdir) {
+      _shadowdir = shadowdir;
       _s_dht_root = Path.Combine(shadowdir, Constants.DIR_DHT_ROOT);
     }
 
@@ -76,6 +78,8 @@ namespace FuseDht {
       File.WriteAllText(Path.Combine(s_etcpath, Constants.FILE_PUT_MODE), config.put_mode.ToString());
       File.WriteAllText(Path.Combine(s_etcpath, Constants.FILE_TTL), config.ttl.ToString());
       File.WriteAllText(Path.Combine(s_etcpath, Constants.FILE_BLOCKING_RD), config.blocking_read.ToString());
+      string s_cachepath = Path.Combine(s_key_path, Constants.DIR_CACHE);
+      File.WriteAllText(Path.Combine(s_cachepath, Constants.FILE_DONE), "1");
     }
 
     /**
@@ -192,6 +196,14 @@ namespace FuseDht {
       }
 
       return Path.Combine(_s_dht_root, fusePath);
+    }
+
+    public string GetFusePath(string shadowPath) {
+      if (!Path.IsPathRooted(shadowPath)) {
+        throw new ArgumentException("rooted shadow path expected");
+      }
+      string ret = shadowPath.Remove(0, _shadowdir.Length);
+      return ret;
     }
 
     public static byte[] GenerateDhtValue(string fileName, byte[] data) {

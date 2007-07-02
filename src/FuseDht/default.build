@@ -51,6 +51,7 @@
         <include name="FuseDhtHelperFactory.cs"/>
         <include name="FuseDhtUtil.cs"/>
         <include name="DhtDataFile.cs"/>
+        <include name="FuseDhtStructureException.cs" />
       </sources>
       <references>
         <include name="System.Runtime.Remoting.dll"/>
