@@ -1,15 +1,15 @@
-using Mono.Unix.Native;
 using System;
 using System.Threading;
 using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.IO;
 using System.Collections;
-using Ipop;
-using Brunet;
-using Brunet.Dht;
 using System.Diagnostics;
 using System.Security.Cryptography;
+using Mono.Unix.Native;
+using Brunet;
+using Brunet.Dht;
+using Ipop;
 #if FUSE_NUNIT
 using NUnit.Framework;
 #endif
@@ -23,6 +23,7 @@ namespace FuseDht {
     
     private IDht _dht;
     private string _shadowdir;
+    private readonly string _metadir;
     private readonly string _dht_addr;
     private readonly string _ipop_ns;
     private IXmlRpcManager _rpc;
@@ -43,7 +44,7 @@ namespace FuseDht {
     public FuseDhtHelper(IDht dht, string shadowdir) {
       _dht = dht;
       this._shadowdir = shadowdir;
-
+      this._metadir = Path.Combine(Path.Combine(_shadowdir, Constants.DIR_DHT_ROOT), Constants.DIR_META);
       this._dht_addr = _dht.GetDhtInfo()["address"] as string;
       try {
         this._rpc = XmlRpcManagerClient.GetXmlRpcManager();
@@ -210,10 +211,10 @@ namespace FuseDht {
 
       for (int i = 0; i < DHT_PUT_RETRY_TIMES; i++) {
         if (put_mode == PutMode.Create) {
-          Debug.WriteLine(string.Format("Creating {0}", dht_key));
+          Debug.WriteLine(string.Format("Creating {0}, {1}", dht_key, new FileInfo(s_file_path).Name));
           result = _dht.Create(dht_key, value, ttl);
         } else {
-          Debug.WriteLine(string.Format("Putting {0}", dht_key));
+          Debug.WriteLine(string.Format("Putting {0}, {1}", dht_key, new FileInfo(s_file_path).Name));
           result = _dht.Put(dht_key, value, ttl);
         }
         Debug.WriteLine(string.Format("Put/Create returned: {0}", result));
@@ -233,20 +234,19 @@ namespace FuseDht {
           fi.MoveTo(s_file_path);
         } else {
           //suffix .uploaded
-          if (s_file_path.EndsWith(Constants.FILE_OFFLINE)) {
-            //file.offline
-            s_file_path = s_file_path.Remove(s_file_path.Length - 1 - Constants.FILE_OFFLINE.Length, 
-                Constants.FILE_OFFLINE.Length);
-          } else if(s_file_path.Remove(s_file_path.Length - 2).EndsWith(Constants.FILE_OFFLINE)) {
-            //file.offline.1
-            s_file_path = s_file_path.Remove(s_file_path.Length - 3 - Constants.FILE_OFFLINE.Length);
-          }
+          s_file_path = FuseDhtUtil.TrimPathExtension(s_file_path);
           //append .uploaded
           fi.MoveTo(s_file_path + Constants.FILE_UPLOADED);
+          DhtMetadataFile file = new DhtMetadataFile(ttl, 
+              s_file_path + Constants.FILE_UPLOADED);
+          Debug.WriteLine(string.Format("Dropping file {0} to meta folder. {1}", file._meta_filename, DateTime.Now));
+          DhtMetadataFileHandler.WriteAsXml(_metadir, file);
           break;
         } 
       }
     }
+
+    
   }
 
 #if FUSE_NUNIT

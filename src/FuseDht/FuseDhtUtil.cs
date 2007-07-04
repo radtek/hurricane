@@ -41,6 +41,12 @@ namespace FuseDht {
       //conf file
       FuseDhtConfigHandler.cfgPath = Path.Combine(_s_dht_root, Constants.FILE_CONF);
       FuseDhtConfigHandler.Write(FuseDhtConfig.GetInstance());
+
+      //meta
+      string s_meta = Path.Combine(Path.Combine(_shadowdir, Constants.DIR_DHT_ROOT), Constants.DIR_META);
+      Directory.CreateDirectory(s_meta);
+      string s_log = Path.Combine(Path.Combine(_shadowdir, Constants.DIR_DHT_ROOT), Constants.DIR_LOG);
+      Directory.CreateDirectory(s_log);
     }
 
     public void CreateSelfBaseDir(string brunetAddr) {
@@ -256,6 +262,23 @@ namespace FuseDht {
       Debug.WriteLine(string.Format("{0} IsIgnoredFilename={1}", filename, ret));
       return ret;
     }
+
+    /**
+     * Remove upload, offline, offline.number, etc
+     */
+    public static string TrimPathExtension(string s_file_path) {
+      if (s_file_path.EndsWith(Constants.FILE_OFFLINE)) {
+        //file.offline
+        s_file_path = s_file_path.Remove(s_file_path.Length - Constants.FILE_OFFLINE.Length);
+      } else if (s_file_path.EndsWith(Constants.FILE_UPLOADED)) {
+        //file.uploaded
+        s_file_path = s_file_path.Remove(s_file_path.Length - Constants.FILE_UPLOADED.Length);
+      } else if (s_file_path.Remove(s_file_path.Length - 2).EndsWith(Constants.FILE_OFFLINE)) {
+        //file.offline.1
+        s_file_path = s_file_path.Remove(s_file_path.Length - 2 - Constants.FILE_OFFLINE.Length);
+      }
+      return s_file_path;
+    }
   }
 
 #if FUSE_NUNIT
@@ -291,9 +314,15 @@ namespace FuseDht {
     }
 
     [Test]
-    public void TestIgnoredFilename() {
-      string fn = "sdfds.so.1"
-      FuseDhtUtil.IsIgnoredFilename();
+    public void TestTrimPath() {
+      string s1 = FuseDhtHelper.TrimPath("/tmp/file.offline");
+      Assert.AreEqual("/tmp/file", s1, "1");
+      string s2 = FuseDhtHelper.TrimPath("/tmp/file.offline.1");
+      Assert.AreEqual("/tmp/file", s2, "2");
+      string s3 = FuseDhtHelper.TrimPath("/tmp/file.uploaded");
+      Assert.AreEqual("/tmp/file", s3, "3");
+      string s4 = FuseDhtHelper.TrimPath("/tmp/file");
+      Assert.AreEqual("/tmp/file", s4, "4");
     }
   }
 #endif

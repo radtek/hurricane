@@ -120,17 +120,17 @@ namespace FuseDht {
       FuseDhtConfig config = FuseDhtConfig.GetInstance();
       config.ttl = 5000;
       config.lifespan = 5000;
-      config.putMode = PutMode.Recreate.ToString();
+      config.put_mode = PutMode.Recreate.ToString();
       FuseDhtConfigHandler.Write("./config", config);
       FuseDhtConfig actual = FuseDhtConfigHandler.Read("./config");
-      Assert.AreEqual(config.putMode, actual.putMode);
+      Assert.AreEqual(config.put_mode, actual.put_mode);
     }
 
     [Test]
     [Ignore]
     public void TestReadPutMode() {
       FuseDhtConfig actual = FuseDhtConfigHandler.Read("./config");
-      Assert.AreEqual(PutMode.Recreate, actual.putMode);
+      Assert.AreEqual(PutMode.Recreate, actual.put_mode);
     }
   }
 #endif

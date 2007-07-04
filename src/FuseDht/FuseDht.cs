@@ -92,6 +92,7 @@ namespace FuseDht {
       this._helper = FuseDhtHelperFactory.GetFuseDhtHelper(_helpe_type, this._shadowdir);
       this._util.InitDhtRootFileStructure();
       this._util.CreateSelfBaseDir(this._helper.DhtAddress);
+      DhtFileManager.StartAsThread(Path.Combine(Path.Combine(_shadowdir, Constants.DIR_DHT_ROOT), Constants.DIR_META), _helper);
     }
 
     protected override Errno OnRenamePath(string from, string to) {
@@ -343,7 +344,7 @@ namespace FuseDht {
       Errno err = this._rfs.OnReadSymbolicLink(path, out target);
 
       /*
-       * Here it will return a real path which cause us losing control of the user operations
+       * Here it will return a real path which causes us losing control of the user operations
        * So we modify it with a relative path
        */
       string[] paths = FuseDhtUtil.ParsePath(path);

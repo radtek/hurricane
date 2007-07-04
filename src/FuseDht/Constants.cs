@@ -16,6 +16,8 @@ namespace FuseDht {
     public const string DIR_CACHE = "cache";
     public const string DIR_MY = "my";
     public const string DIR_KEY_DIR_GENERATOR = "KeyDirGenerator";
+    public const string DIR_META = "meta";
+    public const string DIR_LOG = "log";
     
     //some file names have prefix "dot" but no variable has. The visibility of files is controlled here.
     public const string FILE_OFFLINE = ".offline";
@@ -27,6 +29,7 @@ namespace FuseDht {
     public const string FILE_LIFESPAN = "lifespan";
     public const string FILE_DONE = ".done";
     public const string FILE_BLOCKING_RD = "blocking_read";
+    public const string FILE_RENEW_LOG = "renew.log";
     //links
     public const string LN_SELF_BASEDIR = "myself";
     //default values
@@ -48,8 +51,10 @@ namespace FuseDht {
      *                   /my/file_upload
      *    /fusedht.conf
      *    /KeyGenDir/basedir/bin_file
+     *    /.meta
      */
     public const int LVL_DHT = 0;
+    public const int LVL_RENEW = 1;
     public const int LVL_CONF_FILE = 1;
     public const int LVL_BASE_DIR = 1;
     public const int LVL_KEY_DIR_GENTR = 1;

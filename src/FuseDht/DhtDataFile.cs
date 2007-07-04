@@ -14,29 +14,43 @@ namespace FuseDht {
    * It encapsulates the way to generate the filename, the way to give DhtGetResult
    * information via file contents and attributes
    */
-  class DhtDataFile {
+  public class DhtDataFile {
     public const int DEFAULT_FN_LENGTH = 20;
-    
-    private string _parent_dir_path;
-    private DhtGetResult _dgr;
-    private string _filename;
-    private byte[] _content;
+
+    #region Fields
+
+    /**
+     * shadow path
+     */
+    string _parent_dir_path;
+    int _age;
+    int _ttl;
+    byte[] _content;
+
+    string _filename;
+    string _real_filename;  //in case there are multiple values with the same _filename
     /*
      * For FuseDht inserted values
+     * keys: filename, value
      */
-    private IDictionary _fuse_value;
+    IDictionary _fuse_value;
+
+    #endregion
 
     public DhtDataFile(string parentDirPath, DhtGetResult dgr) {
       this._parent_dir_path = parentDirPath;
-      this._dgr = dgr;
+      this._age = dgr.age;
+      this._ttl = dgr.ttl;
       IDictionary val = FuseDhtUtil.ParseDhtValue(dgr.value);
       if (val != null) {
         _fuse_value = val;
         _filename = (string)_fuse_value[Constants.DHT_VALUE_ATTR_FN];
+        _real_filename = _filename;
         _content = _fuse_value[Constants.DHT_VALUE_ATTR_VAL] as byte[];
       } else {
-        this._filename = GenFileName();
         _content = dgr.value;
+        this._filename = GenFileName();
+        _real_filename = _filename;
       }
     }
 
@@ -52,7 +66,7 @@ namespace FuseDht {
      * @deprecated
      */
     private string GenFileName() {
-      return _dgr.age + "," + _dgr.ttl + "," + GenFilenameFromContent(_dgr.value, DEFAULT_FN_LENGTH);
+      return _age + "," + _ttl + "," + GenFilenameFromContent(_content, DEFAULT_FN_LENGTH);
     }
 
     public void WriteToFile() {
@@ -70,10 +84,8 @@ namespace FuseDht {
           s_path += ".1";
         }
       }
+      _real_filename = new FileInfo(s_path).Name;
       File.WriteAllBytes(s_path, _content);
-      TimeSpan ts = new TimeSpan(0, 0, _dgr.age);
-      DateTime c_time = DateTime.UtcNow - ts;
-      File.SetCreationTimeUtc(s_path, c_time);
     }
 
     private string GenFilenameFromContent(byte[] content, int fnLength) {
