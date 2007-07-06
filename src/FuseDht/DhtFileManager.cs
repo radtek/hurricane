@@ -124,6 +124,7 @@ namespace FuseDht {
           Thread.CurrentThread.GetHashCode()));
       ExpiringArgs args = (ExpiringArgs)e;
       string data_file = args.DataFileSPath;
+      string filename = FuseDhtUtil.TrimPathExtension(new FileInfo(data_file).Name);
 
       FileInfo f = new FileInfo(data_file);
       DirectoryInfo keydir = f.Directory.Parent;
@@ -131,8 +132,9 @@ namespace FuseDht {
 
       int ttl = args.TTL;
       byte[] data = File.ReadAllBytes(data_file);
+      byte[] dht_data = FuseDhtUtil.GenerateDhtValue(filename, data);
       File.Delete(args.MetaFileSPath);
-      _helper.AsDhtPut(basedir.Name, keydir.Name, data, ttl, PutMode.Put, data_file);
+      _helper.AsDhtPut(basedir.Name, keydir.Name, dht_data, ttl, PutMode.Put, data_file);
       File.AppendAllText(_renew_log, string.Format("File {0} renewed for {1} seconds at {2}\n", data_file, ttl, DateTime.Now));
     }
 
