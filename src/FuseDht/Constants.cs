@@ -30,12 +30,13 @@ namespace FuseDht {
     public const string FILE_DONE = ".done";
     public const string FILE_BLOCKING_RD = "blocking_read";
     public const string FILE_RENEW_LOG = "renew.log";
+    public const string FILE_REFRESH = "refresh_time";
     //links
     public const string LN_SELF_BASEDIR = "myself";
     //default values
     public const int DEFAULT_TTL = 5000;	//seconds
     public const int DEFAULT_MAX_BYTES = 1000;	//bytes
-    public const int DEFAULT_LIFESPAN = 3000;
+    public const int DEFAULT_LIFESPAN = -1;
     public const PutMode DEFAULT_PUT_MODE = PutMode.Put;
     public const bool DEFAULT_INVALIDATE = true;
     public const bool DEFAULT_BLOCKING_RD = true;
@@ -66,6 +67,7 @@ namespace FuseDht {
     public const int LVL_BIN_KEY_FILE = 3;
     public const int LVL_DATA_FILE = 4;
     public const int LVL_ARG_FILE = 4;
+    public const int LVL_REFRESH_TIME = 4;
 
     public const string DHT_VALUE_ATTR_FN = "filename";
     public const string DHT_VALUE_ATTR_VAL = "value";

@@ -54,6 +54,14 @@ namespace FuseDht {
       }
     }
 
+    public int Age {
+      get { return _age; }
+    }
+
+    public int TTL {
+      get { return _ttl; }
+    }
+
     public string Name {
       get { return _filename; }
     }

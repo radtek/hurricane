@@ -232,16 +232,30 @@ namespace FuseDht {
           throw new FuseDhtStructureException();
         }
 
-        TimeSpan ts = new TimeSpan(0, 0, lifespan.GetValueOrDefault());
         bool stale = false;
 
-        if (cache.GetFiles().Length == 0) {
-          stale = true;
+        if (lifespan > 0) {
+          TimeSpan ts = new TimeSpan(0, 0, lifespan.GetValueOrDefault());
+          if (cache.GetFiles().Length == 0) {
+            stale = true;
+          } else {
+            foreach (FileInfo finfo in cache.GetFiles()) {
+              if (finfo.CreationTimeUtc.Add(ts) < System.DateTime.UtcNow) {
+                stale = true;
+                break;
+              }
+            }
+          }
         } else {
-          foreach (FileInfo finfo in cache.GetFiles()) {
-            if (finfo.CreationTimeUtc.Add(ts) < System.DateTime.UtcNow) {
+          //we don't use lifespan if it's <= 0
+          DateTime? dt = (DateTime?)_util.ReadParam(basedirName, key, Constants.FILE_REFRESH);
+          if (dt == null) {
+            throw new FuseDhtStructureException();
+          } else {
+            if (dt <= DateTime.Now) {
+              //comparison of local times
+              Debug.WriteLine(string.Format("At least one of the files in this directories passed its end time, stale"));
               stale = true;
-              break;
             }
           }
         }

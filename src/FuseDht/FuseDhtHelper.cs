@@ -134,6 +134,7 @@ namespace FuseDht {
       IBlockingQueue bq = dht.GetAsBlockingQueue(dht_key);
       int i = 0;
       bool set = false;
+      DateTime dt = DateTime.MinValue;
       while (true) {
         // Still a chance for Dequeue to execute on an empty closed queue 
         // so we'll do this instead.
@@ -142,6 +143,11 @@ namespace FuseDht {
           Debug.WriteLine(string.Format("Got #{0} item", i++));
           DhtDataFile file = new DhtDataFile(s_parent_path, result);
           file.WriteToFile();
+          DateTime end = DateTime.UtcNow - new TimeSpan(0, 0, file.Age) + new TimeSpan(0, 0, file.TTL);
+          if (dt == DateTime.MinValue || end < dt) {
+            //if hasn't been set, set it. Otherwise only set if we can get a smaller datetime
+            dt = end;
+          }
           if(waitingFileName != null && file.Name.Equals(waitingFileName)) {
             //notify the waiting thread that the expected file arrives
             Debug.WriteLine(string.Format("Got the expected file"));
@@ -155,6 +161,10 @@ namespace FuseDht {
       }
       //set again in case no such filename in Dht
       File.WriteAllText(Path.Combine(s_parent_path, Constants.FILE_DONE), "1"); //done
+      string refresh = Path.Combine(new DirectoryInfo(s_parent_path).Parent.GetDirectories(Constants.DIR_ETC)[0].FullName, 
+        Constants.FILE_REFRESH);
+      //we use utc to compare, but we write local time string for easy to read
+      File.WriteAllText(refresh, dt.ToLocalTime().ToString());
       if (!set) {
         //no filename matched. So I release the waiting thread at the end
         re.Set(); 

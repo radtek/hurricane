@@ -64,8 +64,8 @@ namespace FuseDht {
           e.Name, DateTime.Now, Thread.CurrentThread.GetHashCode()));
       string s_file = e.FullPath;
       DhtMetadataFile meta = DhtMetadataFileHandler.ReadFromXml(s_file);
-      if(meta.end_time < _wakeup_time) {
-        Debug.WriteLine(string.Format("end_time of this file earilier than _wakeup_time, Set event. {0}", 
+      if(meta.EndTimeUtc < _wakeup_time) {
+        Debug.WriteLine(string.Format("EndTimeUtc of this file earilier than _wakeup_time, Set event. {0}", 
             DateTime.Now));
         _wakeup_event.Set();
       }
@@ -84,14 +84,17 @@ namespace FuseDht {
 
       foreach(FileInfo f in files) {
         DhtMetadataFile meta = DhtMetadataFileHandler.ReadFromXml(f.FullName);
+#if FUSE_NUNIT
+        Assert.AreEqual(DateTimeKind.Local ,meta.end_time.Kind);
+#endif
         if (IsExpiring(meta)) {
           _expiringFiles.Add(meta);
         } else {
-          if (_wakeup_time <= DateTime.UtcNow && meta.end_time > DateTime.UtcNow) {
-            _wakeup_time = meta.end_time;
-          } else if (_wakeup_time > DateTime.UtcNow && meta.end_time < _wakeup_time) {
+          if (_wakeup_time <= DateTime.UtcNow && meta.EndTimeUtc > DateTime.UtcNow) {
+            _wakeup_time = meta.EndTimeUtc;
+          } else if (_wakeup_time > DateTime.UtcNow && meta.EndTimeUtc < _wakeup_time) {
             //to find the earliest expring time as wakeup time
-            _wakeup_time = meta.end_time;
+            _wakeup_time = meta.EndTimeUtc;
           }
         }
       }
@@ -111,8 +114,8 @@ namespace FuseDht {
     }
 
     public bool IsExpiring(DhtMetadataFile file) {
-      if (file.end_time - DateTime.UtcNow < new TimeSpan(0, 0, 30)) {
-        //if end_time is somehow less than utcnow, we still add it in
+      if (file.EndTimeUtc - DateTime.UtcNow < new TimeSpan(0, 0, 30)) {
+        //if EndTimeUtc is somehow less than utcnow, we still add it in
         return true;
       } else {
         return false;

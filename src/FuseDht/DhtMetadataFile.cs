@@ -22,16 +22,27 @@ namespace FuseDht {
     public int ttl;
     public string _meta_filename;
 
+    public DateTime CreateTimeUtc {
+      get { return create_time.ToUniversalTime(); }
+    }
+
+    public DateTime EndTimeUtc {
+      get { return end_time.ToUniversalTime(); }
+    }
+
     public DhtMetadataFile() { }
 
     public DhtMetadataFile(long createTime, long endTime, string sDataFilePath) {
-      create_time = DateTime.FromBinary(createTime);
-      end_time = DateTime.FromBinary(endTime);
+      create_time = DateTime.FromBinary(createTime).ToUniversalTime();
+      end_time = DateTime.FromBinary(endTime).ToUniversalTime();
       s_data_file_path = sDataFilePath;
     }
     
     public DhtMetadataFile(int ttl, string dataFilePath) {
-      create_time = DateTime.UtcNow;
+      /*
+       * Local time is used here because of .NET issues with DateTime Xml Serialization.
+       */
+      create_time = DateTime.Now;
       this.ttl = ttl;
       end_time = create_time + new TimeSpan(0, 0, this.GetTTLForMetaFile(ttl));
       s_data_file_path = dataFilePath;
@@ -121,8 +132,8 @@ namespace FuseDht {
       DhtMetadataFileHandler.WriteAsXml("/tmp", file);
       string p = Path.Combine("/tmp", file._meta_filename);
       DhtMetadataFile file1 = DhtMetadataFileHandler.ReadFromXml(p);
-      Assert.AreEqual(file.create_time.ToLongTimeString(), file1.create_time.ToLongTimeString());
-      Assert.AreEqual(file.end_time.ToLongTimeString(), file1.end_time.ToLongTimeString());
+      Assert.AreEqual(file.create_time, file1.create_time);
+      Assert.AreEqual(file.end_time, file1.end_time);
     }
   }
 #endif

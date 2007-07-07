@@ -116,6 +116,9 @@ namespace FuseDht {
             }
           case Constants.FILE_PUT_MODE:
             return Constants.GetPutMode(p);
+          case Constants.FILE_REFRESH:
+            //this returns local time
+            return Convert.ToDateTime(p);
           default:
             return null;
         }
@@ -315,13 +318,13 @@ namespace FuseDht {
 
     [Test]
     public void TestTrimPath() {
-      string s1 = FuseDhtHelper.TrimPath("/tmp/file.offline");
+      string s1 = FuseDhtUtil.TrimPathExtension("/tmp/file.offline");
       Assert.AreEqual("/tmp/file", s1, "1");
-      string s2 = FuseDhtHelper.TrimPath("/tmp/file.offline.1");
+      string s2 = FuseDhtUtil.TrimPathExtension("/tmp/file.offline.1");
       Assert.AreEqual("/tmp/file", s2, "2");
-      string s3 = FuseDhtHelper.TrimPath("/tmp/file.uploaded");
+      string s3 = FuseDhtUtil.TrimPathExtension("/tmp/file.uploaded");
       Assert.AreEqual("/tmp/file", s3, "3");
-      string s4 = FuseDhtHelper.TrimPath("/tmp/file");
+      string s4 = FuseDhtUtil.TrimPathExtension("/tmp/file");
       Assert.AreEqual("/tmp/file", s4, "4");
     }
   }
