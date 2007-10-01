@@ -59,12 +59,11 @@ namespace FuseDht {
           case "-h":
           case "--help":
             FileSystem.ShowFuseHelp("FuseDht");
-            Console.Error.WriteLine("FuseDht Arguments:");
-            string help = "1.\t" + "Mounting Point\n"
-                        + "2.\t" + "Shadow Path"
-                        +"options:\n"
+            string help = "FuseDht Arguments:\n"
+                        + "1.\t" + "Mounting Point\n"
+                        + "2.\t" + "Shadow Path\n"
+                        + "FuseDht Options:\n"
                         + "-l[ocal]:\tUse LocalHT instead of Dht";
-            Console.WriteLine("FuseDht Options");
             Console.Error.WriteLine(help);
             return false;
           case "-l":

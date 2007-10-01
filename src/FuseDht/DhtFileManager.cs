@@ -41,7 +41,7 @@ namespace FuseDht {
           //kinda tired, wait here.
           _wakeup_event.Reset();
           //never feed a sleeping_time < -1 to this
-          Debug.WriteLine(string.Format("Wait until {0}", _wakeup_time.ToLocalTime()));
+          Debug.WriteLine(string.Format("DhtFileManager: Wait until LocalTime {0}", _wakeup_time.ToLocalTime()));
           _wakeup_event.WaitOne(sleeping_time, true);
         }
       }
