@@ -81,7 +81,7 @@ namespace FuseDht {
       throw new Exception("The method or operation is not implemented.");
     }
 
-    public DhtGetResult[] ContinueGet(string token) {
+    public DhtGetResult ContinueGet(string token) {
       throw new Exception("The method or operation is not implemented.");
     }
 
