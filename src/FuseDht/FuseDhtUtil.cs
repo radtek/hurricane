@@ -13,7 +13,7 @@ using Brunet.Dht;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
-namespace FuseDht {
+namespace FuseSolution.FuseDht {
   class FuseDhtUtil {
     readonly string _s_dht_root;
     readonly string _shadowdir;

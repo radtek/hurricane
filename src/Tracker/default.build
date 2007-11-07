@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+<project name="DhtTracker" default="build" basedir=".">
+  <description> Build DhtTracker </description>
+  <property name="debug" value="false" />
+  <property name="define" value="" />
+  <property name="lib.dir" value="../../lib"/>
+  <property name="build.dir" value="build" />
+  <property name="exe" value="TrackerApp.exe" />
+  <property name="dll" value="DhtTracker.dll" />
+
+  <target name="build">
+    <call target="buildDhtTracker" />
+  </target>
+
+  <target name="debug">
+    <property name="debug" value="true" />
+    <call target="buildDhtTracker" />
+  </target>
+
+  <target name="test">
+    <property name="debug" value="true" />
+    <property name="define" value="FUSE_DEBUG,FUSE_NUNIT" />
+    <call target="buildDhtTracker" />
+  </target>
+
+  <target name="clean" description="Deletes the current configuration">
+    <delete dir="${build.dir}/" failonerror="false"/>
+    <delete dir="${build.dir}/${exe}" failonerror="false"/>
+    <delete dir="${build.dir}/${dll}" failonerror="false"/>
+  </target>
+
+  <target name="buildDhtTracker" description="build FuseDht">
+    <mkdir dir="${build.dir}" failonerror="true"/>
+    <copy todir="${build.dir}">
+      <fileset basedir="${lib.dir}">
+        <include name="*.dll" />
+      </fileset>
+    </copy>
+    <csc 
+         target="library"
+         debug="${debug}"
+         output="${build.dir}/DhtTracker.dll"
+         define="${define}">
+      <sources failonempty="true">
+        <include name="DhtTorrentManager.cs"/>
+        <include name="DhtTracker.cs"/>
+        <include name="TorrentManagerFactory.cs"/>
+      </sources>
+      <references>
+        <include name="System.Runtime.Remoting.dll"/>
+        <include name="${build.dir}/NUnit.Framework.dll" />
+        <include name="${build.dir}/Brunet.dll" />
+        <include name="${build.dir}/Brunet.Dht.dll" />
+        <include name="${build.dir}/Brunet.XmlRpc.dll" />
+        <include name="${build.dir}/Ipop.XmlRpcClient.dll" />
+        <include name="${build.dir}/Mono.Fuse.dll" />
+        <include name="${build.dir}/CookComputing.XmlRpcV2.dll" />
+        <include name="${build.dir}/MonoTorrent.dll" />
+      </references>
+    </csc>
+    <copy todir="${lib.dir}">
+      <fileset basedir="${build.dir}">
+        <include name="DhtTracker.dll" />
+      </fileset>
+    </copy>
+  </target>
+</project>

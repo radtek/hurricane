@@ -1,6 +1,6 @@
 using System;
 
-namespace FuseDht {
+namespace FuseSolution.FuseDht {
   public enum PutMode {
     Put,
     Create,

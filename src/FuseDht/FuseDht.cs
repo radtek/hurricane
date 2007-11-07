@@ -14,7 +14,7 @@ using NUnit.Framework;
 #endif
 
 
-namespace FuseDht {
+namespace FuseSolution.FuseDht {
   /// <summary>
   /// Interrupts system calls and weaves in FuseDht logic.
   /// </summary>

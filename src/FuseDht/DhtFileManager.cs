@@ -8,7 +8,7 @@ using System.Diagnostics;
 using NUnit.Framework;
 #endif
 
-namespace FuseDht {
+namespace FuseSolution.FuseDht {
   public class DhtFileManager {
     List<DhtMetadataFile> _expiringFiles = new List<DhtMetadataFile>();
     DateTime _wakeup_time;

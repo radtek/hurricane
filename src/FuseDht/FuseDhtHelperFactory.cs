@@ -3,9 +3,10 @@ using System;
 using System.Collections;
 using Brunet.Dht;
 using Brunet;
+using FuseSolution.Common;
 
 
-namespace FuseDht {
+namespace FuseSolution.FuseDht {
 
   public class FuseDhtHelperFactory {
     public enum HelperType {
@@ -15,7 +16,9 @@ namespace FuseDht {
     public FuseDhtHelperFactory() {
     }
 
-    /// <param name="basedir">Mounting point of shadow FS</param>    
+    /**
+     * @param basedir Mounting point of shadow FS
+     */
     public static FuseDhtHelper GetFuseDhtHelper(HelperType t, string basedir) {
       if (t == HelperType.Local) {
         IDht dht = new LocalHT();

@@ -14,7 +14,7 @@ using Ipop;
 using NUnit.Framework;
 #endif
 
-namespace FuseDht {  
+namespace FuseSolution.FuseDht {  
   /// <summary>
   /// Deal with Dht operations for FuseDht class
   /// </summary>

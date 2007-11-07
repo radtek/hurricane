@@ -47,7 +47,7 @@ using System.Text;
 using Mono.Fuse;
 using Mono.Unix.Native;
 
-namespace FuseDht {
+namespace FuseSolution.FuseDht {
 	class RedirectFHFSHelper {
 
 		private string basedir;

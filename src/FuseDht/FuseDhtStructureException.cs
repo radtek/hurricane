@@ -1,7 +1,7 @@
 
 using System;
 
-namespace FuseDht {
+namespace FuseSolution.FuseDht {
   /**
    * This exception should be thrown when FuseDht experiences unexpected structural
    * errors like:
