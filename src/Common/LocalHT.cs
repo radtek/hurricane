@@ -16,7 +16,7 @@ namespace FuseSolution.Common {
    * LocalHT only uses TableServer to read and store data locally but provide the same interface
    * as IDht for testing purpose.
    */
-  class LocalHT : Ipop.IDht {
+  public class LocalHT : Ipop.IDht {
     private TableServer _ts;
 
     public const int MAX_BYTES = 1000;

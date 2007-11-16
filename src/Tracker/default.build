@@ -42,12 +42,33 @@
          output="${build.dir}/DhtTracker.dll"
          define="${define}">
       <sources failonempty="true">
-        <include name="DhtTorrentManager.cs"/>
-        <include name="DhtTracker.cs"/>
+        <include name="IIntervalAlgorithm.cs" />
+        <include name="ITorrentManager.cs" />
+        <include name="Peer.cs" />
+        <include name="PeerManager.cs" />
+        <include name="SimpleTorrentManager.cs" />
+        <include name="StaticIntervalAlgorithm.cs" />
+        <include name="Tracker.cs" />
+        <include name="TrackerEngine.cs" />
+        <include name="Tracker.cs"/>
         <include name="TorrentManagerFactory.cs"/>
+        <include name="TrackerFactory.cs"/>
+        
+        <include name="Frontend/AnnounceHandler.cs" />
+        <include name="Frontend/AnnounceParameterParser.cs" />
+        <include name="Frontend/AnnounceParameters.cs" />
+        <include name="Frontend/global.asax.cs" />
+        <include name="Frontend/InternalHttpServer.cs" />
+        <include name="Frontend/ParameterParser.cs" />
+        <include name="Frontend/ScrapeHandler.cs" />
+        <include name="Frontend/ScrapeParameterParser.cs" />
+        <include name="Frontend/ScrapeParameters.cs" />
+        <include name="Frontend/TestHandler.cs" />
+        <include name="DhtTorrentManager.cs"/>
       </sources>
       <references>
         <include name="System.Runtime.Remoting.dll"/>
+        <include name="System.Web.dll"/>
         <include name="${build.dir}/NUnit.Framework.dll" />
         <include name="${build.dir}/Brunet.dll" />
         <include name="${build.dir}/Brunet.Dht.dll" />
@@ -56,6 +77,7 @@
         <include name="${build.dir}/Mono.Fuse.dll" />
         <include name="${build.dir}/CookComputing.XmlRpcV2.dll" />
         <include name="${build.dir}/MonoTorrent.dll" />
+        <include name="${build.dir}/LocalHT.dll" />
       </references>
     </csc>
     <copy todir="${lib.dir}">

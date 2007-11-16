@@ -151,25 +151,25 @@ namespace FuseSolution.Tracker {
     ///</param>
     public void AddTorrent(Torrent torrent) {
       //Console.WriteLine("adding torrent " + HttpUtility.UrlEncode(torrent.InfoHash) + " to the tracker"); 
-      Console.WriteLine("adding torrent " + Toolbox.GetHex(torrent.InfoHash) + " to the tracker");
+      Console.WriteLine("adding torrent " + Toolbox.ToHex(torrent.InfoHash) + " to the tracker");
 
-      if (torrents.ContainsKey(Toolbox.GetHex(torrent.InfoHash))) {
+      if (torrents.ContainsKey(Toolbox.ToHex(torrent.InfoHash))) {
         Console.WriteLine("torrent already added");//TODO remove
         return;
       }
 
       switch (_tracker_type) {
         case TrackerType.Local:
-          torrents.Add(Toolbox.GetHex(torrent.InfoHash), 
+          torrents.Add(Toolbox.ToHex(torrent.InfoHash), 
             TorrentManagerFactory.GetTorrentManager(TrackerType.Local, torrent));
           break;
         case TrackerType.Dht:
-          torrents.Add(Toolbox.GetHex(torrent.InfoHash),
+          torrents.Add(Toolbox.ToHex(torrent.InfoHash),
             TorrentManagerFactory.GetTorrentManager(TrackerType.Dht, torrent));
           break;
         case TrackerType.Simple:
         default:
-          torrents.Add(Toolbox.GetHex(torrent.InfoHash), new SimpleTorrentManager(torrent));
+          torrents.Add(Toolbox.ToHex(torrent.InfoHash), new SimpleTorrentManager(torrent));
           break;
       }
     }
@@ -178,9 +178,9 @@ namespace FuseSolution.Tracker {
     ///</summary>
     ///<param>The Torrent to be removed from the Tracker</param>
     public void RemoveTorrent(Torrent torrent) {
-      Console.WriteLine("removing torrent " + Toolbox.GetHex(torrent.InfoHash) + " from the tracker");
-      if (torrents.ContainsKey(Toolbox.GetHex(torrent.InfoHash)))
-        torrents.Remove(Toolbox.GetHex(torrent.InfoHash));
+      Console.WriteLine("removing torrent " + Toolbox.ToHex(torrent.InfoHash) + " from the tracker");
+      if (torrents.ContainsKey(Toolbox.ToHex(torrent.InfoHash)))
+        torrents.Remove(Toolbox.ToHex(torrent.InfoHash));
     }
 
     public void RemoveTorrent(string path) {
@@ -197,7 +197,7 @@ namespace FuseSolution.Tracker {
     ///</summary>
     public void Announce(AnnounceParameters par, Stream stream) {
       //some pre checks
-      if (!torrents.ContainsKey(Toolbox.GetHex(par.infoHash))) {
+      if (!torrents.ContainsKey(Toolbox.ToHex(par.infoHash))) {
         throw new TrackerException("Torrent not Registered at this Tracker");
       }
 
@@ -205,7 +205,7 @@ namespace FuseSolution.Tracker {
         throw new TrackerException("Tracker does not allow Non Compact Format");
       }
 
-      ITorrentManager torrent = torrents[Toolbox.GetHex(par.infoHash)];
+      ITorrentManager torrent = torrents[Toolbox.ToHex(par.infoHash)];
 
       switch (par.@event) {
         case TorrentEvent.Completed:
@@ -278,7 +278,7 @@ namespace FuseSolution.Tracker {
     }
 
     private BEncodedDictionary GetAnnounceResponse(AnnounceParameters par) {
-      ITorrentManager torrentManager = torrents[Toolbox.GetHex(par.infoHash)];
+      ITorrentManager torrentManager = torrents[Toolbox.ToHex(par.infoHash)];
       BEncodedDictionary dict = new BEncodedDictionary();
 
       Debug.WriteLine(torrentManager.Count);
@@ -305,7 +305,7 @@ namespace FuseSolution.Tracker {
 
       if (par.Count == 1) {
         //uniscrape
-        ITorrentManager torrent = torrents[Toolbox.GetHex(par.InfoHash)];
+        ITorrentManager torrent = torrents[Toolbox.ToHex(par.InfoHash)];
         //string infoHashString = ToolBox.SingleByteString(torrent.Torrent.InfoHash);
         filesDict.Add(torrent.Torrent.InfoHash, torrent.GetScrapeEntry());
       }
@@ -321,7 +321,7 @@ namespace FuseSolution.Tracker {
       if (par.Count > 1) {
         //multiscrape
         foreach (byte[] infoHash in par) {
-          ITorrentManager torrent = torrents[Toolbox.GetHex(infoHash)];
+          ITorrentManager torrent = torrents[Toolbox.ToHex(infoHash)];
           //string infoHashString = ToolBox.SingleByteString(torrent.Torrent.InfoHash);
           filesDict.Add(new BEncodedString(torrent.Torrent.InfoHash), torrent.GetScrapeEntry());
         }
