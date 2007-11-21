@@ -1,26 +1,25 @@
 <?xml version="1.0"?>
-<project name="DhtTracker" default="build" basedir=".">
-  <description> Build DhtTracker </description>
+<project name="FuseDht" default="build" basedir=".">
+  <description> Build Common </description>
   <property name="debug" value="false" />
   <property name="define" value="" />
   <property name="lib.dir" value="../../lib"/>
   <property name="build.dir" value="build" />
-  <property name="exe" value="TrackerApp.exe" />
-  <property name="dll" value="DhtTracker.dll" />
+  <property name="dll" value="LocalHT.dll" />
 
   <target name="build">
-    <call target="buildDhtTracker" />
+    <call target="buildCommon" />
   </target>
 
   <target name="debug">
     <property name="debug" value="true" />
-    <call target="buildDhtTracker" />
+    <call target="buildCommon" />
   </target>
 
   <target name="test">
     <property name="debug" value="true" />
     <property name="define" value="FUSE_DEBUG,FUSE_NUNIT" />
-    <call target="buildDhtTracker" />
+    <call target="buildCommon" />
   </target>
 
   <target name="clean" description="Deletes the current configuration">
@@ -28,43 +27,29 @@
     <delete dir="${build.dir}/${exe}" failonerror="false"/>
     <delete dir="${build.dir}/${dll}" failonerror="false"/>
   </target>
-
-  <target name="buildDhtTracker" description="build DhtTracker">
+  
+  <target name="buildCommon" description="build Common">
     <mkdir dir="${build.dir}" failonerror="true"/>
     <copy todir="${build.dir}">
       <fileset basedir="${lib.dir}">
         <include name="*.dll" />
       </fileset>
     </copy>
-    <csc 
-         target="exe"
-         debug="${debug}"
-         output="${build.dir}/DhtTracker.exe"
-         define="${define}">
+    <csc target="library"
+         output="${build.dir}/LocalHT.dll">
       <sources failonempty="true">
-        <include name="DhtListener.cs" />
-        <include name="DhtServiceProxy.cs" />
-        <include name="PeerEntry.cs" />
-        <include name="../Common/Enums.cs" />
-        <include name="TrackerApp.cs" />
+        <include name="LocalHT.cs"/>
       </sources>
       <references>
-        <include name="System.Runtime.Remoting.dll"/>
-        <include name="System.Web.dll"/>
-        <include name="${build.dir}/NUnit.Framework.dll" />
         <include name="${build.dir}/Brunet.dll" />
         <include name="${build.dir}/Brunet.Dht.dll" />
-        <include name="${build.dir}/Brunet.XmlRpc.dll" />
+        <include name="${build.dir}/NUnit.Framework.dll" />
         <include name="${build.dir}/Ipop.XmlRpcClient.dll" />
-        <include name="${build.dir}/Mono.Fuse.dll" />
-        <include name="${build.dir}/CookComputing.XmlRpcV2.dll" />
-        <include name="${build.dir}/MonoTorrent.dll" />
-        <include name="${build.dir}/LocalHT.dll" />
       </references>
     </csc>
     <copy todir="${lib.dir}">
       <fileset basedir="${build.dir}">
-        <include name="DhtTracker.exe" />
+        <include name="LocalHT.dll" />
       </fileset>
     </copy>
   </target>
