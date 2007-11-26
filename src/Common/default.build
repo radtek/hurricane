@@ -53,4 +53,26 @@
       </fileset>
     </copy>
   </target>
+
+  <target name="svc">
+    <mkdir dir="${build.dir}" failonerror="true"/>
+    <copy todir="${build.dir}">
+      <fileset basedir="${lib.dir}">
+        <include name="*.dll" />
+      </fileset>
+    </copy>
+    <csc target="exe"
+         output="${build.dir}/LocalHTSvc.exe">
+      <sources failonempty="true">
+        <include name="LocalHT.cs"/>
+        <include name="LocalHTService.cs"/>
+      </sources>
+      <references>
+        <include name="${build.dir}/Brunet.dll" />
+        <include name="${build.dir}/Brunet.Dht.dll" />
+        <include name="${build.dir}/NUnit.Framework.dll" />
+        <include name="${build.dir}/Ipop.DhtService.dll" />
+      </references>
+    </csc>
+  </target>
 </project>

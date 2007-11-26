@@ -161,7 +161,7 @@ namespace FuseSolution.Tracker {
       if (entry.PeerState != MonoTorrent.Common.TorrentEvent.None) {
         c.Add("event", entry.PeerEventAsRequestKey);
       }
-      //NOTE: "ip" is optional and it won't be put in here, we set the announce's clientAddress intead
+      //NOTE: "ip" is optional and it won't be put in here, we set the announce's clientAddress instead
       AnnounceParameters par = new AnnounceParameters(c, IPAddress.Parse(entry.PeerIP));
       return par;
     }
