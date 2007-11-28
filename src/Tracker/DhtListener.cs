@@ -83,6 +83,7 @@ namespace FuseSolution.Tracker {
       context = listener.EndGetContext(result);
       HandleRequest(context);
       context.Response.Close();
+      Console.WriteLine(string.Format("Reponse sent to {0}, BeginGetContext again", context.Request.RemoteEndPoint.ToString()));
       listener.BeginGetContext(EndGetRequest, null);
     }
 
@@ -90,11 +91,15 @@ namespace FuseSolution.Tracker {
      * 
      */
     private void HandleRequest(HttpListenerContext context) {
+      Console.WriteLine(string.Format("Request received from {0}. RawUrl={1}", 
+          context.Request.RemoteEndPoint.ToString(), context.Request.RawUrl));
       RequestParameters parameters;
       bool isScrape = context.Request.RawUrl.StartsWith("/scrape", StringComparison.OrdinalIgnoreCase);
       NameValueCollection collection = ParseQuery(context.Request.RawUrl);
-      if (isScrape)
+      Console.WriteLine(string.Format("Request Type: {0}", isScrape ? "scrape" : "announce"));
+      if (isScrape) {
         parameters = new ScrapeParameters(collection, context.Request.RemoteEndPoint.Address);
+      }
       else
         parameters = new AnnounceParameters(collection, context.Request.RemoteEndPoint.Address);
 
@@ -110,6 +115,7 @@ namespace FuseSolution.Tracker {
       }
 
       byte[] response = parameters.Response.Encode();
+      Console.Write(string.Format("Reponse built: {0} (Base32)", Brunet.Base32.Encode(response)));
       context.Response.ContentType = "text/plain";
       context.Response.StatusCode = 200;
       context.Response.OutputStream.Write(response, 0, response.Length);
@@ -133,10 +139,17 @@ namespace FuseSolution.Tracker {
      */
     private void HandleAnnounceRequest(AnnounceParameters parameters) {
       ICollection<PeerEntry> entries = _proxy.GetPeers(parameters.InfoHash);
+      Console.WriteLine(string.Format("##{0}##", entries.Count));
       foreach (PeerEntry entry in entries) {
         AnnounceParameters par = GenerateAnnounceParameters(parameters.InfoHash, entry);
-        //Tracker will write to the par.Reponse but we don't use it
-        RaiseAnnounceReceived(par);
+        if (par.IsValid) {
+          //Tracker will write to the par.Reponse but we don't use it
+          Console.WriteLine("!!!!!!!!!!!!!!!!!!");
+          RaiseAnnounceReceived(par);
+        } else {
+          Console.WriteLine("Parameters invalid!");
+        }
+        Console.WriteLine(string.Format("Tracker's reponse for this peer from DHT: {0}", par.Response.ToString()));
       }
       //Got all I need, now announce myself
       _proxy.AnnouncePeer(parameters.InfoHash, parameters);
@@ -149,12 +162,13 @@ namespace FuseSolution.Tracker {
     private AnnounceParameters GenerateAnnounceParameters(byte[] infoHash, PeerEntry entry) {
       NameValueCollection c = new NameValueCollection();
       //"info_hash", "peer_id", "port", "uploaded(bytes)", "downloaded", "left", "compact"
-      c.Add("info_hash", Encoding.UTF8.GetString(infoHash));
+      //infoHash here should be just like what's in HttpRequests
+      c.Add("info_hash", System.Web.HttpUtility.UrlEncode(infoHash));
       c.Add("peer_id", entry.PeerID);
       c.Add("port", entry.PeerPort.ToString());
       //fake the mandatory fields, these are solely used to compute the upload/download speed
-      c.Add("uploaded", "1000");
-      c.Add("downloaded", "1000");
+      c.Add("uploaded", "0");
+      c.Add("downloaded", "0");
       c.Add("left", "1000");
       c.Add("compact", "1");
       //optional but need to set

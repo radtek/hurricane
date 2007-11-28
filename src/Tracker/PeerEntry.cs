@@ -70,6 +70,7 @@ namespace FuseSolution.Tracker {
 
     public PeerEntry(byte[] binaryEntry) {
       IList list = (IList)AdrConverter.Deserialize(binaryEntry);
+      Console.WriteLine(string.Format("Length of list in PeerEntry: {0}", list.Count));
       this._peer_id = list[0] as string;
       IPAddress ip = null;
       bool succ = IPAddress.TryParse(list[1] as string, out ip);
