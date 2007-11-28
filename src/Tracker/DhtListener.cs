@@ -110,9 +110,9 @@ namespace FuseSolution.Tracker {
       }
 
       byte[] response = parameters.Response.Encode();
-      context.Response.OutputStream.Write(response, 0, response.Length);
       context.Response.ContentType = "text/plain";
       context.Response.StatusCode = 200;
+      context.Response.OutputStream.Write(response, 0, response.Length);
     }
 
     private NameValueCollection ParseQuery(string url) {
