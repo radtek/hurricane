@@ -4,6 +4,7 @@ using System.Collections;
 using System.Text;
 using Ipop;
 using Brunet.Dht;
+using System.Diagnostics;
 using FuseSolution.Common;
 using MonoTorrent.Tracker;
 using Brunet;
@@ -46,33 +47,30 @@ namespace FuseSolution.Tracker {
      * @return A List of PeerEntries which could have duplicated peers w/ different states. Empty List if no peers for this infoHash
      */
     public ICollection<PeerEntry> GetPeers(byte[] infoHash) {
-      Console.WriteLine(string.Format("Getting peers for infoHash:{0} (Base32)", Base32.Encode(infoHash)));
+      Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose, 
+          string.Format("Getting peers for infoHash:{0} (Base32)", Base32.Encode(infoHash)));
       ICollection<PeerEntry> peers = new List<PeerEntry>();
       DhtGetResult[] results = _dht.Get(Encoding.UTF8.GetString(infoHash));
-      
-      //string token = _dht.BeginGet(Encoding.UTF8.GetString(infoHash));
-      //int count = 0;
-      //DhtGetResult dgr;
-      //while (!(dgr = _dht.ContinueGet(token)).IsEmpty()) {
-      //  Console.WriteLine("Result:  " + count++);
-      //  Console.WriteLine("Value: " + dgr.valueString);
-      //  Console.WriteLine("Age:  " + dgr.age);
-      //  Console.WriteLine("Ttl:  " + dgr.ttl + "\n");
-      //  PeerEntry entry = new PeerEntry(dgr.value);
-      //  peers.Add(entry);
-      //}
-
-      Console.WriteLine(string.Format("{0} peer(s) retrieved from DHT", results.Length));
+      Debug.WriteLineIf(Logger.TrackerLog.TraceInfo, 
+          string.Format("{0} peer(s) retrieved from DHT", results.Length));
       foreach (DhtGetResult r in results) {
-        PeerEntry entry = new PeerEntry(r.value);
-        Console.WriteLine(string.Format("Peer entry built: {0}", entry.ToString()));
-        peers.Add(entry);
+        try {
+          PeerEntry entry = new PeerEntry(r.value);
+          Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose, string.Format("Peer entry built: {0}", entry.ToString()));
+          peers.Add(entry);
+        } catch (Exception e) {
+          //deserliazation error
+          Debug.WriteLineIf(Logger.TrackerLog.TraceError, e);
+          continue;
+        }
       }
       return peers;
     }
 
     public bool AnnouncePeer(byte[] infoHash, AnnounceParameters pars) {
-      return AnnouncePeer(infoHash, new PeerEntry(pars));
+      PeerEntry entry = new PeerEntry(pars);
+      Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose, string.Format("To be input: {0}", entry.ToString()));
+      return AnnouncePeer(infoHash, entry);
     }
 
     public bool AnnouncePeer(byte[] infoHash, PeerEntry peer) {

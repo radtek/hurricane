@@ -66,20 +66,16 @@ namespace FuseSolution.Tracker {
        */
       this._peer_endpoint = pars.ClientAddress;
       this._peer_id = pars.PeerId;
+      this._event = pars.Event;
     }
 
     public PeerEntry(byte[] binaryEntry) {
       IList list = (IList)AdrConverter.Deserialize(binaryEntry);
-      Console.WriteLine(string.Format("Length of list in PeerEntry: {0}", list.Count));
       this._peer_id = list[0] as string;
-      IPAddress ip = null;
-      bool succ = IPAddress.TryParse(list[1] as string, out ip);
-      if (succ == false) {
-        throw new ArgumentException(":::Invalid IP Address:::");
-      }
+      IPAddress ip = IPAddress.Parse(list[1] as string);
       this._peer_endpoint = new IPEndPoint(ip, (int)list[2]);
       this._event = (TorrentEvent)list[3];
-    } 
+    }
     #endregion
 
     public string Serialize() {
@@ -88,7 +84,7 @@ namespace FuseSolution.Tracker {
       list.Add(_peer_id);
       list.Add(_peer_endpoint.Address.ToString());
       list.Add(_peer_endpoint.Port);
-      list.Add((ushort)_event);
+      list.Add((int)_event);
       byte[] content = null;
       using (MemoryStream ms = new System.IO.MemoryStream()) {
         AdrConverter.Serialize(list, ms);

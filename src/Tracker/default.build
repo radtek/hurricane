@@ -19,7 +19,7 @@
 
   <target name="test">
     <property name="debug" value="true" />
-    <property name="define" value="FUSE_DEBUG,FUSE_NUNIT" />
+    <property name="define" value="FUSE_DEBUG,FUSE_NUNIT,TRACKER_NUNIT" />
     <call target="buildDhtTracker" />
   </target>
 
@@ -46,6 +46,7 @@
         <include name="DhtServiceProxy.cs" />
         <include name="PeerEntry.cs" />
         <include name="../Common/Enums.cs" />
+        <include name="../Common/Logger.cs" />
         <include name="TrackerApp.cs" />
       </sources>
       <references>
@@ -60,6 +61,7 @@
         <include name="${build.dir}/CookComputing.XmlRpcV2.dll" />
         <include name="${build.dir}/MonoTorrent.dll" />
         <include name="${build.dir}/LocalHT.dll" />
+        <include name="nunit.framework.dll" />
       </references>
     </csc>
     <copy todir="${lib.dir}">

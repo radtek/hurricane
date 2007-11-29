@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Text;
 using System.Web;
 using System.Net;
@@ -81,9 +82,17 @@ namespace FuseSolution.Tracker {
     private void EndGetRequest(IAsyncResult result) {
       HttpListenerContext context;
       context = listener.EndGetContext(result);
-      HandleRequest(context);
-      context.Response.Close();
-      Console.WriteLine(string.Format("Reponse sent to {0}, BeginGetContext again", context.Request.RemoteEndPoint.ToString()));
+      try {
+        HandleRequest(context);
+        Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose,
+            string.Format("Sending response to {0}", context.Request.RemoteEndPoint.ToString()));
+        context.Response.Close();
+      } catch (Exception e) {
+        context.Response.Close();
+        Debug.WriteLineIf(Logger.TrackerLog.TraceError, "Error in handling this request");
+        Debug.WriteLineIf(Logger.TrackerLog.TraceError, e);
+      }
+      //We still continue to serve the next request
       listener.BeginGetContext(EndGetRequest, null);
     }
 
@@ -115,7 +124,6 @@ namespace FuseSolution.Tracker {
       }
 
       byte[] response = parameters.Response.Encode();
-      Console.Write(string.Format("Reponse built: {0} (Base32)", Brunet.Base32.Encode(response)));
       context.Response.ContentType = "text/plain";
       context.Response.StatusCode = 200;
       context.Response.OutputStream.Write(response, 0, response.Length);
@@ -139,21 +147,22 @@ namespace FuseSolution.Tracker {
      */
     private void HandleAnnounceRequest(AnnounceParameters parameters) {
       ICollection<PeerEntry> entries = _proxy.GetPeers(parameters.InfoHash);
-      Console.WriteLine(string.Format("##{0}##", entries.Count));
       foreach (PeerEntry entry in entries) {
         AnnounceParameters par = GenerateAnnounceParameters(parameters.InfoHash, entry);
         if (par.IsValid) {
           //Tracker will write to the par.Reponse but we don't use it
-          Console.WriteLine("!!!!!!!!!!!!!!!!!!");
           RaiseAnnounceReceived(par);
         } else {
-          Console.WriteLine("Parameters invalid!");
+          Debug.WriteLineIf(Logger.TrackerLog.TraceError, string.Format("Parameters invalid!"));
         }
-        Console.WriteLine(string.Format("Tracker's reponse for this peer from DHT: {0}", par.Response.ToString()));
+        Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose, 
+            string.Format("Tracker's reponse for this peer from DHT: {0}", par.Response.ToString()));
       }
       //Got all I need, now announce myself
       _proxy.AnnouncePeer(parameters.InfoHash, parameters);
       RaiseAnnounceReceived(parameters);
+      Debug.WriteLineIf(Logger.TrackerLog.TraceInfo,
+            string.Format("Tracker's reponse for this peer from client: {0}", parameters.Response.ToString()));
     }
 
     /**

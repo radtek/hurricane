@@ -39,6 +39,11 @@ using MonoTorrent.Tracker;
 using MonoTorrent.Common;
 using FuseSolution.Common;
 
+#if TRACKER_NUNIT
+using NUnit.Framework;
+#endif
+
+
 namespace FuseSolution.Tracker {
   using Tracker = MonoTorrent.Tracker.Tracker;
 
