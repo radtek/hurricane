@@ -31,7 +31,8 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Diagnostics;
-using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Collections;
 using System.Web;
 using System.Net;
 
@@ -94,11 +95,16 @@ namespace FuseSolution.Tracker {
     MonoTorrent.Tracker.Tracker tracker;
     TorrentFolderWatcher watcher;
     const string TORRENT_DIR = "Torrents";
+    ListenerBase _listener;
+    int _tracker_port = 10000;
+    int _dht_port = 51515;
+    int _interval = 20; //in seconds
 
     ///<summary>Start the Tracker. Start Watching the TORRENT_DIR Directory for new Torrents.</summary>
-    public MySimpleTracker(DhtType t) {
-      //System.Net.IPEndPoint listenpoint = new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, 10000);
-      //Console.WriteLine("Listening at: {0}", listenpoint);
+    public MySimpleTracker(IDictionary options) {
+      /* The following code not necessary when found a way to set DhtListener listen to all the prefixes
+      System.Net.IPEndPoint listenpoint = new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, 10000);
+      Console.WriteLine("Listening at: {0}", listenpoint);
       IPAddress[] addrs = null;
       try {
         addrs = Dns.GetHostAddresses(Dns.GetHostName());
@@ -117,20 +123,27 @@ namespace FuseSolution.Tracker {
         Debug.WriteLineIf(Logger.TrackerLog.TraceInfo, string.Format("Listening to {0}", prefix));
       }
       ListenerBase listener = new DhtListener(prefixes, t);
+      */
 
+      _listener = new DhtListener((int)options["dht_port"], (DhtType)options["dht_type"]);
+      _interval = (int)options["interval"];
       tracker = new Tracker();
-      tracker.RegisterListener(listener);
-      listener.Start();
-
+      tracker.RegisterListener(_listener);
       SetupTorrentWatcher();
+      StartTracker();
+    }
 
+    public void StartTracker() {
+      _listener.Start();
+      watcher.StartWatching();
+      watcher.ForceScan();
       while (true) {
         lock (tracker)
           foreach (SimpleTorrentManager m in tracker) {
             Console.WriteLine("Name: {0}", m.Trackable.Name);
             Console.WriteLine("Complete: {1}   Incomplete: {2}   Downloaded: {0}", m.Downloaded, m.Complete, m.Count - m.Complete);
             Console.WriteLine();
-            System.Threading.Thread.Sleep(10000);
+            System.Threading.Thread.Sleep(_interval * 1000);
           }
       }
     }
@@ -151,9 +164,6 @@ namespace FuseSolution.Tracker {
           Debug.WriteLine("Stacktrace: {0}", ex.ToString());
         }
       };
-
-      watcher.StartWatching();
-      watcher.ForceScan();
     }
 
     void watcher_TorrentLost(object sender, TorrentWatcherEventArgs e) {
@@ -188,14 +198,64 @@ namespace FuseSolution.Tracker {
     }
 
     public static void Main(string[] args) {
+      //default values
       DhtType t = DhtType.BrunetDht;
-      if(args.Length == 1 && args[0].Equals("-l")) {
-        t = DhtType.Local;
+      int tracker_port = 10000;
+      int dht_port = 51515;
+      int interval = 20;
+
+      for (int i = 0; i < args.Length; i++) {
+        switch (args[i]) {
+          case "-l":
+            t = DhtType.Local;
+            break;
+          case "-tp":
+            if (i == args.Length - 1) {
+              //no next value
+              Console.Error.WriteLine("No tracker port specified");
+              return;
+            }
+            if (!Int32.TryParse(args[++i], out tracker_port)) {
+              Console.Error.WriteLine("Invalid tracker port");
+              return;
+            }
+            break;
+          case "-dp":
+            if (i == args.Length - 1) {
+              //no next value
+              Console.Error.WriteLine("No dht service specified");
+              return;
+            }
+            if (!Int32.TryParse(args[++i], out dht_port)) {
+              Console.Error.WriteLine("Invalid dht service port");
+              return;
+            }
+            break;
+          case "-i":
+            if (i == args.Length - 1) {
+              //no next value
+              Console.Error.WriteLine("No interval specified");
+              return;
+            }
+            if (!Int32.TryParse(args[++i], out interval)) {
+              Console.Error.WriteLine("Invalid dht service port");
+              return;
+            }
+            break;
+          default:
+            Console.Error.WriteLine("Invalid arguments");
+            return;
+        }
       }
-      
-      Debug.Listeners.Add(new TextWriterTraceListener(Console.Out));
-      Debug.WriteLine("Starting DhtTracker FrontendEngine");
-      new MySimpleTracker(t);
+
+      Debug.WriteLine(string.Format("Starting DhtTracker FrontendEngine at port: {0}", tracker_port));
+      IDictionary c = new ListDictionary();
+      c.Add("dht_type", t);
+      c.Add("tracker_port", tracker_port);
+      c.Add("dht_port", dht_port);
+      c.Add("interval", interval);
+      MySimpleTracker tracker = new MySimpleTracker(c);
+      tracker.StartTracker();
     }
   }
 }

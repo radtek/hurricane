@@ -54,11 +54,24 @@ namespace FuseSolution.Tracker {
       _proxy = DhtServiceLocator.GetDhtServiceProxy(dhtType);
     }
 
+    /**
+     * Construct DhtListener with a collection of prefixes
+     */
     public DhtListener(ICollection<string> prefixes, DhtType dhtType) {
       listener = new System.Net.HttpListener();
       foreach (string prefix in prefixes) {
         listener.Prefixes.Add(prefix);
       }
+      _proxy = DhtServiceLocator.GetDhtServiceProxy(dhtType);
+    }
+
+    /**
+     * Let the listener simply listens to all the requests to the specific port. 
+     * (that not handled by others)
+     */
+    public DhtListener(int port, DhtType dhtType) {
+      listener = new System.Net.HttpListener();
+      listener.Prefixes.Add(string.Format("http://*:{0}/", port));
       _proxy = DhtServiceLocator.GetDhtServiceProxy(dhtType);
     }
 
