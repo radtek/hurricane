@@ -97,9 +97,26 @@ namespace FuseSolution.Tracker {
 
     ///<summary>Start the Tracker. Start Watching the TORRENT_DIR Directory for new Torrents.</summary>
     public MySimpleTracker(DhtType t) {
-      System.Net.IPEndPoint listenpoint = new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, 10000);
-      Console.WriteLine("Listening at: {0}", listenpoint);
-      ListenerBase listener = new DhtListener(listenpoint, t);
+      //System.Net.IPEndPoint listenpoint = new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, 10000);
+      //Console.WriteLine("Listening at: {0}", listenpoint);
+      IPAddress[] addrs = null;
+      try {
+        addrs = Dns.GetHostAddresses(Dns.GetHostName());
+        if (addrs == null || addrs.Length == 0) {
+          throw new Exception();
+        }
+      } catch (Exception e) {
+        Debug.WriteLineIf(Logger.TrackerLog.TraceError, e);
+        addrs = new IPAddress[1];
+        addrs[0] = IPAddress.Loopback;
+      }
+      IList<string> prefixes = new List<string>();
+      foreach (IPAddress addr in addrs) {
+        string prefix = string.Format("http://{0}:{1}/", addr.ToString(), 10000);
+        prefixes.Add(prefix);
+        Debug.WriteLineIf(Logger.TrackerLog.TraceInfo, string.Format("Listening to {0}", prefix));
+      }
+      ListenerBase listener = new DhtListener(prefixes, t);
 
       tracker = new Tracker();
       tracker.RegisterListener(listener);

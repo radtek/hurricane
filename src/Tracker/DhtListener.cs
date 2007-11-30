@@ -54,6 +54,14 @@ namespace FuseSolution.Tracker {
       _proxy = DhtServiceLocator.GetDhtServiceProxy(dhtType);
     }
 
+    public DhtListener(ICollection<string> prefixes, DhtType dhtType) {
+      listener = new System.Net.HttpListener();
+      foreach (string prefix in prefixes) {
+        listener.Prefixes.Add(prefix);
+      }
+      _proxy = DhtServiceLocator.GetDhtServiceProxy(dhtType);
+    }
+
 
     #endregion Constructors
 
@@ -64,7 +72,8 @@ namespace FuseSolution.Tracker {
     /// Starts listening for incoming connections
     /// </summary>
     public override void Start() {
-      listener.Prefixes.Add(string.Format("http://{0}:{1}/", endpoint.Address.ToString(), endpoint.Port));
+      //listener.Prefixes.Add(string.Format("http://{0}:{1}/", endpoint.Address.ToString(), endpoint.Port));
+      //listener.Prefixes.Add("http://192.168.0.102:10000/");
       listener.Start();
       listener.BeginGetContext(EndGetRequest, null);
     }
