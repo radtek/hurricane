@@ -25,6 +25,7 @@ namespace FuseSolution.Tracker {
         default:
           if (!_dhts.ContainsKey(DhtType.BrunetDht)) {
             //IDht dht = Ipop.DhtServiceClient.GetSoapDhtClient(51515);
+            //TODO: Make it not hard-coded
             IDht dht = Ipop.DhtServiceClient.GetXmlRpcDhtClient(51515);
             _dhts[DhtType.BrunetDht] = new DhtServiceProxy(dht);
           }
@@ -48,18 +49,21 @@ namespace FuseSolution.Tracker {
      */
     public ICollection<PeerEntry> GetPeers(byte[] infoHash) {
       Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose, 
-          string.Format("Getting peers for infoHash:{0} (Base32)", Base32.Encode(infoHash)));
+          string.Format("Getting peers for infoHash:\t{0} (Base32)", Base32.Encode(infoHash)));
       ICollection<PeerEntry> peers = new List<PeerEntry>();
+      //Firing DHT Get
       DhtGetResult[] results = _dht.Get(Encoding.UTF8.GetString(infoHash));
       Debug.WriteLineIf(Logger.TrackerLog.TraceInfo, 
           string.Format("{0} peer(s) retrieved from DHT", results.Length));
+      int index = 0;
       foreach (DhtGetResult r in results) {
         try {
           PeerEntry entry = new PeerEntry(r.value);
-          Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose, string.Format("Peer entry built: {0}", entry.ToString()));
+          Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose, string.Format("Peer entry {0} built:\n{1}", index++,entry.ToString()));
           peers.Add(entry);
         } catch (Exception e) {
-          //deserliazation error
+          //Deserliazation error
+          Debug.WriteLineIf(Logger.TrackerLog.TraceError, "Error when Deserializing result from DHT");
           Debug.WriteLineIf(Logger.TrackerLog.TraceError, e);
           continue;
         }
@@ -69,13 +73,14 @@ namespace FuseSolution.Tracker {
 
     public bool AnnouncePeer(byte[] infoHash, AnnounceParameters pars) {
       PeerEntry entry = new PeerEntry(pars);
-      Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose, string.Format("To be input: {0}", entry.ToString()));
+      Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose, string.Format("Peer to be announced:\n{0}", entry.ToString()));
       return AnnouncePeer(infoHash, entry);
     }
 
     public bool AnnouncePeer(byte[] infoHash, PeerEntry peer) {
+      //Firing DHT Put
       bool succ = _dht.Put(Encoding.UTF8.GetString(infoHash), peer.Serialize(), (int)_interval_alg.Interval);
-      Console.WriteLine(string.Format("{0} announced peer to DHT", succ? "Successfully" : "Failed to"));
+      Console.WriteLine(string.Format("{0} peer to DHT", succ ? "Successfully announced" : "Failed to announce"));
       return succ;
     }
   }

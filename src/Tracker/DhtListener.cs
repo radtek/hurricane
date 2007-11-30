@@ -88,20 +88,21 @@ namespace FuseSolution.Tracker {
             string.Format("Sending response to {0}", context.Request.RemoteEndPoint.ToString()));
         context.Response.Close();
       } catch (Exception e) {
-        context.Response.Close();
         Debug.WriteLineIf(Logger.TrackerLog.TraceError, "Error in handling this request");
         Debug.WriteLineIf(Logger.TrackerLog.TraceError, e);
       }
       //We still continue to serve the next request
       listener.BeginGetContext(EndGetRequest, null);
+      Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose, string.Format("Begin to serve the next request"));
     }
 
     /**
-     * 
+     * http://addr:port/scrape goes to scrape and others go to announce,
      */
     private void HandleRequest(HttpListenerContext context) {
-      Console.WriteLine(string.Format("Request received from {0}. RawUrl={1}", 
-          context.Request.RemoteEndPoint.ToString(), context.Request.RawUrl));
+      Debug.WriteLineIf(Logger.TrackerLog.TraceInfo, string.Format("Request received from {0}.", 
+          context.Request.RemoteEndPoint.ToString()));
+      Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose,string.Format("RawUrl={0}", context.Request.RawUrl));
       RequestParameters parameters;
       bool isScrape = context.Request.RawUrl.StartsWith("/scrape", StringComparison.OrdinalIgnoreCase);
       NameValueCollection collection = ParseQuery(context.Request.RawUrl);
@@ -156,13 +157,15 @@ namespace FuseSolution.Tracker {
           Debug.WriteLineIf(Logger.TrackerLog.TraceError, string.Format("Parameters invalid!"));
         }
         Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose, 
-            string.Format("Tracker's reponse for this peer from DHT: {0}", par.Response.ToString()));
+            string.Format("\tVerbose: Tracker's reponse for this peer {0} from DHT: {1}", 
+            par.ClientAddress ,par.Response.ToString()));
       }
       //Got all I need, now announce myself
       _proxy.AnnouncePeer(parameters.InfoHash, parameters);
       RaiseAnnounceReceived(parameters);
       Debug.WriteLineIf(Logger.TrackerLog.TraceInfo,
-            string.Format("Tracker's reponse for this peer from client: {0}", parameters.Response.ToString()));
+            string.Format("Tracker's reponse for this peer from client {0}\n{1}", 
+            parameters.ClientAddress.ToString(), parameters.Response.ToString()));
     }
 
     /**

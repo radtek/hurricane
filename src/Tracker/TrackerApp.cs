@@ -107,7 +107,6 @@ namespace FuseSolution.Tracker {
 
       SetupTorrentWatcher();
 
-
       while (true) {
         lock (tracker)
           foreach (SimpleTorrentManager m in tracker) {
@@ -178,7 +177,7 @@ namespace FuseSolution.Tracker {
       }
       
       Debug.Listeners.Add(new TextWriterTraceListener(Console.Out));
-      Debug.WriteLine("starting FrontendEngine");
+      Debug.WriteLine("Starting DhtTracker FrontendEngine");
       new MySimpleTracker(t);
     }
   }
