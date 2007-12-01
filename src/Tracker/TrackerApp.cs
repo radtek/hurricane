@@ -125,7 +125,8 @@ namespace FuseSolution.Tracker {
       ListenerBase listener = new DhtListener(prefixes, t);
       */
 
-      _listener = new DhtListener((int)options["dht_port"], (DhtType)options["dht_type"]);
+      _listener = new DhtListener((int)options["tracker_port"], (DhtType)options["dht_type"],
+          (int)options["dht_port"]);
       _interval = (int)options["interval"];
       tracker = new Tracker();
       tracker.RegisterListener(_listener);

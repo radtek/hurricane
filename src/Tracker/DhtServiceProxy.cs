@@ -13,7 +13,10 @@ namespace FuseSolution.Tracker {
   class DhtServiceLocator {
     private static IDictionary<DhtType, DhtServiceProxy> _dhts = new Dictionary<DhtType, DhtServiceProxy>();
 
-    public static DhtServiceProxy GetDhtServiceProxy(DhtType dhtType) {
+    /**
+     * @param port: port on localhost that dht service is running at.
+     */
+    public static DhtServiceProxy GetDhtServiceProxy(DhtType dhtType, int port) {
       switch (dhtType) {
         case DhtType.Local:
           if (!_dhts.ContainsKey(DhtType.Local)) {
@@ -24,9 +27,7 @@ namespace FuseSolution.Tracker {
         case DhtType.BrunetDht:
         default:
           if (!_dhts.ContainsKey(DhtType.BrunetDht)) {
-            //IDht dht = Ipop.DhtServiceClient.GetSoapDhtClient(51515);
-            //TODO: Make it not hard-coded
-            IDht dht = Ipop.DhtServiceClient.GetXmlRpcDhtClient(51515);
+            IDht dht = Ipop.DhtServiceClient.GetXmlRpcDhtClient(port);
             _dhts[DhtType.BrunetDht] = new DhtServiceProxy(dht);
           }
           return _dhts[DhtType.BrunetDht];
