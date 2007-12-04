@@ -64,10 +64,5 @@
         <include name="nunit.framework.dll" />
       </references>
     </csc>
-    <copy todir="${lib.dir}">
-      <fileset basedir="${build.dir}">
-        <include name="DhtTracker.exe" />
-      </fileset>
-    </copy>
   </target>
 </project>
