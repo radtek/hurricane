@@ -25,6 +25,16 @@ namespace MonoTorrent
 
         static void Main(string[] args)
         {
+          int port = 12121;
+          for (int i = 0; i < args.Length; i++) {
+            switch (args[i]) {
+              default:
+                //port
+                port = Int32.Parse(args[i]);
+                break;
+            }
+          }
+
 			/* Generate the paths to the folder we will save .torrent files to and where we download files to */
             basePath = Environment.CurrentDirectory;						// This is the directory we are currently in
             torrentsPath = Path.Combine(basePath, "Torrents");				// This is the directory we will save .torrents to
@@ -42,7 +52,7 @@ namespace MonoTorrent
             listener = new Top10Listener(25);
             try
             {
-                StartEngine();
+                StartEngine(port);
             }
             catch(Exception ex)
             {
@@ -51,15 +61,10 @@ namespace MonoTorrent
             }
         }
 
-        private static void StartEngine()
+        private static void StartEngine(int listenPort)
         {
-            int port;
+            int port = listenPort;
             Torrent torrent = null;
-            // Ask the user what port they want to use for incoming connections
-            Console.Write(Environment.NewLine + "Choose a listen port: ");
-            while (!Int32.TryParse(Console.ReadLine(), out port)) { }
-
-
 
             // Create the settings which the engine will use
             // downloadsPath - this is the path where we will save all the files to
@@ -73,7 +78,7 @@ namespace MonoTorrent
             // 50 open connections - should never really need to be changed
             // Unlimited download speed - valid range from 0 -> int.Max
             // Unlimited upload speed - valid range from 0 -> int.Max
-            TorrentSettings torrentDefaults = new TorrentSettings(4, 150, 0, 25);
+            TorrentSettings torrentDefaults = new TorrentSettings(4, 150, 0, 0);
 
             // Create an instance of the engine.
             engine = new ClientEngine(engineSettings);
