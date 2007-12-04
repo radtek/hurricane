@@ -44,37 +44,45 @@ namespace FuseSolution.Tracker {
       : this(endpoint, DhtType.BrunetDht) {
     }
 
-
+    /**
+     * @deprecated
+     */
     public DhtListener(IPEndPoint endpoint, DhtType dhtType) {
       if (endpoint == null)
         throw new ArgumentNullException("endpoint");
 
       listener = new System.Net.HttpListener();
       this.endpoint = endpoint;
-      _proxy = DhtServiceLocator.GetDhtServiceProxy(dhtType);
+      _proxy = DhtServiceLocator.GetDhtServiceProxy(dhtType, 51515);
     }
 
     /**
      * Construct DhtListener with a collection of prefixes
      */
-    public DhtListener(ICollection<string> prefixes, DhtType dhtType) {
+    public DhtListener(ICollection<string> prefixes, DhtType dhtType, int dhtPort) {
       listener = new System.Net.HttpListener();
       foreach (string prefix in prefixes) {
         listener.Prefixes.Add(prefix);
       }
-      _proxy = DhtServiceLocator.GetDhtServiceProxy(dhtType);
+      _proxy = DhtServiceLocator.GetDhtServiceProxy(dhtType ,dhtPort);
     }
 
     /**
      * Let the listener simply listens to all the requests to the specific port. 
      * (that not handled by others)
      */
-    public DhtListener(int port, DhtType dhtType) {
-      listener = new System.Net.HttpListener();
-      listener.Prefixes.Add(string.Format("http://*:{0}/", port));
-      _proxy = DhtServiceLocator.GetDhtServiceProxy(dhtType);
+    public DhtListener(int trackerPort, DhtType dhtType, int dhtPort)
+      : this(ListenToAllPrefixes('*', trackerPort), dhtType, dhtPort) {
     }
 
+    /**
+     * @see <a href="http://msdn2.microsoft.com/en-us/library/system.net.httplistener.aspx">Use of '+' and '* mark'</a>
+     */
+    private static ICollection<string> ListenToAllPrefixes(char plusOrAsterisk, int trackerPort) {
+      ICollection<string> c = new List<string>();
+      c.Add(string.Format("http://{0}:{1}/", plusOrAsterisk, trackerPort));
+      return c;
+    }
 
     #endregion Constructors
 
@@ -173,20 +181,20 @@ namespace FuseSolution.Tracker {
       foreach (PeerEntry entry in entries) {
         AnnounceParameters par = GenerateAnnounceParameters(parameters.InfoHash, entry);
         if (par.IsValid) {
-          //Tracker will write to the par.Reponse but we don't use it
+          //Tracker will write to the par.Response but we don't use it
           RaiseAnnounceReceived(par);
         } else {
           Debug.WriteLineIf(Logger.TrackerLog.TraceError, string.Format("Parameters invalid!"));
         }
         Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose, 
-            string.Format("\tVerbose: Tracker's reponse for this peer {0} from DHT: {1}", 
+            string.Format("\tVerbose: Tracker's response for this peer {0} from DHT: {1}", 
             par.ClientAddress ,par.Response.ToString()));
       }
       //Got all I need, now announce myself
       _proxy.AnnouncePeer(parameters.InfoHash, parameters);
       RaiseAnnounceReceived(parameters);
       Debug.WriteLineIf(Logger.TrackerLog.TraceInfo,
-            string.Format("Tracker's reponse for this peer from client {0}\n{1}", 
+            string.Format("Tracker's response for this peer from client {0}\n{1}", 
             parameters.ClientAddress.ToString(), parameters.Response.ToString()));
     }
 
