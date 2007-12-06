@@ -8,11 +8,12 @@ using System.Net;
 using MonoTorrent.Tracker;
 using Ipop;
 using FuseSolution.Common;
+using log4net;
 
 namespace FuseSolution.Tracker {
   class DhtListener : ListenerBase {
     #region Fields
-
+    private static readonly ILog log = LogManager.GetLogger(typeof(DhtListener));
     private IPEndPoint endpoint;
     private System.Net.HttpListener listener;
     private DhtServiceProxy _proxy;
@@ -123,7 +124,8 @@ namespace FuseSolution.Tracker {
       }
       //We still continue to serve the next request
       listener.BeginGetContext(EndGetRequest, null);
-      Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose, string.Format("Begin to serve the next request"));
+      //Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose, string.Format("Begin to serve the next request"));
+      Logger.WriteLineIf(LogLevel.Verbose, log, string.Format("Begin to serve the next request"));
     }
 
     /**
@@ -136,7 +138,7 @@ namespace FuseSolution.Tracker {
       RequestParameters parameters;
       bool isScrape = context.Request.RawUrl.StartsWith("/scrape", StringComparison.OrdinalIgnoreCase);
       NameValueCollection collection = ParseQuery(context.Request.RawUrl);
-      Console.WriteLine(string.Format("Request Type: {0}", isScrape ? "scrape" : "announce"));
+      Debug.WriteLineIf(Logger.TrackerLog.TraceInfo,string.Format("Request Type: {0}", isScrape ? "scrape" : "announce"));
       if (isScrape) {
         parameters = new ScrapeParameters(collection, context.Request.RemoteEndPoint.Address);
       }
@@ -184,6 +186,7 @@ namespace FuseSolution.Tracker {
           //Tracker will write to the par.Response but we don't use it
           RaiseAnnounceReceived(par);
         } else {
+          log.Error("Parameters invaild!");
           Debug.WriteLineIf(Logger.TrackerLog.TraceError, string.Format("Parameters invalid!"));
         }
         Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose, 

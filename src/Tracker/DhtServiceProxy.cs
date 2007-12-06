@@ -81,7 +81,7 @@ namespace FuseSolution.Tracker {
     public bool AnnouncePeer(byte[] infoHash, PeerEntry peer) {
       //Firing DHT Put
       bool succ = _dht.Put(Encoding.UTF8.GetString(infoHash), peer.Serialize(), (int)_interval_alg.Interval);
-      Console.WriteLine(string.Format("{0} peer to DHT", succ ? "Successfully announced" : "Failed to announce"));
+      Debug.WriteLineIf(Logger.TrackerLog.TraceInfo, string.Format("{0} peer to DHT", succ ? "Successfully announced" : "Failed to announce"));
       return succ;
     }
   }

@@ -17,6 +17,12 @@
     <call target="buildDhtTracker" />
   </target>
 
+  <target name="log4net">
+    <property name="debug" value="false" />
+    <property name="define" value="LOG4NET" />
+    <call target="buildDhtTracker" />
+  </target>
+
   <target name="test">
     <property name="debug" value="true" />
     <property name="define" value="FUSE_DEBUG,FUSE_NUNIT,TRACKER_NUNIT" />
@@ -62,6 +68,7 @@
         <include name="${build.dir}/MonoTorrent.dll" />
         <include name="${build.dir}/LocalHT.dll" />
         <include name="nunit.framework.dll" />
+        <include name="${build.dir}/log4net.dll" />
       </references>
     </csc>
   </target>
