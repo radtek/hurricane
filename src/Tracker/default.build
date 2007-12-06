@@ -17,7 +17,7 @@
     <call target="buildDhtTracker" />
   </target>
 
-  <target name="log4net">
+  <target name="l4n">
     <property name="debug" value="false" />
     <property name="define" value="LOG4NET" />
     <call target="buildDhtTracker" />

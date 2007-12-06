@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
@@ -8,12 +9,11 @@ using System.Net;
 using MonoTorrent.Tracker;
 using Ipop;
 using FuseSolution.Common;
-using log4net;
 
 namespace FuseSolution.Tracker {
   class DhtListener : ListenerBase {
     #region Fields
-    private static readonly ILog log = LogManager.GetLogger(typeof(DhtListener));
+    private static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(DhtListener));
     private IPEndPoint endpoint;
     private System.Net.HttpListener listener;
     private DhtServiceProxy _proxy;
@@ -125,7 +125,7 @@ namespace FuseSolution.Tracker {
       //We still continue to serve the next request
       listener.BeginGetContext(EndGetRequest, null);
       //Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose, string.Format("Begin to serve the next request"));
-      Logger.WriteLineIf(LogLevel.Verbose, log, string.Format("Begin to serve the next request"));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format("Begin to serve the next request"));
     }
 
     /**
@@ -186,8 +186,8 @@ namespace FuseSolution.Tracker {
           //Tracker will write to the par.Response but we don't use it
           RaiseAnnounceReceived(par);
         } else {
-          log.Error("Parameters invaild!");
-          Debug.WriteLineIf(Logger.TrackerLog.TraceError, string.Format("Parameters invalid!"));
+          Logger.WriteLineIf(LogLevel.Error, _log_props, string.Format("Parameters invalid!"));
+          //Debug.WriteLineIf(Logger.TrackerLog.TraceError, string.Format("Parameters invalid!"));
         }
         Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose, 
             string.Format("\tVerbose: Tracker's response for this peer {0} from DHT: {1}", 
