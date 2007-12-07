@@ -92,16 +92,20 @@ namespace FuseSolution.Tracker {
   }
 
   class MySimpleTracker {
+    #region Fields
+    private static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(MySimpleTracker));
+
     MonoTorrent.Tracker.Tracker tracker;
     TorrentFolderWatcher watcher;
     const string TORRENT_DIR = "Torrents";
     ListenerBase _listener;
-    int _tracker_port = 10000;
-    int _dht_port = 51515;
-    int _interval = 20; //in seconds
+    int _interval = 20; //in seconds 
+    #endregion
 
+    #region Constructors
     ///<summary>Start the Tracker. Start Watching the TORRENT_DIR Directory for new Torrents.</summary>
-    public MySimpleTracker(IDictionary options) {
+    public MySimpleTracker(IDictionary options)
+    {
       /* The following code not necessary when found a way to set DhtListener listen to all the prefixes
       System.Net.IPEndPoint listenpoint = new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, 10000);
       Console.WriteLine("Listening at: {0}", listenpoint);
@@ -132,7 +136,8 @@ namespace FuseSolution.Tracker {
       tracker.RegisterListener(_listener);
       SetupTorrentWatcher();
       StartTracker();
-    }
+    } 
+    #endregion
 
     public void StartTracker() {
       _listener.Start();
@@ -204,9 +209,18 @@ namespace FuseSolution.Tracker {
       int tracker_port = 10000;
       int dht_port = 51515;
       int interval = 20;
+      string l4n_config = null;
 
       for (int i = 0; i < args.Length; i++) {
         switch (args[i]) {
+          case "-l4n":
+            if (i == args.Length - 1) {
+              //no next value
+              Console.Error.WriteLine("No l4n config specified");
+              return;
+            }
+            l4n_config = args[++i];
+            break;
           case "-l":
             t = DhtType.Local;
             break;
@@ -249,7 +263,13 @@ namespace FuseSolution.Tracker {
         }
       }
 
-      Debug.WriteLine(string.Format("Starting DhtTracker FrontendEngine at port: {0}", tracker_port));
+      if (string.IsNullOrEmpty(l4n_config)) {
+        Logger.LoadConfig();
+      } else {
+        Logger.LoadConfig(l4n_config);
+      }
+      //Debug.WriteLine(string.Format("Starting DhtTracker FrontendEngine at port: {0}", tracker_port));
+      Logger.WriteLineIf(LogLevel.Info, _log_props, string.Format("Starting DhtTracker FrontendEngine at port: {0}", tracker_port));
       IDictionary c = new ListDictionary();
       c.Add("dht_type", t);
       c.Add("tracker_port", tracker_port);

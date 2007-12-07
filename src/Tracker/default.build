@@ -30,7 +30,6 @@
   </target>
 
   <target name="clean" description="Deletes the current configuration">
-    <delete dir="${build.dir}/" failonerror="false"/>
     <delete dir="${build.dir}/${exe}" failonerror="false"/>
     <delete dir="${build.dir}/${dll}" failonerror="false"/>
   </target>
@@ -53,6 +52,7 @@
         <include name="PeerEntry.cs" />
         <include name="../Common/Enums.cs" />
         <include name="../Common/Logger.cs" />
+        <include name="../Common/LocalHT.cs" />
         <include name="TrackerApp.cs" />
       </sources>
       <references>
@@ -66,7 +66,6 @@
         <include name="${build.dir}/Mono.Fuse.dll" />
         <include name="${build.dir}/CookComputing.XmlRpcV2.dll" />
         <include name="${build.dir}/MonoTorrent.dll" />
-        <include name="${build.dir}/LocalHT.dll" />
         <include name="nunit.framework.dll" />
         <include name="${build.dir}/log4net.dll" />
       </references>

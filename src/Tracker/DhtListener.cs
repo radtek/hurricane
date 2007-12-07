@@ -115,12 +115,15 @@ namespace FuseSolution.Tracker {
       context = listener.EndGetContext(result);
       try {
         HandleRequest(context);
-        Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose,
+        //Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose,
+        //    string.Format("Sending response to {0}", context.Request.RemoteEndPoint.ToString()));
+        Logger.WriteLineIf(LogLevel.Verbose, _log_props,
             string.Format("Sending response to {0}", context.Request.RemoteEndPoint.ToString()));
         context.Response.Close();
       } catch (Exception e) {
-        Debug.WriteLineIf(Logger.TrackerLog.TraceError, "Error in handling this request");
-        Debug.WriteLineIf(Logger.TrackerLog.TraceError, e);
+        //Debug.WriteLineIf(Logger.TrackerLog.TraceError, "Error in handling this request");
+        //Debug.WriteLineIf(Logger.TrackerLog.TraceError, e);
+        Logger.WriteLineIf(LogLevel.Error, _log_props, "Error in handling this request", e);
       }
       //We still continue to serve the next request
       listener.BeginGetContext(EndGetRequest, null);
@@ -196,9 +199,12 @@ namespace FuseSolution.Tracker {
       //Got all I need, now announce myself
       _proxy.AnnouncePeer(parameters.InfoHash, parameters);
       RaiseAnnounceReceived(parameters);
-      Debug.WriteLineIf(Logger.TrackerLog.TraceInfo,
-            string.Format("Tracker's response for this peer from client {0}\n{1}", 
-            parameters.ClientAddress.ToString(), parameters.Response.ToString()));
+      //Debug.WriteLineIf(Logger.TrackerLog.TraceInfo,
+      //      string.Format("Tracker's response for this peer from client {0}\n{1}", 
+      //      parameters.ClientAddress.ToString(), parameters.Response.ToString()));
+      Logger.WriteLineIf(LogLevel.Info, _log_props,
+          string.Format("Tracker's response for this peer from client {0}:\n{1}",
+          parameters.ClientAddress.ToString(), parameters.Response.ToString()));
     }
 
     /**

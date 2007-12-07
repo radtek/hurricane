@@ -36,8 +36,11 @@ namespace FuseSolution.Tracker {
   }
   
   class DhtServiceProxy {
+    #region Fields
+    private static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(DhtServiceProxy));
     IDht _dht;
-    IIntervalAlgorithm _interval_alg;
+    IIntervalAlgorithm _interval_alg; 
+    #endregion
 
     public DhtServiceProxy(IDht dht) {
       _dht = dht;
@@ -54,18 +57,26 @@ namespace FuseSolution.Tracker {
       ICollection<PeerEntry> peers = new List<PeerEntry>();
       //Firing DHT Get
       DhtGetResult[] results = _dht.Get(Encoding.UTF8.GetString(infoHash));
-      Debug.WriteLineIf(Logger.TrackerLog.TraceInfo, 
+      //Debug.WriteLineIf(Logger.TrackerLog.TraceInfo, 
+      //    string.Format("{0} peer(s) retrieved from DHT", results.Length));
+      Logger.WriteLineIf(LogLevel.Info, _log_props,
           string.Format("{0} peer(s) retrieved from DHT", results.Length));
       int index = 0;
       foreach (DhtGetResult r in results) {
         try {
+          Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+              string.Format("Raw stringValue of the peer to be deserialized: {0}", r.valueString));
           PeerEntry entry = new PeerEntry(r.value);
-          Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose, string.Format("Peer entry {0} built:\n{1}", index++,entry.ToString()));
+          //Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose, string.Format("Peer entry {0} built:\n{1}", index++,entry.ToString()));
+          Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+              string.Format("Peer entry #{0} built:\n{1}", index++, entry.ToString()));
           peers.Add(entry);
         } catch (Exception e) {
           //Deserliazation error
-          Debug.WriteLineIf(Logger.TrackerLog.TraceError, "Error when Deserializing result from DHT");
-          Debug.WriteLineIf(Logger.TrackerLog.TraceError, e);
+          //Debug.WriteLineIf(Logger.TrackerLog.TraceError, "Error when Deserializing result from DHT");
+          //Debug.WriteLineIf(Logger.TrackerLog.TraceError, e);
+          Logger.WriteLineIf(LogLevel.Error, _log_props,
+              "Error when Deserializing result from DHT", e);
           continue;
         }
       }
@@ -74,14 +85,21 @@ namespace FuseSolution.Tracker {
 
     public bool AnnouncePeer(byte[] infoHash, AnnounceParameters pars) {
       PeerEntry entry = new PeerEntry(pars);
-      Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose, string.Format("Peer to be announced:\n{0}", entry.ToString()));
+      //Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose, string.Format("Peer to be announced:\n{0}", entry.ToString()));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+          string.Format("Peer to be announced:\n{0}", entry.ToString()));
       return AnnouncePeer(infoHash, entry);
     }
 
     public bool AnnouncePeer(byte[] infoHash, PeerEntry peer) {
       //Firing DHT Put
-      bool succ = _dht.Put(Encoding.UTF8.GetString(infoHash), peer.Serialize(), (int)_interval_alg.Interval);
-      Debug.WriteLineIf(Logger.TrackerLog.TraceInfo, string.Format("{0} peer to DHT", succ ? "Successfully announced" : "Failed to announce"));
+      string s = peer.Serialize();
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+          string.Format("Raw valueString of the peer to be announced: {0}", s));
+      bool succ = _dht.Put(Encoding.UTF8.GetString(infoHash), s, (int)_interval_alg.Interval);
+      //Debug.WriteLineIf(Logger.TrackerLog.TraceInfo, string.Format("{0} peer to DHT", succ ? "Successfully announced" : "Failed to announce"));
+      Logger.WriteLineIf(LogLevel.Info, _log_props,
+          string.Format("{0} peer to DHT", succ ? "Successfully announced" : "Failed to announce"));
       return succ;
     }
   }
