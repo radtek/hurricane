@@ -25,7 +25,9 @@ namespace MonoTorrent
 
         static void Main(string[] args)
         {
-          int port = 12121;
+          
+          int port = 0;
+
           for (int i = 0; i < args.Length; i++) {
             switch (args[i]) {
               default:
@@ -33,6 +35,11 @@ namespace MonoTorrent
                 port = Int32.Parse(args[i]);
                 break;
             }
+          }
+
+          if (port == 0) {
+            Random rnd = new Random();
+            port = rnd.Next(10000, 65535);
           }
 
 			/* Generate the paths to the folder we will save .torrent files to and where we download files to */
