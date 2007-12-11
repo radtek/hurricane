@@ -52,7 +52,9 @@ namespace FuseSolution.Tracker {
      * @return A List of PeerEntries which could have duplicated peers w/ different states. Empty List if no peers for this infoHash
      */
     public ICollection<PeerEntry> GetPeers(byte[] infoHash) {
-      Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose, 
+      //Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose, 
+      //    string.Format("Getting peers for infoHash:\t{0} (Base32)", Base32.Encode(infoHash)));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
           string.Format("Getting peers for infoHash:\t{0} (Base32)", Base32.Encode(infoHash)));
       ICollection<PeerEntry> peers = new List<PeerEntry>();
       //Firing DHT Get

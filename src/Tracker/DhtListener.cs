@@ -135,13 +135,18 @@ namespace FuseSolution.Tracker {
      * http://addr:port/scrape goes to scrape and others go to announce,
      */
     private void HandleRequest(HttpListenerContext context) {
-      Debug.WriteLineIf(Logger.TrackerLog.TraceInfo, string.Format("Request received from {0}.", 
+      //Debug.WriteLineIf(Logger.TrackerLog.TraceInfo, string.Format("Request received from {0}.", 
+      //    context.Request.RemoteEndPoint.ToString()));
+      //Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose,string.Format("RawUrl={0}", context.Request.RawUrl));
+      Logger.WriteLineIf(LogLevel.Info, _log_props, string.Format("Request received from {0}.", 
           context.Request.RemoteEndPoint.ToString()));
-      Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose,string.Format("RawUrl={0}", context.Request.RawUrl));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format("RawUrl={0}", context.Request.RawUrl));
       RequestParameters parameters;
       bool isScrape = context.Request.RawUrl.StartsWith("/scrape", StringComparison.OrdinalIgnoreCase);
       NameValueCollection collection = ParseQuery(context.Request.RawUrl);
-      Debug.WriteLineIf(Logger.TrackerLog.TraceInfo,string.Format("Request Type: {0}", isScrape ? "scrape" : "announce"));
+      //Debug.WriteLineIf(Logger.TrackerLog.TraceInfo,string.Format("Request Type: {0}", isScrape ? "scrape" : "announce"));
+      Logger.WriteLineIf(LogLevel.Info, _log_props,
+          string.Format("Request Type: {0}", isScrape ? "scrape" : "announce"));
       if (isScrape) {
         parameters = new ScrapeParameters(collection, context.Request.RemoteEndPoint.Address);
       }
@@ -192,9 +197,12 @@ namespace FuseSolution.Tracker {
           Logger.WriteLineIf(LogLevel.Error, _log_props, string.Format("Parameters invalid!"));
           //Debug.WriteLineIf(Logger.TrackerLog.TraceError, string.Format("Parameters invalid!"));
         }
-        Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose, 
-            string.Format("\tVerbose: Tracker's response for this peer {0} from DHT: {1}", 
-            par.ClientAddress ,par.Response.ToString()));
+        //Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose, 
+        //    string.Format("Tracker's response for this peer {0} from DHT: {1}", 
+        //    par.ClientAddress ,par.Response.ToString()));
+        Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+            string.Format("Tracker's response for this peer {0} from DHT: {1}",
+            par.ClientAddress, par.Response.ToString()));
       }
       //Got all I need, now announce myself
       _proxy.AnnouncePeer(parameters.InfoHash, parameters);

@@ -166,8 +166,10 @@ namespace FuseSolution.Tracker {
           lock (tracker)
             tracker.Add(trackable);
         } catch (Exception ex) {
-          Debug.WriteLine("Error loading torrent from disk: {0}", ex.Message);
-          Debug.WriteLine("Stacktrace: {0}", ex.ToString());
+          //Debug.WriteLine("Error loading torrent from disk: {0}", ex.Message);
+          //Debug.WriteLine("Stacktrace: {0}", ex.ToString());
+          Logger.WriteLineIf(LogLevel.Error, _log_props,
+              "Error loading torrent from disk", ex);
         }
       };
     }

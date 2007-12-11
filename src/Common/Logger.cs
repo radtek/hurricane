@@ -52,6 +52,9 @@ namespace FuseSolution.Common {
      * Well, this really could be optimized in terms of speed, but let's just keep the simplicity
      */
     public static void WriteLineIf(LogLevel level, IDictionary props, params object[] args) {
+      if (args.Length == 0) {
+        throw new ArgumentException("Object(s) to log needed.");
+      }
 #if TRACE
       TraceWriteLineIf(level, props["trace_switch"] as TraceSwitch, args);
 #endif
