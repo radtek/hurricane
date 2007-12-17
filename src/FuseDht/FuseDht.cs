@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Text;
 using Mono.Fuse;
@@ -19,16 +20,15 @@ namespace FuseSolution.FuseDht {
   /// Interrupts system calls and weaves in FuseDht logic.
   /// </summary>
   public class FuseDht : FileSystem {
-    
+
+    #region Fields
     private FuseDhtHelper _helper;
-
     private FuseDhtUtil _util;
-
     private string _shadowdir;
-
     private RedirectFHFSHelper _rfs;
-
     private FuseDhtHelperFactory.HelperType _helpe_type = FuseDhtHelperFactory.HelperType.Dht;
+    private IDictionary _helper_options = new ListDictionary();
+    #endregion
     
     public static void Main(string[] args) {
 
@@ -70,12 +70,27 @@ namespace FuseSolution.FuseDht {
             //if not specified, use Dht
             _helpe_type = FuseDhtHelperFactory.HelperType.Local;
             break;
+          case "-dp":
+          case "-dht_port":
+            int dht_port = 51515;
+            if (i == args.Length - 1) {
+              //no next value
+              Console.Error.WriteLine("No dht service specified");
+              return false;
+            }
+            if (!Int32.TryParse(args[++i], out dht_port)) {
+              Console.Error.WriteLine("Invalid dht service port");
+              return false;
+            }
+            _helper_options.Add("dht_port", dht_port);
+            break;
           default:
             if (string.IsNullOrEmpty(base.MountPoint)) {
               base.MountPoint = args[i];
               Console.WriteLine("MountPoint: {0}", args[i]);
             } else if (string.IsNullOrEmpty(this._shadowdir)) {
               _shadowdir = args[i];
+              _helper_options.Add("shadow_dir", _shadowdir);
               Console.WriteLine("Shadow: {0}", args[i]);
             }
             break;
@@ -88,7 +103,7 @@ namespace FuseSolution.FuseDht {
       this._rfs = new RedirectFHFSHelper(this._shadowdir);
       this._util = new FuseDhtUtil(this._shadowdir);
       Console.WriteLine("Connecting to {0}", _helpe_type);
-      this._helper = FuseDhtHelperFactory.GetFuseDhtHelper(_helpe_type, this._shadowdir);
+      this._helper = FuseDhtHelperFactory.GetFuseDhtHelper(_helpe_type, this._helper_options);
       this._util.InitDhtRootFileStructure();
       this._util.CreateSelfBaseDir(this._helper.DhtAddress);
       DhtFileManager.StartAsThread(Path.Combine(Path.Combine(_shadowdir, Constants.DIR_DHT_ROOT), Constants.DIR_META), _helper);

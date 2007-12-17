@@ -41,7 +41,7 @@
          output="${build.dir}/FuseDht.exe"
          define="${define}">
       <sources failonempty="true">
-        <include name="LocalHT.cs"/>
+        <include name="../Common/LocalHT.cs"/>
         <include name="Constants.cs"/>
         <include name="FuseDhtConfig.cs"/>
         <include name="RedirectFS-FH.cs"/>
