@@ -26,7 +26,7 @@ namespace FuseSolution.FuseDht {
         IDht dht = new LocalHT();
         return new FuseDhtHelper(dht, shadow_dir);
       } else if (t == HelperType.Dht) {
-        IDht dht = Ipop.DhtServiceClient.GetXmlRpcDhtClient(dht_port);
+        IDht dht = Ipop.DhtServiceClient.GetSoapDhtClient(dht_port);
         return new FuseDhtHelper(dht, shadow_dir);
       } else {
         throw new ArgumentException("No Dht of specified type");
