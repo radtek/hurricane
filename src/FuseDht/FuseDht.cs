@@ -26,6 +26,7 @@ namespace FuseSolution.FuseDht {
     private FuseDhtUtil _util;
     private string _shadowdir;
     private RedirectFHFSHelper _rfs;
+    private bool _auto_renew;
     private FuseDhtHelperFactory.HelperType _helpe_type = FuseDhtHelperFactory.HelperType.Dht;
     private IDictionary _helper_options = new ListDictionary();
     #endregion
@@ -84,6 +85,10 @@ namespace FuseSolution.FuseDht {
             }
             _helper_options.Add("dht_port", dht_port);
             break;
+          case "-ar":
+          case "-auto_renew":
+            _auto_renew = true;
+            break;
           default:
             if (string.IsNullOrEmpty(base.MountPoint)) {
               base.MountPoint = args[i];
@@ -106,7 +111,9 @@ namespace FuseSolution.FuseDht {
       this._helper = FuseDhtHelperFactory.GetFuseDhtHelper(_helpe_type, this._helper_options);
       this._util.InitDhtRootFileStructure();
       this._util.CreateSelfBaseDir(this._helper.DhtAddress);
-      DhtFileManager.StartAsThread(Path.Combine(Path.Combine(_shadowdir, Constants.DIR_DHT_ROOT), Constants.DIR_META), _helper);
+      if (_auto_renew) {
+        DhtFileManager.StartAsThread(Path.Combine(Path.Combine(_shadowdir, Constants.DIR_DHT_ROOT), Constants.DIR_META), _helper); 
+      }
     }
 
     protected override Errno OnRenamePath(string from, string to) {
@@ -195,7 +202,8 @@ namespace FuseSolution.FuseDht {
             _util.WriteToParamFile(basedirName, key, Constants.FILE_INVALIDATE, "0");
             Debug.WriteLine("Calling DhtGet");
             //_helper.AsDhtGet(basedirName, key);
-            _helper.DhtGet(basedirName, key, FuseDhtHelper.OpMode.BQ);
+            //_helper.DhtGet(basedirName, key, FuseDhtHelper.OpMode.BQ);
+            _helper.DhtGet(basedirName, key, FuseDhtHelper.OpMode.Sync);
           } else {
             Debug.WriteLine("DhtGet not called because of on-going read on the same key or cached files are still new");
           }
