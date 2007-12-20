@@ -107,8 +107,9 @@ namespace FuseSolution.FuseDht {
     }
 
     /**
-     * This is method uses the method that is only included in ISoapDht. So if other
-     * interfaces are used here, a casting exception will be thrown.
+     * This method uses the ISoapDht only BlockingQueue feature.
+     * So if other interfaces (XmlRpc) are used here, a casting exception will be thrown.
+     * @deprecated Since now I switched to XmlRpc approach
      */
     public void BQGetProc(object ostate) {
       IList state = (IList)ostate;
@@ -171,6 +172,10 @@ namespace FuseSolution.FuseDht {
       }
     }
 
+    /**
+     * A synchronous way of accessing DHT. The method gets blocked until all the wanted results
+     * returned or DHT-GET failed, in which case there is no result returned.
+     */
     public void GetProc(object ostate) {
       IList state = (IList)ostate;
       string dht_key = state[0] as string;
@@ -186,12 +191,24 @@ namespace FuseSolution.FuseDht {
       Debug.WriteLine(string.Format("Getting {0}", dht_key));
       DhtGetResult[] results = _dht.Get(dht_key);
       Debug.WriteLine(string.Format("Got {0} items", results.Length));
+      //We need the earliest expiration time of all the returned items
+      DateTime dt = DateTime.MinValue;
       foreach (DhtGetResult result in results) {
         DhtDataFile file = new DhtDataFile(s_parent_path, result);
         file.WriteToFile();
+        DateTime end = DateTime.UtcNow - new TimeSpan(0, 0, file.Age) + new TimeSpan(0, 0, file.TTL);
+        if (dt == DateTime.MinValue || end < dt) {
+          //if hasn't been set, set it. Otherwise only set if we can get a smaller datetime
+          dt = end;
+        }
       }
-      
+
+      //set again in case no such filename in Dht
       File.WriteAllText(Path.Combine(s_parent_path, Constants.FILE_DONE), "1"); //done
+      string refresh_path = Path.Combine(new DirectoryInfo(s_parent_path).Parent.GetDirectories(Constants.DIR_ETC)[0].FullName,
+        Constants.FILE_REFRESH);
+      //We use utc to compare, but write local time string for easy to read
+      File.WriteAllText(refresh_path, dt.ToLocalTime().ToString());
     }
 
     public void AsDhtPut(string basedirName, string key, byte[] value, int ttl, PutMode putMode, string s_filePath) {
