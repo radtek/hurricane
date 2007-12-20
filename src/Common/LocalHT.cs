@@ -17,9 +17,11 @@ namespace FuseSolution.Common {
    * as IDht for testing purpose.
    */
   public class LocalHT : Ipop.IDht {
+    #region Fields
     private TableServer _ts;
-
-    public const int MAX_BYTES = 1000;
+    private static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(LocalHT));
+    public const int MAX_BYTES = 1000; 
+    #endregion
 
     private MemBlock MapToBrunetAddress(byte[] key) {
       HashAlgorithm hashAlgo = HashAlgorithm.Create();
@@ -59,7 +61,7 @@ namespace FuseSolution.Common {
       IList result = this._ts.Get(mb_key, MAX_BYTES, null);
       IList values = result[0] as IList;
       List<DhtGetResult> ret = new List<DhtGetResult>();
-      Debug.WriteLine(string.Format("Count of Dht Get Results: {0}", values.Count));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("Count of Dht Get Results: {0}", values.Count));
       foreach (Hashtable ht in values) {
         ret.Add(new DhtGetResult(ht));
       }

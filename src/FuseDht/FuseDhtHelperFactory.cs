@@ -19,7 +19,8 @@ namespace FuseSolution.FuseDht {
     /**
      * @param basedir Mounting point of shadow FS
      */
-    public static FuseDhtHelper GetFuseDhtHelper(HelperType t, IDictionary options) {
+    public static FuseDhtHelper GetFuseDhtHelper(IDictionary options) {
+      HelperType t = (HelperType)options["helper_type"];
       string shadow_dir = options["shadow_dir"] as string;
       int dht_port = (int)options["dht_port"];
       if (t == HelperType.Local) {

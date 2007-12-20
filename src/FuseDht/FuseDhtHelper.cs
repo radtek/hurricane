@@ -10,6 +10,7 @@ using Mono.Unix.Native;
 using Brunet;
 using Brunet.Dht;
 using Ipop;
+using FuseSolution.Common;
 #if FUSE_NUNIT
 using NUnit.Framework;
 #endif
@@ -19,14 +20,17 @@ namespace FuseSolution.FuseDht {
   /// Deal with Dht operations for FuseDht class
   /// </summary>
   public class FuseDhtHelper {
+
+    #region Fields
     public const int DHT_PUT_RETRY_TIMES = 3;
-    
+    private static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(FuseDhtHelper));
     private IDht _dht;
     private string _shadowdir;
     private readonly string _metadir;
     private readonly string _dht_addr;
     private readonly string _ipop_ns;
-    private IXmlRpcManager _rpc;
+    private IXmlRpcManager _rpc; 
+    #endregion
 
     /**
      * Sync : Block until all results retrieved
@@ -56,7 +60,7 @@ namespace FuseSolution.FuseDht {
           _ipop_ns = string.Empty;
         }
       } catch (Exception e) {
-        Debug.WriteLine(e);
+        Logger.WriteLineIf(LogLevel.Verbose, _log_props,e);
         _ipop_ns = string.Empty;
       }
     }
@@ -131,7 +135,7 @@ namespace FuseSolution.FuseDht {
 
       //Handle the exception if this casting fails
       ISoapDht dht = (ISoapDht)_dht;
-      Debug.WriteLine(string.Format("Getting {0}", dht_key));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("Getting {0}", dht_key));
       IBlockingQueue bq = dht.GetAsBlockingQueue(dht_key);
       int i = 0;
       bool set = false;
@@ -141,7 +145,7 @@ namespace FuseSolution.FuseDht {
         // so we'll do this instead.
         try {
           DhtGetResult result = (DhtGetResult)bq.Dequeue();
-          Debug.WriteLine(string.Format("Got #{0} item", i++));
+          Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("Got #{0} item", i++));
           DhtDataFile file = new DhtDataFile(s_parent_path, result);
           file.WriteToFile();
           DateTime end = DateTime.UtcNow - new TimeSpan(0, 0, file.Age) + new TimeSpan(0, 0, file.TTL);
@@ -151,12 +155,12 @@ namespace FuseSolution.FuseDht {
           }
           if(waitingFileName != null && file.Name.Equals(waitingFileName)) {
             //notify the waiting thread that the expected file arrives
-            Debug.WriteLine(string.Format("Got the expected file"));
+            Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("Got the expected file"));
             re.Set();
             set = true;
           }
         } catch (Exception e) {
-          Debug.WriteLine(e);
+          Logger.WriteLineIf(LogLevel.Verbose, _log_props,e);
           break;
         }
       }
@@ -188,9 +192,9 @@ namespace FuseSolution.FuseDht {
                            + key + Path.DirectorySeparatorChar
                            + Constants.DIR_CACHE;
 
-      Debug.WriteLine(string.Format("Getting {0}", dht_key));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("Getting {0}", dht_key));
       DhtGetResult[] results = _dht.Get(dht_key);
-      Debug.WriteLine(string.Format("Got {0} items", results.Length));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("Got {0} items", results.Length));
       //We need the earliest expiration time of all the returned items
       DateTime dt = DateTime.MinValue;
       foreach (DhtGetResult result in results) {
@@ -238,13 +242,13 @@ namespace FuseSolution.FuseDht {
 
       for (int i = 0; i < DHT_PUT_RETRY_TIMES; i++) {
         if (put_mode == PutMode.Create) {
-          Debug.WriteLine(string.Format("Creating {0}, {1}", dht_key, new FileInfo(s_file_path).Name));
+          Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("Creating {0}, {1}", dht_key, new FileInfo(s_file_path).Name));
           result = _dht.Create(dht_key, value, ttl);
         } else {
-          Debug.WriteLine(string.Format("Putting {0}, {1}", dht_key, new FileInfo(s_file_path).Name));
+          Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("Putting {0}, {1}", dht_key, new FileInfo(s_file_path).Name));
           result = _dht.Put(dht_key, value, ttl);
         }
-        Debug.WriteLine(string.Format("Put/Create returned: {0}", result));
+        Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("Put/Create returned: {0}", result));
 
         FileInfo fi = new FileInfo(s_file_path);
         if (!result) {
@@ -266,7 +270,7 @@ namespace FuseSolution.FuseDht {
           fi.MoveTo(s_file_path + Constants.FILE_UPLOADED);
           DhtMetadataFile file = new DhtMetadataFile(ttl, 
               s_file_path + Constants.FILE_UPLOADED);
-          Debug.WriteLine(string.Format("Dropping file {0} to meta folder. {1}", file._meta_filename, DateTime.Now));
+          Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("Dropping file {0} to meta folder. {1}", file._meta_filename, DateTime.Now));
           DhtMetadataFileHandler.WriteAsXml(_metadir, file);
           break;
         } 

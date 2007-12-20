@@ -12,11 +12,15 @@ using Brunet;
 using Brunet.Dht;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
+using FuseSolution.Common;
 
 namespace FuseSolution.FuseDht {
   class FuseDhtUtil {
+    #region Fields
     readonly string _s_dht_root;
     readonly string _shadowdir;
+    private static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(FuseDhtUtil)); 
+    #endregion
 
     public FuseDhtUtil(string shadowdir) {
       _shadowdir = shadowdir;
@@ -68,7 +72,7 @@ namespace FuseSolution.FuseDht {
     }
 
     public void InitKeyDirStructure(string basedirName, string key) {
-      Debug.WriteLine(string.Format("Initializing keydir: {0}/{1}", basedirName, key));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("Initializing keydir: {0}/{1}", basedirName, key));
       string s_key_path = Path.Combine(_s_dht_root, Path.Combine(basedirName, key));
 
       DirectoryInfo di = new DirectoryInfo(s_key_path);
@@ -123,7 +127,7 @@ namespace FuseSolution.FuseDht {
             return null;
         }
       } catch (Exception e) {
-        Debug.WriteLine(e);
+        Logger.WriteLineIf(LogLevel.Verbose, _log_props,e);
         return null;
       }
     }
@@ -180,12 +184,12 @@ namespace FuseSolution.FuseDht {
         //reg = new Regex(@"^[A-Za-z0-9]*\.*[A-Za-z]*$");
         reg = new Regex(@"^[^.~].*[^.~]$");
       } catch {
-        Debug.WriteLine("invalid regular expression");
+        Logger.WriteLineIf(LogLevel.Verbose, _log_props,"invalid regular expression");
         return false;
       }
       ret = reg.IsMatch(filename);
 
-      Debug.WriteLine(string.Format("{0} IsValidName={1}", filename, ret));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("{0} IsValidName={1}", filename, ret));
       return ret;
     }
 
@@ -257,12 +261,12 @@ namespace FuseSolution.FuseDht {
         //reg = new Regex(@"^[A-Za-z0-9]*\.*[A-Za-z]*$");
         reg = new Regex(@".*\.so[.]*.*");
       } catch {
-        Debug.WriteLine("invalid regular expression");
+        Logger.WriteLineIf(LogLevel.Verbose, _log_props,"invalid regular expression");
         return false;
       }
       ret = reg.IsMatch(filename);
 
-      Debug.WriteLine(string.Format("{0} IsIgnoredFilename={1}", filename, ret));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("{0} IsIgnoredFilename={1}", filename, ret));
       return ret;
     }
 

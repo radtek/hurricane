@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.Text;
 using System.IO;
 using System.Threading;
@@ -7,15 +8,20 @@ using System.Diagnostics;
 #if FUSE_DEBUG
 using NUnit.Framework;
 #endif
+using FuseSolution.Common;
 
 namespace FuseSolution.FuseDht {
   public class DhtFileManager {
+
+    #region Fields
     List<DhtMetadataFile> _expiringFiles = new List<DhtMetadataFile>();
     DateTime _wakeup_time;
     readonly string _s_meta_dir;
     readonly string _renew_log;
     AutoResetEvent _wakeup_event = new AutoResetEvent(false);
     readonly FuseDhtHelper _helper;
+    private static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(DhtFileManager));  
+    #endregion
 
     public DhtFileManager(string sMetaDir, FuseDhtHelper helper) {
       _s_meta_dir = sMetaDir;
@@ -32,7 +38,7 @@ namespace FuseSolution.FuseDht {
       long l = 0;
       while (true) {
         ScanDirectory(dir);
-        Debug.WriteLine(string.Format("DhtFileManager: #{0} scan at {1}", l++, DateTime.Now));
+        Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("DhtFileManager: #{0} scan at {1}", l++, DateTime.Now));
         TimeSpan sleeping_time = (_wakeup_time - DateTime.UtcNow);
         if (sleeping_time < TimeSpan.Zero) {
           //hurry up. we are already late
@@ -41,7 +47,7 @@ namespace FuseSolution.FuseDht {
           //kinda tired, wait here.
           _wakeup_event.Reset();
           //never feed a sleeping_time < -1 to this
-          Debug.WriteLine(string.Format("DhtFileManager: Wait until LocalTime {0}", _wakeup_time.ToLocalTime()));
+          Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("DhtFileManager: Wait until LocalTime {0}", _wakeup_time.ToLocalTime()));
           _wakeup_event.WaitOne(sleeping_time, true);
         }
       }
@@ -60,12 +66,12 @@ namespace FuseSolution.FuseDht {
     }
 
     public void OnNewFileComes(object source, FileSystemEventArgs e) {
-      Debug.WriteLine(string.Format("DhtFileManager: New File {0} comes at {1}, threadID: {2}", 
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("DhtFileManager: New File {0} comes at {1}, threadID: {2}", 
           e.Name, DateTime.Now, Thread.CurrentThread.GetHashCode()));
       string s_file = e.FullPath;
       DhtMetadataFile meta = DhtMetadataFileHandler.ReadFromXml(s_file);
       if(meta.EndTimeUtc < _wakeup_time) {
-        Debug.WriteLine(string.Format("EndTimeUtc of this file earilier than _wakeup_time, Set event. {0}", 
+        Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("EndTimeUtc of this file earilier than _wakeup_time, Set event. {0}", 
             DateTime.Now));
         _wakeup_event.Set();
       }
@@ -75,11 +81,11 @@ namespace FuseSolution.FuseDht {
       FileInfo[] files = dir.GetFiles();
       if (files.Length == 0) {
         //if the folder is empty, wait 5 more seconds
-        Debug.WriteLine(string.Format("DhtFileManager: Folder empty. Wait 10 more seconds"));
+        Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("DhtFileManager: Folder empty. Wait 10 more seconds"));
         _wakeup_time = DateTime.UtcNow + new TimeSpan(0, 0, 10);
         return;
       } else {
-        Debug.WriteLine(string.Format("{0} files under this folder", files.Length));
+        Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("{0} files under this folder", files.Length));
       }
 
       foreach(FileInfo f in files) {
@@ -104,7 +110,7 @@ namespace FuseSolution.FuseDht {
         _wakeup_time = DateTime.UtcNow + new TimeSpan(0, 0, 10);
       }
 
-      Debug.WriteLine(string.Format("DhtFileManager: Found {0} expiring files after one scan, threadID: {1}", 
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("DhtFileManager: Found {0} expiring files after one scan, threadID: {1}", 
           _expiringFiles.Count, Thread.CurrentThread.GetHashCode()));
       foreach(DhtMetadataFile m in _expiringFiles) {
         ExpiringEvent(this, new ExpiringArgs(m.s_data_file_path, m.ttl, 
@@ -123,7 +129,7 @@ namespace FuseSolution.FuseDht {
     }
 
     public void DhtPutHandler(Object sender, EventArgs e) {
-      Debug.WriteLine(string.Format("DhtFileManager: DhtPutHanlder caught an event, threadID: {0}", 
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("DhtFileManager: DhtPutHanlder caught an event, threadID: {0}", 
           Thread.CurrentThread.GetHashCode()));
       ExpiringArgs args = (ExpiringArgs)e;
       string data_file = args.DataFileSPath;

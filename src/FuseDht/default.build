@@ -22,6 +22,12 @@
     <call target="buildFuseDht" />
   </target>
 
+  <target name="l4n">
+    <property name="debug" value="false" />
+    <property name="define" value="LOG4NET" />
+    <call target="buildFuseDht" />
+  </target>
+
   <target name="clean" description="Deletes the current configuration">
     <delete dir="${build.dir}/" failonerror="false"/>
     <delete dir="${build.dir}/${exe}" failonerror="false"/>
@@ -42,6 +48,7 @@
          define="${define}">
       <sources failonempty="true">
         <include name="../Common/LocalHT.cs"/>
+        <include name="../Common/Logger.cs"/>
         <include name="Constants.cs"/>
         <include name="FuseDhtConfig.cs"/>
         <include name="RedirectFS-FH.cs"/>
@@ -60,12 +67,12 @@
         <include name="${build.dir}/Brunet.dll" />
         <include name="${build.dir}/Brunet.Dht.dll" />
         <include name="${build.dir}/Brunet.XmlRpc.dll" />
-        <!--<include name="${build.dir}/Ipop.SoapDhtClient.dll" />-->
         <include name="${build.dir}/Ipop.XmlRpcClient.dll" />
         <include name="${build.dir}/Ipop.IBlockingQueue.dll" />
         <include name="${build.dir}/Mono.Fuse.dll" />
         <include name="${build.dir}/CookComputing.XmlRpcV2.dll" />
-        <include name ="Mono.Posix.dll" />
+        <include name="Mono.Posix.dll" />
+        <include name="${build.dir}/log4net.dll" />
       </references>
     </csc>
   </target>

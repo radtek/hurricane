@@ -147,7 +147,8 @@ namespace FuseSolution.Common {
             Trace.WriteLineIf(ts.TraceVerbose, val);
             break;
           case LogLevel.Fatal:
-            Trace.Fail(val);
+            Trace.Fail(val as string);
+            break;
           default:
             break;
         }
@@ -170,12 +171,12 @@ namespace FuseSolution.Common {
               break;
             case LogLevel.Fatal:
               string detail_message = cat;
-              Trace.Fail(val, detail_message);
+              Trace.Fail(val as string, detail_message);
+              break;
             default:
               break;
           }
         } else if (args[1] is Exception) {
-          object val = args[0];
           Exception e = args[1] as Exception;
           switch (level) {
             case LogLevel.Error:
@@ -220,7 +221,8 @@ namespace FuseSolution.Common {
             Debug.WriteLineIf(ts.TraceVerbose, val);
             break;
           case LogLevel.Fatal:
-            Debug.Fail(val);
+            Debug.Fail(val as string);
+            break;
           default:
             break;
         }
@@ -243,12 +245,12 @@ namespace FuseSolution.Common {
               break;
             case LogLevel.Fatal:
               string detail_message = cat;
-              Debug.Fail(val, detail_message);
+              Debug.Fail(val as string, detail_message);
+              break;
             default:
               break;
           }
         } else if (args[1] is Exception) {
-          object val = args[0];
           Exception e = args[1] as Exception;
           switch (level) {
             case LogLevel.Error:

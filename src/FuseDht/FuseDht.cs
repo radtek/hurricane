@@ -10,6 +10,7 @@ using System.Threading;
 using Brunet;
 using System.Runtime.Remoting.Messaging;
 using System.IO;
+using FuseSolution.Common;
 #if FUSE_NUNIT
 using NUnit.Framework;
 #endif
@@ -22,22 +23,24 @@ namespace FuseSolution.FuseDht {
   public class FuseDht : FileSystem {
 
     #region Fields
+    private static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(FuseDht));
     private FuseDhtHelper _helper;
     private FuseDhtUtil _util;
     private string _shadowdir;
     private RedirectFHFSHelper _rfs;
     private bool _auto_renew;
-    private FuseDhtHelperFactory.HelperType _helpe_type = FuseDhtHelperFactory.HelperType.Dht;
+    private FuseDhtHelperFactory.HelperType _helper_type = FuseDhtHelperFactory.HelperType.Dht;
+    private int _dht_port = 51515;
     private IDictionary _helper_options = new ListDictionary();
     #endregion
     
     public static void Main(string[] args) {
-
+      Logger.LoadConfig();
       try {
         using (FuseDht fs = new FuseDht()) {
           string[] unhandled = fs.ParseFuseArguments(args);
           foreach (string key in fs.FuseOptions.Keys) {
-            Console.WriteLine("Option: {0}={1}", key, fs.FuseOptions[key]);
+            Console.WriteLine("Option={1}", key, fs.FuseOptions[key]);
           }
           if (!fs.ParseArguments(unhandled))
             return;
@@ -47,8 +50,8 @@ namespace FuseSolution.FuseDht {
       } catch (System.Net.WebException) {
         Console.Error.WriteLine("Soap/XmlRpc Dht interface not started. Please start it first");
       } catch (Exception e) {
-        Console.WriteLine("System cannot started");
-        Debug.WriteLine(e);
+        Logger.WriteLineIf(LogLevel.Fatal, _log_props,
+              "System cannot started", e);
         //if caught unhandled exception, terminates.
         Thread.CurrentThread.Abort();
       }
@@ -69,21 +72,19 @@ namespace FuseSolution.FuseDht {
             return false;
           case "-l":
             //if not specified, use Dht
-            _helpe_type = FuseDhtHelperFactory.HelperType.Local;
+            _helper_type = FuseDhtHelperFactory.HelperType.Local;
             break;
           case "-dp":
           case "-dht_port":
-            int dht_port = 51515;
             if (i == args.Length - 1) {
               //no next value
               Console.Error.WriteLine("No dht service specified");
               return false;
             }
-            if (!Int32.TryParse(args[++i], out dht_port)) {
+            if (!Int32.TryParse(args[++i], out _dht_port)) {
               Console.Error.WriteLine("Invalid dht service port");
               return false;
             }
-            _helper_options.Add("dht_port", dht_port);
             break;
           case "-ar":
           case "-auto_renew":
@@ -92,11 +93,11 @@ namespace FuseSolution.FuseDht {
           default:
             if (string.IsNullOrEmpty(base.MountPoint)) {
               base.MountPoint = args[i];
-              Console.WriteLine("MountPoint: {0}", args[i]);
+              Console.WriteLine("MountPoint", args[i]);
             } else if (string.IsNullOrEmpty(this._shadowdir)) {
               _shadowdir = args[i];
               _helper_options.Add("shadow_dir", _shadowdir);
-              Console.WriteLine("Shadow: {0}", args[i]);
+              Console.WriteLine("Shadow", args[i]);
             }
             break;
         }
@@ -105,10 +106,13 @@ namespace FuseSolution.FuseDht {
     }
 
     void InitFuseDhtSystem() {
+      _helper_options.Add("helper_type", _helper_type);
+      _helper_options.Add("dht_port", _dht_port);
+
       this._rfs = new RedirectFHFSHelper(this._shadowdir);
       this._util = new FuseDhtUtil(this._shadowdir);
-      Console.WriteLine("Connecting to {0}", _helpe_type);
-      this._helper = FuseDhtHelperFactory.GetFuseDhtHelper(_helpe_type, this._helper_options);
+      Console.WriteLine("Connecting to {0}", _helper_type);
+      this._helper = FuseDhtHelperFactory.GetFuseDhtHelper(this._helper_options);
       this._util.InitDhtRootFileStructure();
       this._util.CreateSelfBaseDir(this._helper.DhtAddress);
       if (_auto_renew) {
@@ -117,8 +121,8 @@ namespace FuseSolution.FuseDht {
     }
 
     protected override Errno OnRenamePath(string from, string to) {
-
-      Debug.WriteLine(string.Format("OnRenamePath, from={0}, to={1}: {2}", from, to, System.DateTime.Now));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+          string.Format("OnRenamePath, from={0}, to={1}", from, to));
       
       //Don't allow renaming of keydir and basedir
       string[] paths = FuseDhtUtil.ParsePath(from);
@@ -147,8 +151,8 @@ namespace FuseSolution.FuseDht {
     }
 
     protected override Errno OnCreateDirectory(string path, FilePermissions mode) {
-
-      Debug.WriteLine(string.Format("OnCreateDirectory, path={0}, mode={1}: {2}", path, mode, System.DateTime.Now));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+          string.Format("OnCreateDirectory, path={0}, mode={1}", path, mode));
 
       //dht/basedir or dht/basedir/keydir
       //or dht/KeyDirGenerator/basedir
@@ -167,8 +171,8 @@ namespace FuseSolution.FuseDht {
         try {
           _util.InitKeyDirStructure(basedirName, keydir.Name);
         } catch (Exception e) {
-          Debug.WriteLine(e);
-          Console.Error.WriteLine("Init key dir failed. Removing dir...");
+          Logger.WriteLineIf(LogLevel.Error, _log_props,
+              "Init key dir failed. Removing dir...", e);
           Directory.Delete(s_path, true);
           return Errno.EACCES;
         }
@@ -178,8 +182,8 @@ namespace FuseSolution.FuseDht {
 
     protected override Errno OnReadDirectory(string path, OpenedPathInfo fi,
         out IEnumerable<DirectoryEntry> subPaths) {
-      
-      Debug.WriteLine(string.Format("OnReadDirectory, path={0}, handle={1}: {2}", path, fi.Handle, System.DateTime.Now));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+          string.Format("OnReadDirectory, path={0}, handle={1}", path, fi.Handle));
 
       //only block read of "cache"
       string[] paths = FuseDhtUtil.ParsePath(path);
@@ -200,12 +204,14 @@ namespace FuseSolution.FuseDht {
           if (shouldCallDht) {
             //write to invalidate file even if it's already false/0
             _util.WriteToParamFile(basedirName, key, Constants.FILE_INVALIDATE, "0");
-            Debug.WriteLine("Calling DhtGet");
+            Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+                "Calling DhtGet");
             //_helper.AsDhtGet(basedirName, key);
             //_helper.DhtGet(basedirName, key, FuseDhtHelper.OpMode.BQ);
             _helper.DhtGet(basedirName, key, FuseDhtHelper.OpMode.Sync);
           } else {
-            Debug.WriteLine("DhtGet not called because of on-going read on the same key or cached files are still new");
+            Logger.WriteLineIf(LogLevel.Info, _log_props,
+                "DhtGet not called because of on-going read on the same key or cached files are still new");
           }
         }
       }
@@ -239,7 +245,8 @@ namespace FuseSolution.FuseDht {
         bool succ = Int32.TryParse(File.ReadAllText(fdone[0].FullName), out done);
         
         if (succ && done == 0) {
-          Debug.WriteLine(".done found and equals 0");
+          Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+            ".done found and equals 0");
           return false;
         }
       }
@@ -276,29 +283,33 @@ namespace FuseSolution.FuseDht {
           } else {
             if (dt <= DateTime.Now) {
               //comparison of local times
-              Debug.WriteLine(string.Format("At least one of the files in this directories passed its end time, stale"));
+              Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+                  string.Format("At least one of the files in this directories passed its end time, stale"));
               stale = true;
             }
           }
         }
 
         if (stale) {
-          Debug.WriteLine("Stale. Calling DhtGet");
+          Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+              "Stale. Calling DhtGet");
           shouldCallDht = true;
         }
       } else {
-        Debug.WriteLine("Invalidated");
+        Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+              "Invalidated");
         shouldCallDht = true;
       }
-      Debug.WriteLine(string.Format("ShouldCallDht={0}", shouldCallDht));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+          string.Format("ShouldCallDht={0}", shouldCallDht));
       return shouldCallDht;
     }
 
     protected override Errno OnReleaseHandle(string path, OpenedPathInfo info) {
-
-      Debug.WriteLine(string.Format("OnReleaseHandle, path={0}, handle={1}, openflags={2}: {3}", path, info.Handle, info.OpenFlags, System.DateTime.Now));
-      Errno ret = this._rfs.OnReleaseHandle(path, info);
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+          string.Format("OnReleaseHandle, path={0}, handle={1}, openflags={2}", path, info.Handle, info.OpenFlags));
       
+      Errno ret = this._rfs.OnReleaseHandle(path, info);
       if(ret != 0) {
         return ret;
       }
@@ -329,7 +340,8 @@ namespace FuseSolution.FuseDht {
                 if (ttl == null || put_mode == null) {
                   return Errno.EACCES;
                 }
-                Debug.WriteLine("Calling DhtPut");
+                Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+                    "Calling DhtPut");
                 _helper.AsDhtPut(basedir, key, dht_val, ttl.GetValueOrDefault(),
                     put_mode.GetValueOrDefault(), Path.Combine(_shadowdir, path.Remove(0, 1))); //remove the first "/" of path
               }
@@ -357,7 +369,8 @@ namespace FuseSolution.FuseDht {
             Console.WriteLine(_util.GetShadowPath(path));
             if (FuseDhtConfigHandler.cfgPath.Equals(_util.GetShadowPath(path))) {
               FuseDhtConfigHandler.Refresh();
-              Debug.Write(FuseDhtConfig.GetInstance().ToString());
+              Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+                  FuseDhtConfig.GetInstance().ToString());
             }
             break;
           default:
@@ -368,15 +381,15 @@ namespace FuseSolution.FuseDht {
          * if things caught in here. We just log the message but still return 0 because the release of
          * the handle succeeded.
          */
-        Debug.WriteLine(e);
+        Logger.WriteLineIf(LogLevel.Error, _log_props,
+            e);
       }
       return 0;
     }
 
     protected override Errno OnReadSymbolicLink(string path, out string target) {
-
-      Debug.WriteLine(string.Format("OnReadSymbolicLink, path={0}: {1}", path, System.DateTime.Now));
-
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+          string.Format("OnReadSymbolicLink, path={0}", path));
       Errno err = this._rfs.OnReadSymbolicLink(path, out target);
 
       /*
@@ -398,15 +411,15 @@ namespace FuseSolution.FuseDht {
         default:
           break;
       }
-      Debug.WriteLine(string.Format("Linked to {0}", target));
-
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+          string.Format("Linked to {0}", target));
       return err;
     }
 
 
     protected override Errno OnGetPathStatus(string path, out Stat buf) {
-
-      Debug.WriteLine(string.Format("OnGetPathStatus, path={0}: {1}", path, System.DateTime.Now));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+          string.Format("OnGetPathStatus, path={0}", path));
 
       string[] paths = FuseDhtUtil.ParsePath(path);
 
@@ -431,7 +444,8 @@ namespace FuseSolution.FuseDht {
               bool succ = Int32.TryParse(File.ReadAllText(fdone[0].FullName), out done);
 
               if (succ && done == 0) {
-                Debug.WriteLine(".done found and equals 0");
+                Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+                    ".done found and equals 0");
                 return rs;
               }
             }
@@ -454,7 +468,8 @@ namespace FuseSolution.FuseDht {
               try {
                 shouldCallDht = this.ShouldCallDhtGet(_util.GetFusePath(dir.FullName));
               } catch (Exception e) {
-                Debug.WriteLine(e);
+                Logger.WriteLineIf(LogLevel.Error, _log_props,
+                  e);
                 return Errno.EACCES;
               }
             }
@@ -464,12 +479,14 @@ namespace FuseSolution.FuseDht {
               _helper.DhtGet(basedir.Name, keydir.Name, FuseDhtHelper.OpMode.BQ, finfo.Name, re);
               DateTime t = DateTime.UtcNow;
               re.WaitOne();
-              Debug.WriteLine(string.Format("Waited on expectedFileArrived Event for {0}", 
+              Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+                  string.Format("Waited on expectedFileArrived Event for {0}", 
                   Convert.ToString((DateTime.UtcNow - t).TotalMilliseconds)));
               //the file arrived, so we do this again
               _util.WriteToParamFile(basedir.Name, keydir.Name, Constants.FILE_INVALIDATE, "0");
               Errno e = this._rfs.OnGetPathStatus(path, out buf);
-              Debug.WriteLine(string.Format("\tFilePermission of the path: {0}", buf.st_mode));
+              Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+                  string.Format("\tFilePermission of the path={0}", buf.st_mode));
               return e;
             }
           }
@@ -480,27 +497,28 @@ namespace FuseSolution.FuseDht {
 
       
       Errno ret = this._rfs.OnGetPathStatus(path, out buf);
-      Debug.WriteLine(string.Format("\tFilePermission of the path: {0}", buf.st_mode));
+     
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+          string.Format("\tFilePermission of the path={0}", buf.st_mode));
       return ret;
     }
 
-    #region UnmodifiedMethods
+    #region Unmodified Methods
     protected override Errno OnRemoveFile(string path) {
-
-      Debug.WriteLine(string.Format("OnRemoveFile, path={0}: {1}", path, System.DateTime.Now));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnRemoveFile, path={0}", path));
       return this._rfs.OnRemoveFile(path);
     }
 
     protected override Errno OnRemoveDirectory(string path) {
 
-      Debug.WriteLine(string.Format("OnRemoveDirectory, path={0}: {1}", path, System.DateTime.Now));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnRemoveDirectory, path={0}", path));
       return this._rfs.OnRemoveDirectory(path);
     }
 
     protected override unsafe Errno OnWriteHandle(string path, OpenedPathInfo info,
         byte[] buf, long offset, out int bytesWritten) {
 
-      Debug.WriteLine(string.Format("OnWriteHandle, path={0}, handle={1}, buflength={2}, offset={3}: {4}", path, info.Handle, buf.Length, offset, System.DateTime.Now));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnWriteHandle, path={0}, handle={1}, buflength={2}, offset={3}", path, info.Handle, buf.Length, offset));
 
       return this._rfs.OnWriteHandle(path, info, buf, offset, out bytesWritten);
     }
@@ -508,154 +526,154 @@ namespace FuseSolution.FuseDht {
     protected override unsafe Errno OnReadHandle(string path, OpenedPathInfo info, byte[] buf,
         long offset, out int bytesRead) {
 
-      Debug.WriteLine(string.Format("OnReadHandle, path={0}, handle={1}, buflength={2}, offset={3}: {4}", path, info.Handle, buf.Length, offset, System.DateTime.Now));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnReadHandle, path={0}, handle={1}, buflength={2}, offset={3}", path, info.Handle, buf.Length, offset));
 
       return this._rfs.OnReadHandle(path, info, buf, offset, out bytesRead);
     }
 
     protected override Errno OnChangePathPermissions(string path, FilePermissions mode) {
 
-      Debug.WriteLine(string.Format("OnChangePathPermissions, path={0}, filepermission={1}: {2}", path, mode, System.DateTime.Now));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnChangePathPermissions, path={0}, filepermission={1}", path, mode));
 
       return this._rfs.OnChangePathPermissions(path, mode);
     }
 
     protected override Errno OnOpenHandle(string path, OpenedPathInfo info) {
 
-      Debug.WriteLine(string.Format("OnOpenHandle, path={0}, openflags={1}: {2}", path, info.OpenFlags, System.DateTime.Now));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnOpenHandle, path={0}, openflags={1}", path, info.OpenFlags));
 
       return this._rfs.OnOpenHandle(path, info);
     }
 
     protected override Errno OnFlushHandle(string path, OpenedPathInfo info) {
 
-      Debug.WriteLine(string.Format("OnFlushHandle, path={0}, handle={1}: {2}", path, info.Handle, System.DateTime.Now));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnFlushHandle, path={0}, handle={1}", path, info.Handle));
 
       return this._rfs.OnFlushHandle(path, info);
     }
 
     protected override Errno OnCreateHandle(string path, OpenedPathInfo info, FilePermissions mode) {
 
-      Debug.WriteLine(string.Format("OnCreateHandle, path={0}, openflags={1}, filepermission={2}: {3}", path, info.OpenAccess, mode, System.DateTime.Now));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnCreateHandle, path={0}, openflags={1}, filepermission={2}", path, info.OpenAccess, mode));
 
       return this._rfs.OnCreateHandle(path, info, mode);
     }
 
     protected override Errno OnGetHandleStatus(string path, OpenedPathInfo info, out Stat buf) {
 
-      Debug.WriteLine(string.Format("OnGetHandleStatus, path={0}, handle={1}: {2}", path, info.Handle, System.DateTime.Now));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnGetHandleStatus, path={0}, handle={1}", path, info.Handle));
 
       return this._rfs.OnGetHandleStatus(path, info, out buf);
     }
 
     protected override Errno OnOpenDirectory(string path, OpenedPathInfo info) {
 
-      Debug.WriteLine(string.Format("OnOpenDirectory, path={0}: {1}", path, System.DateTime.Now));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnOpenDirectory, path={0}", path));
 
       return this._rfs.OnOpenDirectory(path, info);
     }
 
     protected override Errno OnAccessPath(string path, AccessModes mask) {
 
-      Debug.WriteLine(string.Format("OnAccessPath, path={0}, mask={1}: {2}", path, mask, System.DateTime.Now));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnAccessPath, path={0}, mask={1}", path, mask));
 
       return this._rfs.OnAccessPath(path, mask);
     }
 
     protected override Errno OnReleaseDirectory(string path, OpenedPathInfo info) {
 
-      Debug.WriteLine(string.Format("OnReleaseDirectory, path={0}, handle={1}: {2}", path, info.Handle, System.DateTime.Now));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnReleaseDirectory, path={0}, handle={1}", path, info.Handle));
 
       return this._rfs.OnReleaseDirectory(path, info);
     }
 
     protected override Errno OnCreateSpecialFile(string path, FilePermissions mode, ulong rdev) {
 
-      Debug.WriteLine(string.Format("OnCreateSpecialFile, path={0}, mode={1}, rdev={2}: {3}", path, mode, rdev, System.DateTime.Now));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnCreateSpecialFile, path={0}, mode={1}, rdev={2}", path, mode, rdev));
 
       return this._rfs.OnCreateSpecialFile(path, mode, rdev);
     }
 
     protected override Errno OnCreateSymbolicLink(string from, string to) {
 
-      Debug.WriteLine(string.Format("OnCreateSymbolicLink, from={0}, to={1}: {2}", from, to, System.DateTime.Now));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnCreateSymbolicLink, from={0}, to={1}", from, to));
 
       return this._rfs.OnCreateSymbolicLink(from, to);
     }
 
     protected override Errno OnGetFileSystemStatus(string path, out Statvfs stbuf) {
 
-      Debug.WriteLine(string.Format("OnGetFileSystemStatus, path={0}: {1}", path, System.DateTime.Now));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnGetFileSystemStatus, path={0}", path));
 
       return this._rfs.OnGetFileSystemStatus(path, out stbuf);
     }
 
     protected override Errno OnSynchronizeHandle(string path, OpenedPathInfo info, bool onlyUserData) {
 
-      Debug.WriteLine(string.Format("OnSynchronizeHandle, path={0}, handle={1}, onlyUserData={2}: {3}", path, info.Handle, onlyUserData, System.DateTime.Now));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnSynchronizeHandle, path={0}, handle={1}, onlyUserData={2}", path, info.Handle, onlyUserData));
 
       return this._rfs.OnSynchronizeHandle(path, info, onlyUserData);
     }
 
     protected override Errno OnSetPathExtendedAttribute(string path, string name, byte[] value, XattrFlags flags) {
 
-      Debug.WriteLine(string.Format("OnSetPathExtendedAttribute, path={0}, name={1}, value={2}, flags={3}: {4}", path, name, Encoding.UTF8.GetString(value), flags, System.DateTime.Now));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnSetPathExtendedAttribute, path={0}, name={1}, value={2}, flags={3}", path, name, Encoding.UTF8.GetString(value), flags));
 
       return this._rfs.OnSetPathExtendedAttribute(path, name, value, flags);
     }
 
     protected override Errno OnGetPathExtendedAttribute(string path, string name, byte[] value, out int bytesWritten) {
 
-      Debug.WriteLine(string.Format("OnGetPathExtendedAttribute, path={0}, name={1}, value={2}: {3}", path, name, Encoding.UTF8.GetString(value), System.DateTime.Now));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnGetPathExtendedAttribute, path={0}, name={1}, value={2}", path, name, Encoding.UTF8.GetString(value)));
 
       return this._rfs.OnGetPathExtendedAttribute(path, name, value, out bytesWritten);
     }
 
     protected override Errno OnListPathExtendedAttributes(string path, out string[] names) {
 
-      Debug.WriteLine(string.Format("OnListPathExtendedAttributes, path={0}: {1}", path, System.DateTime.Now));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnListPathExtendedAttributes, path={0}", path));
 
       return this._rfs.OnListPathExtendedAttributes(path, out names);
     }
 
     protected override Errno OnRemovePathExtendedAttribute(string path, string name) {
 
-      Debug.WriteLine(string.Format("OnRemovePathExtendedAttribute, path={0}, name={1}: {2}", path, name, System.DateTime.Now));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnRemovePathExtendedAttribute, path={0}, name={1}", path, name));
 
       return this._rfs.OnRemovePathExtendedAttribute(path, name);
     }
 
     protected override Errno OnCreateHardLink(string from, string to) {
 
-      Debug.WriteLine(string.Format("OnCreateHardLink, from={0}, to={1}: {2}", from, to, System.DateTime.Now));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnCreateHardLink, from={0}, to={1}", from, to));
 
       return this._rfs.OnCreateHardLink(from, to);
     }
 
     protected override Errno OnChangePathOwner(string path, long uid, long gid) {
 
-      Debug.WriteLine(string.Format("OnChangePathOwner, path={0}, uid={1}, gid={2}: {3}", path, uid, gid, System.DateTime.Now));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnChangePathOwner, path={0}, uid={1}, gid={2}", path, uid, gid));
 
       return this._rfs.OnChangePathOwner(path, uid, gid);
     }
 
     protected override Errno OnTruncateFile(string path, long size) {
 
-      Debug.WriteLine(string.Format("OnTruncateFile, path={0}, size={1}: {2}", path, size, System.DateTime.Now));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnTruncateFile, path={0}, size={1}", path, size));
 
       return this._rfs.OnTruncateFile(path, size);
     }
 
     protected override Errno OnTruncateHandle(string path, OpenedPathInfo info, long size) {
 
-      Debug.WriteLine(string.Format("OnTruncateHandle, path={0}, handle={1}, size={2}: {3}", path, info.Handle, size, System.DateTime.Now));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnTruncateHandle, path={0}, handle={1}, size={2}", path, info.Handle, size));
 
       return this._rfs.OnTruncateHandle(path, info, size);
     }
 
     protected override Errno OnChangePathTimes(string path, ref Utimbuf buf) {
 
-      Debug.WriteLine(string.Format("OnChangePathTimes, path={0}, buf={1}: {2}", path, buf, System.DateTime.Now));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnChangePathTimes, path={0}, buf={1}", path, buf));
 
       return this._rfs.OnChangePathTimes(path, ref buf);
     }
