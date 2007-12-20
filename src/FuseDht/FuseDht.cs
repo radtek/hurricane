@@ -31,6 +31,7 @@ namespace FuseSolution.FuseDht {
     private bool _auto_renew;
     private FuseDhtHelperFactory.HelperType _helper_type = FuseDhtHelperFactory.HelperType.Dht;
     private int _dht_port = 51515;
+    private int _xmlrpc_port = 10000;
     private IDictionary _helper_options = new ListDictionary();
     #endregion
     
@@ -86,6 +87,18 @@ namespace FuseSolution.FuseDht {
               return false;
             }
             break;
+          case "-xp":
+          case "-xmlrpc_port":
+            if (i == args.Length - 1) {
+              //no next value
+              Console.Error.WriteLine("No xmlrpc service specified");
+              return false;
+            }
+            if (!Int32.TryParse(args[++i], out _xmlrpc_port)) {
+              Console.Error.WriteLine("Invalid xmlrpc service port");
+              return false;
+            }
+            break;
           case "-ar":
           case "-auto_renew":
             _auto_renew = true;
@@ -108,6 +121,7 @@ namespace FuseSolution.FuseDht {
     void InitFuseDhtSystem() {
       _helper_options.Add("helper_type", _helper_type);
       _helper_options.Add("dht_port", _dht_port);
+      _helper_options.Add("xmlrpc_port", _xmlrpc_port);
 
       this._rfs = new RedirectFHFSHelper(this._shadowdir);
       this._util = new FuseDhtUtil(this._shadowdir);

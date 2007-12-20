@@ -23,13 +23,13 @@ namespace FuseSolution.FuseDht {
       HelperType t = (HelperType)options["helper_type"];
       string shadow_dir = options["shadow_dir"] as string;
       int dht_port = (int)options["dht_port"];
+      int xmlrpc_port = (int)options["xmlrpc_port"];
       if (t == HelperType.Local) {
         IDht dht = new LocalHT();
-        return new FuseDhtHelper(dht, shadow_dir);
+        return new FuseDhtHelper(dht, xmlrpc_port, shadow_dir);
       } else if (t == HelperType.Dht) {
-        //IDht dht = Ipop.DhtServiceClient.GetSoapDhtClient(dht_port);
         IDht dht = Ipop.DhtServiceClient.GetXmlRpcDhtClient(dht_port);
-        return new FuseDhtHelper(dht, shadow_dir);
+        return new FuseDhtHelper(dht, xmlrpc_port, shadow_dir);
       } else {
         throw new ArgumentException("No Dht of specified type");
       }

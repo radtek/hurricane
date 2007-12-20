@@ -45,23 +45,28 @@ namespace FuseSolution.FuseDht {
       get { return _dht_addr; }
     }
     
-    public FuseDhtHelper(IDht dht, string shadowdir) {
+    public FuseDhtHelper(IDht dht, int xmlRpcPort, string shadowdir) {
       _dht = dht;
       this._shadowdir = shadowdir;
       this._metadir = Path.Combine(Path.Combine(_shadowdir, Constants.DIR_DHT_ROOT), Constants.DIR_META);
       this._dht_addr = _dht.GetDhtInfo()["address"] as string;
-      try {
-        this._rpc = XmlRpcManagerClient.GetXmlRpcManager();
-        object[] rs = _rpc.localproxy("ipop.GetState", new object[0]);
-        if (rs != null && rs.Length > 0) {
-          IDictionary dic = (IDictionary)rs[0];
-          _ipop_ns = dic["ipop_namespace"] as string;
-        } else {
+      if (!(dht is LocalHT)) {
+        try {
+          this._rpc = XmlRpcManagerClient.GetXmlRpcManager(xmlRpcPort);
+          object[] rs = _rpc.localproxy("ipop.GetState", new object[0]);
+          if (rs != null && rs.Length > 0) {
+            IDictionary dic = (IDictionary)rs[0];
+            _ipop_ns = dic["ipop_namespace"] as string;
+          } else {
+            _ipop_ns = string.Empty;
+          }
+        } catch (Exception e) {
+          Logger.WriteLineIf(LogLevel.Verbose, _log_props, e);
           _ipop_ns = string.Empty;
+        } finally {
+          Logger.WriteLineIf(LogLevel.Info, _log_props,
+              string.Format("IPOP Namespace: {0}", _ipop_ns));
         }
-      } catch (Exception e) {
-        Logger.WriteLineIf(LogLevel.Verbose, _log_props,e);
-        _ipop_ns = string.Empty;
       }
     }
 
