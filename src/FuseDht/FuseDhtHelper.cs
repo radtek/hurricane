@@ -199,7 +199,7 @@ namespace FuseSolution.FuseDht {
 
       Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("Getting {0}", dht_key));
       DhtGetResult[] results = _dht.Get(dht_key);
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("Got {0} items", results.Length));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("Got {0} item(s)", results.Length));
       //We need the earliest expiration time of all the returned items
       DateTime dt = DateTime.MinValue;
       foreach (DhtGetResult result in results) {

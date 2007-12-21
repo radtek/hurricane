@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Text;
 using System.IO;
 using System.Diagnostics;
@@ -220,11 +221,12 @@ namespace FuseSolution.FuseDht {
     }
 
     public static byte[] GenerateDhtValue(string fileName, byte[] data) {
-      Hashtable ht = new Hashtable();
-      ht[Constants.DHT_VALUE_ATTR_FN] = fileName;
-      ht[Constants.DHT_VALUE_ATTR_VAL] = data;
+      IDictionary dic = new ListDictionary();
+      dic[Constants.DHT_VALUE_ATTR_FN] = fileName;
+      dic[Constants.DHT_VALUE_ATTR_VAL] = Encoding.UTF8.GetString(data);
+      //dic[Constants.DHT_VALUE_ATTR_VAL] = data;
       System.IO.MemoryStream ms = new System.IO.MemoryStream();
-      AdrConverter.Serialize(ht, ms);
+      AdrConverter.Serialize(dic, ms);
       return ms.ToArray();
     }
 

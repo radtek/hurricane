@@ -46,8 +46,10 @@ namespace FuseSolution.FuseDht {
         _fuse_value = val;
         _filename = (string)_fuse_value[Constants.DHT_VALUE_ATTR_FN];
         _real_filename = _filename;
-        _content = _fuse_value[Constants.DHT_VALUE_ATTR_VAL] as byte[];
+        //_content = _fuse_value[Constants.DHT_VALUE_ATTR_VAL] as byte[];
+        _content = Encoding.UTF8.GetBytes(_fuse_value[Constants.DHT_VALUE_ATTR_VAL] as string);
       } else {
+        //Cannot be parsed as IDictionary
         _content = dgr.value;
         this._filename = GenFileName();
         _real_filename = _filename;

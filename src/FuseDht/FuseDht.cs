@@ -444,6 +444,7 @@ namespace FuseSolution.FuseDht {
           DirectoryInfo dir = finfo.Directory;
           DirectoryInfo keydir = dir.Parent;
           DirectoryInfo basedir = keydir.Parent;
+          //Get the status from shadow path
           Errno rs = this._rfs.OnGetPathStatus(path, out buf);
           if (dir.Name.Equals(Constants.DIR_CACHE)) {
             // in cache dir
@@ -458,16 +459,19 @@ namespace FuseSolution.FuseDht {
               bool succ = Int32.TryParse(File.ReadAllText(fdone[0].FullName), out done);
 
               if (succ && done == 0) {
+                //Another read ongoing
                 Logger.WriteLineIf(LogLevel.Verbose, _log_props,
                     ".done found and equals 0");
                 return rs;
               }
             }
 
-            //otherwise
+            //Otherwise
             if (rs == Errno.ENOENT &&
                 !FuseDhtUtil.IsIgnoredFilename(finfo.Name)) {
               //currently there is no such file
+              Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+                    "No such file in shadow FS");
               bool? blocking = (bool?)_util.ReadParam(basedir.Name, keydir.Name, Constants.FILE_BLOCKING_RD);
               if (blocking == null) {
                 return Errno.EACCES;
@@ -480,6 +484,8 @@ namespace FuseSolution.FuseDht {
             } else if (!FuseDhtUtil.IsIgnoredFilename(finfo.Name)) {
               //the file is already there, is it stale?
               try {
+                Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+                    "Calling ShouldCallDhtGet");
                 shouldCallDht = this.ShouldCallDhtGet(_util.GetFusePath(dir.FullName));
               } catch (Exception e) {
                 Logger.WriteLineIf(LogLevel.Error, _log_props,
@@ -490,7 +496,7 @@ namespace FuseSolution.FuseDht {
             if (shouldCallDht) {
               //blocking, get the file and then return
               AutoResetEvent re = new AutoResetEvent(false);
-              _helper.DhtGet(basedir.Name, keydir.Name, FuseDhtHelper.OpMode.BQ, finfo.Name, re);
+              _helper.DhtGet(basedir.Name, keydir.Name, FuseDhtHelper.OpMode.Sync, finfo.Name, re);
               DateTime t = DateTime.UtcNow;
               re.WaitOne();
               Logger.WriteLineIf(LogLevel.Verbose, _log_props,
@@ -616,10 +622,9 @@ namespace FuseSolution.FuseDht {
     }
 
     protected override Errno OnGetFileSystemStatus(string path, out Statvfs stbuf) {
-
       Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnGetFileSystemStatus, path={0}", path));
-
-      return this._rfs.OnGetFileSystemStatus(path, out stbuf);
+      Errno rs =  this._rfs.OnGetFileSystemStatus(path, out stbuf);
+      return rs;
     }
 
     protected override Errno OnSynchronizeHandle(string path, OpenedPathInfo info, bool onlyUserData) {
