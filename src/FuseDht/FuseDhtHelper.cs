@@ -53,9 +53,9 @@ namespace FuseSolution.FuseDht {
       if (!(dht is LocalHT)) {
         try {
           this._rpc = XmlRpcManagerClient.GetXmlRpcManager(xmlRpcPort);
-          object[] rs = _rpc.localproxy("ipop.GetState", new object[0]);
-          if (rs != null && rs.Length > 0) {
-            IDictionary dic = (IDictionary)rs[0];
+          object rs = _rpc.localproxy("ipop.Information");
+          if (rs != null) {
+            IDictionary dic = (IDictionary)rs;
             _ipop_ns = dic["ipop_namespace"] as string;
           } else {
             _ipop_ns = string.Empty;
