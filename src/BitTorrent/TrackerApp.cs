@@ -38,14 +38,14 @@ using System.Net;
 
 using MonoTorrent.Tracker;
 using MonoTorrent.Common;
-using FuseSolution.Common;
+using Fushare.Common;
 
 #if TRACKER_NUNIT
 using NUnit.Framework;
 #endif
 
 
-namespace FuseSolution.Tracker {
+namespace Fushare.BitTorrent {
   using Tracker = MonoTorrent.Tracker.Tracker;
 
   /// <summary>

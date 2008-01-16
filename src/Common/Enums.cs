@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace FuseSolution.Common {
+namespace Fushare.Common {
   public enum DhtType {
     Local,
     BrunetDht,

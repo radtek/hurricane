@@ -1,6 +1,5 @@
 <?xml version="1.0"?>
-<project name="DhtTracker" default="build" basedir=".">
-  <description> Build DhtTracker </description>
+<project default="build" basedir=".">
   <property name="debug" value="false" />
   <property name="define" value="" />
   <property name="lib.dir" value="../../lib"/>
@@ -9,32 +8,36 @@
   <property name="dll" value="DhtTracker.dll" />
 
   <target name="build">
-    <call target="buildDhtTracker" />
+    <call target="buildProject" />
   </target>
 
   <target name="debug">
     <property name="debug" value="true" />
-    <call target="buildDhtTracker" />
+    <call target="buildProject" />
   </target>
 
   <target name="l4n">
     <property name="debug" value="false" />
     <property name="define" value="LOG4NET" />
-    <call target="buildDhtTracker" />
+    <call target="buildProject" />
   </target>
 
   <target name="test">
     <property name="debug" value="true" />
     <property name="define" value="FUSE_DEBUG,FUSE_NUNIT,TRACKER_NUNIT" />
-    <call target="buildDhtTracker" />
+    <call target="buildProject" />
   </target>
 
-  <target name="clean" description="Deletes the current configuration">
-    <delete dir="${build.dir}/${exe}" failonerror="false"/>
-    <delete dir="${build.dir}/${dll}" failonerror="false"/>
+  <target name="clean">
+    <delete>
+      <fileset basedir="${build.dir}">
+        <include name="*.exe" />
+        <include name="*.dll" />
+      </fileset>
+    </delete>
   </target>
 
-  <target name="buildDhtTracker" description="build DhtTracker">
+  <target name="buildProject">
     <mkdir dir="${build.dir}" failonerror="true"/>
     <copy todir="${build.dir}">
       <fileset basedir="${lib.dir}">

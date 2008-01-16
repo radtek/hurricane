@@ -1,6 +1,5 @@
 <?xml version="1.0"?>
-<project name="FuseDht" default="build" basedir=".">
-  <description> Build Common </description>
+<project default="build" basedir=".">
   <property name="debug" value="false" />
   <property name="define" value="" />
   <property name="lib.dir" value="../../lib"/>

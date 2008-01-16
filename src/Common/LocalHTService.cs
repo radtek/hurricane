@@ -7,7 +7,7 @@ using Brunet;
 using System.Security.Cryptography;
 using System.Net;
 
-namespace FuseSolution.Common {
+namespace Fushare.Common {
   /**
    * Soap URL: http://localhost:54541/sd.rem
    * XmlRpc URL: http://localhost:54541/xd.rem

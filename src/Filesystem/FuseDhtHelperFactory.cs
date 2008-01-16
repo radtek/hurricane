@@ -3,10 +3,10 @@ using System;
 using System.Collections;
 using Brunet.Dht;
 using Brunet;
-using FuseSolution.Common;
+using Fushare.Common;
 
 
-namespace FuseSolution.FuseDht {
+namespace Fushare.Filesystem {
 
   public class FuseDhtHelperFactory {
     public enum HelperType {

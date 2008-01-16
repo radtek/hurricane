@@ -1,7 +1,7 @@
 
 using System;
 
-namespace FuseSolution.FuseDht {
+namespace Fushare.Filesystem {
   /**
    * This exception should be thrown when FuseDht experiences unexpected structural
    * errors like:

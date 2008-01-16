@@ -8,7 +8,7 @@ using Brunet;
 using NUnit.Framework;
 #endif
 
-namespace FuseSolution.FuseDht {
+namespace Fushare.Filesystem {
   /**
    * This class represents the file that should be generated from DhtGetResult.
    * It encapsulates the way to generate the filename, the way to give DhtGetResult

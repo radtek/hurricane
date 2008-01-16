@@ -7,7 +7,7 @@ using log4net;
 using log4net.Config;
 #endif
 
-namespace FuseSolution.Common {
+namespace Fushare.Common {
   public enum LogLevel {
     Off, Fatal, Error, Warning, Info, Verbose, All
   }

@@ -13,9 +13,9 @@ using Brunet;
 using Brunet.Dht;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
-using FuseSolution.Common;
+using Fushare.Common;
 
-namespace FuseSolution.FuseDht {
+namespace Fushare.Filesystem {
   class FuseDhtUtil {
     #region Fields
     readonly string _s_dht_root;

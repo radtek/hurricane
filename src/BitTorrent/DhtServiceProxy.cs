@@ -5,11 +5,11 @@ using System.Text;
 using Ipop;
 using Brunet.Dht;
 using System.Diagnostics;
-using FuseSolution.Common;
+using Fushare.Common;
 using MonoTorrent.Tracker;
 using Brunet;
 
-namespace FuseSolution.Tracker {
+namespace Fushare.BitTorrent {
   class DhtServiceLocator {
     private static IDictionary<DhtType, DhtServiceProxy> _dhts = new Dictionary<DhtType, DhtServiceProxy>();
 

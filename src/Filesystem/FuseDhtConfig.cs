@@ -8,7 +8,7 @@ using System.IO;
 using NUnit.Framework;
 #endif
 
-namespace FuseSolution.FuseDht {
+namespace Fushare.Filesystem {
   public class FuseDhtConfigHandler {
     public static string cfgPath;
 

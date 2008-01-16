@@ -8,9 +8,9 @@ using System.Diagnostics;
 #if FUSE_DEBUG
 using NUnit.Framework;
 #endif
-using FuseSolution.Common;
+using Fushare.Common;
 
-namespace FuseSolution.FuseDht {
+namespace Fushare.Filesystem {
   public class DhtFileManager {
 
     #region Fields

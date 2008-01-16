@@ -10,20 +10,20 @@ using System.Threading;
 using Brunet;
 using System.Runtime.Remoting.Messaging;
 using System.IO;
-using FuseSolution.Common;
+using Fushare.Common;
 #if FUSE_NUNIT
 using NUnit.Framework;
 #endif
 
 
-namespace FuseSolution.FuseDht {
+namespace Fushare.Filesystem {
   /// <summary>
   /// Interrupts system calls and weaves in FuseDht logic.
   /// </summary>
-  public class FuseDht : FileSystem {
+  public class FuseFS : FileSystem {
 
     #region Fields
-    private static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(FuseDht));
+    private static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(FuseFS));
     private FuseDhtHelper _helper;
     private FuseDhtUtil _util;
     private string _shadowdir;
@@ -38,7 +38,7 @@ namespace FuseSolution.FuseDht {
     public static void Main(string[] args) {
       Logger.LoadConfig();
       try {
-        using (FuseDht fs = new FuseDht()) {
+        using (FuseFS fs = new FuseFS()) {
           string[] unhandled = fs.ParseFuseArguments(args);
           foreach (string key in fs.FuseOptions.Keys) {
             Console.WriteLine("Option={1}", key, fs.FuseOptions[key]);

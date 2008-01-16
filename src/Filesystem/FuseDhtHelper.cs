@@ -10,12 +10,12 @@ using Mono.Unix.Native;
 using Brunet;
 using Brunet.Dht;
 using Ipop;
-using FuseSolution.Common;
+using Fushare.Common;
 #if FUSE_NUNIT
 using NUnit.Framework;
 #endif
 
-namespace FuseSolution.FuseDht {  
+namespace Fushare.Filesystem {  
   /// <summary>
   /// Deal with Dht operations for FuseDht class
   /// </summary>

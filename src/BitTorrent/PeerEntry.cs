@@ -8,7 +8,7 @@ using System.Collections;
 using System.IO;
 using Brunet;
 
-namespace FuseSolution.Tracker {
+namespace Fushare.BitTorrent {
   /**
    * A data object that represents the entry to be put to/get from Dht
    */

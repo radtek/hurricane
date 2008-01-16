@@ -9,7 +9,7 @@ using Brunet;
 using NUnit.Framework;
 #endif
 
-namespace FuseSolution.FuseDht {
+namespace Fushare.Filesystem {
   public class DhtMetadataFile {
     [XmlElement(DataType = "dateTime")]
     public DateTime create_time;

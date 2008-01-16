@@ -11,7 +11,7 @@ using NUnit.Framework;
 using System.Diagnostics;
 using Ipop;
 
-namespace FuseSolution.Common {
+namespace Fushare.Common {
   /**
    * LocalHT only uses TableServer to read and store data locally but provide the same interface
    * as IDht for testing purpose.

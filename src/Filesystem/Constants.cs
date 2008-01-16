@@ -1,6 +1,6 @@
 using System;
 
-namespace FuseSolution.FuseDht {
+namespace Fushare.Filesystem {
   public enum PutMode {
     Put,
     Create,
