@@ -220,11 +220,14 @@ namespace Fushare.Filesystem {
       return ret;
     }
 
-    public static byte[] GenerateDhtValue(string fileName, byte[] data) {
+    /**
+     * @param data in string format. string is directly put in the dictionary.
+     * Note: conversion from big byte[] to string throws exception in mono1.2.6
+     */
+    public static byte[] GenerateDhtValue(string fileName, string data) {
       IDictionary dic = new ListDictionary();
       dic[Constants.DHT_VALUE_ATTR_FN] = fileName;
-      dic[Constants.DHT_VALUE_ATTR_VAL] = Encoding.UTF8.GetString(data);
-      //dic[Constants.DHT_VALUE_ATTR_VAL] = data;
+      dic[Constants.DHT_VALUE_ATTR_VAL] = data;
       System.IO.MemoryStream ms = new System.IO.MemoryStream();
       AdrConverter.Serialize(dic, ms);
       return ms.ToArray();

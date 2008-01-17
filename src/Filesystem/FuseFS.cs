@@ -346,7 +346,7 @@ namespace Fushare.Filesystem {
               if ((OpenFlags.O_WRONLY == (info.OpenFlags & OpenFlags.O_WRONLY)
                   || OpenFlags.O_RDWR == (info.OpenFlags & OpenFlags.O_RDWR))
                 && FuseDhtUtil.IsValidMyFileName(filename)) {
-                byte[] value = File.ReadAllBytes(Path.Combine(_shadowdir, path.Remove(0, 1)));
+                string value = File.ReadAllText(Path.Combine(_shadowdir, path.Remove(0, 1)));
                 byte[] dht_val = FuseDhtUtil.GenerateDhtValue(filename, value);
 
                 int? ttl = (int?)_util.ReadParam(basedir, key, Constants.FILE_TTL);
