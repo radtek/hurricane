@@ -10,16 +10,17 @@ using System.Threading;
 using Brunet;
 using System.Runtime.Remoting.Messaging;
 using System.IO;
-using Fushare.Common;
 #if FUSE_NUNIT
 using NUnit.Framework;
 #endif
 
 
 namespace Fushare.Filesystem {
-  /// <summary>
-  /// Interrupts system calls and weaves in FuseDht logic.
-  /// </summary>
+
+  /**
+   * Interrupts system calls and weaves in FuseDht logic.
+   * 
+   */
   public class FuseFS : FileSystem {
 
     #region Fields
@@ -33,32 +34,10 @@ namespace Fushare.Filesystem {
     private int _dht_port = 51515;
     private int _xmlrpc_port = 10000;
     private IDictionary _helper_options = new ListDictionary();
-    #endregion
     
-    public static void Main(string[] args) {
-      Logger.LoadConfig();
-      try {
-        using (FuseFS fs = new FuseFS()) {
-          string[] unhandled = fs.ParseFuseArguments(args);
-          foreach (string key in fs.FuseOptions.Keys) {
-            Console.WriteLine("Option={1}", key, fs.FuseOptions[key]);
-          }
-          if (!fs.ParseArguments(unhandled))
-            return;
-          fs.InitFuseDhtSystem();
-          fs.Start();
-        }
-      } catch (System.Net.WebException) {
-        Console.Error.WriteLine("Soap/XmlRpc Dht interface not started. Please start it first");
-      } catch (Exception e) {
-        Logger.WriteLineIf(LogLevel.Fatal, _log_props,
-              "System cannot started", e);
-        //if caught unhandled exception, terminates.
-        Thread.CurrentThread.Abort();
-      }
-    }
+    #endregion
 
-    private bool ParseArguments(string[] args) {
+    public bool ParseArguments(string[] args) {
       for (int i = 0; i < args.Length; ++i) {
         switch (args[i]) {
           case "-h":
@@ -118,7 +97,18 @@ namespace Fushare.Filesystem {
       return true;
     }
 
-    void InitFuseDhtSystem() {
+    public void InitAndStartFS(string[] args) {
+      string[] unhandled = this.ParseFuseArguments(args);
+      foreach (string key in this.FuseOptions.Keys) {
+        Console.WriteLine("Option={1}", key, this.FuseOptions[key]);
+      }
+      if (!this.ParseArguments(unhandled))
+        return;
+      this.InitFuseDhtSystem();
+      this.Start();
+    }
+    
+    public void InitFuseDhtSystem() {
       _helper_options.Add("helper_type", _helper_type);
       _helper_options.Add("dht_port", _dht_port);
       _helper_options.Add("xmlrpc_port", _xmlrpc_port);

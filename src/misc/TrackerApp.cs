@@ -38,7 +38,7 @@ using System.Net;
 
 using MonoTorrent.Tracker;
 using MonoTorrent.Common;
-using Fushare.Common;
+using Fushare;
 
 #if TRACKER_NUNIT
 using NUnit.Framework;
