@@ -3,7 +3,6 @@ using System;
 using System.Collections;
 using Brunet.Dht;
 using Brunet;
-using Fushare.Common;
 
 
 namespace Fushare.Filesystem {

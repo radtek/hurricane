@@ -9,9 +9,10 @@ using System.Security.Cryptography;
 using NUnit.Framework;
 #endif
 using System.Diagnostics;
+using Fushare.Filesystem;
 using Ipop;
 
-namespace Fushare.Common {
+namespace Fushare {
   /**
    * LocalHT only uses TableServer to read and store data locally but provide the same interface
    * as IDht for testing purpose.

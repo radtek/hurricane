@@ -10,7 +10,6 @@ using Mono.Unix.Native;
 using Brunet;
 using Brunet.Dht;
 using Ipop;
-using Fushare.Common;
 #if FUSE_NUNIT
 using NUnit.Framework;
 #endif

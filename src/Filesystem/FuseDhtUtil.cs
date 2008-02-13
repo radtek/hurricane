@@ -13,7 +13,6 @@ using Brunet;
 using Brunet.Dht;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
-using Fushare.Common;
 
 namespace Fushare.Filesystem {
   class FuseDhtUtil {
@@ -318,8 +317,7 @@ namespace Fushare.Filesystem {
     [Test]
     [Ignore]
     public void TestValueSerializationAndDeserialiazation() {
-      byte[] b = Encoding.UTF8.GetBytes("testing value~~~~~");
-      byte[] val = FuseDhtUtil.GenerateDhtValue("file1.txt", b);
+      byte[] val = FuseDhtUtil.GenerateDhtValue("file1.txt", "testing value~~~~~");
       IDictionary dic = FuseDhtUtil.ParseDhtValue(val);
       Assert.AreEqual("testing value~~~~~", Encoding.UTF8.GetString((byte[])dic[Constants.DHT_VALUE_ATTR_VAL]));
       Assert.AreEqual("file1.txt", (string)dic[Constants.DHT_VALUE_ATTR_FN]);

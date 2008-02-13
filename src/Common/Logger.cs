@@ -7,7 +7,7 @@ using log4net;
 using log4net.Config;
 #endif
 
-namespace Fushare.Common {
+namespace Fushare {
   public enum LogLevel {
     Off, Fatal, Error, Warning, Info, Verbose, All
   }
@@ -19,14 +19,25 @@ namespace Fushare.Common {
       Trace, Debug, Log4Net
     }
 
+    /**
+     * Load the config file from ./l4n.config
+     */
     public static void LoadConfig() {
       LoadConfig("l4n.config");
     }
 
     public static void LoadConfig(string configFile) {
+#if LOG4NET
       XmlConfigurator.Configure(new System.IO.FileInfo(configFile));
+#endif
     }
 
+    /**
+     * Should be called by every class who wants to be logged to prepare the 
+     * logging properties.
+     * If LOG4NET, Logger of the specific type is attached
+     * If DEBUG || TRACE, TraceSwitch is added
+     */
     public static IDictionary PrepareLoggerProperties(Type objType) {
       IDictionary dic = new System.Collections.Specialized.ListDictionary();
 #if LOG4NET
@@ -49,7 +60,14 @@ namespace Fushare.Common {
 
     #region Log Methods
     /**
-     * Well, this really could be optimized in terms of speed, but let's just keep the simplicity
+     * Main method for multi-tool logging.
+     * Which logging tool to use depends on the MACROS defined.
+     * @warning Well, this really could be optimized in terms of speed, 
+     * but let's just keep the simplicity.
+     * 
+     * @param args DEBUG || TRACE: args[0] object to log; args[1]: (optional) string category
+     *                     LOG4NET: args[0]: object message; args[1]: (optional) Exception
+     * @note params object[] args is not used to pass multiple message objects
      */
     public static void WriteLineIf(LogLevel level, IDictionary props, params object[] args) {
       if (args.Length == 0) {
@@ -71,7 +89,6 @@ namespace Fushare.Common {
 #if LOG4NET
     /**
      * @param log ILog instance
-     * @param args args[0]: ; args[1]: object message; log[2]: (optional) Exception
      */
     private static void Log4NetWriteLineIf(LogLevel level, ILog log, params object[] args) {
       if (args.Length == 1) {
@@ -127,7 +144,6 @@ namespace Fushare.Common {
 #if TRACE
     /**
      * @param ts TraceSwitch that defined the logging conditions
-     * @param args args[0] TraceSwitch; args[1]: object value; args[2]: (optional) string category
      */
     private static void TraceWriteLineIf(LogLevel level, TraceSwitch ts, params object[] args) {
       //TraceSwitch
@@ -276,6 +292,6 @@ namespace Fushare.Common {
       }
     }
 #endif
-  }
     #endregion
+  }
 }

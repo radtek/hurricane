@@ -8,10 +8,9 @@ using System.Web;
 using System.Net;
 using MonoTorrent.Tracker;
 using Ipop;
-using Fushare.Common;
 
 namespace Fushare.BitTorrent {
-  class DhtListener : ListenerBase {
+  public class DhtListener : ListenerBase {
     #region Fields
     private static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(DhtListener));
     private IPEndPoint endpoint;

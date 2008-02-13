@@ -8,7 +8,6 @@ using System.Diagnostics;
 #if FUSE_DEBUG
 using NUnit.Framework;
 #endif
-using Fushare.Common;
 
 namespace Fushare.Filesystem {
   public class DhtFileManager {
@@ -140,7 +139,7 @@ namespace Fushare.Filesystem {
       DirectoryInfo basedir = keydir.Parent;
 
       int ttl = args.TTL;
-      byte[] data = File.ReadAllBytes(data_file);
+      string data = File.ReadAllText(data_file);
       byte[] dht_data = FuseDhtUtil.GenerateDhtValue(filename, data);
       File.Delete(args.MetaFileSPath);
       _helper.AsDhtPut(basedir.Name, keydir.Name, dht_data, ttl, PutMode.Put, data_file);

@@ -5,7 +5,6 @@ using System.Text;
 using Ipop;
 using Brunet.Dht;
 using System.Diagnostics;
-using Fushare.Common;
 using MonoTorrent.Tracker;
 using Brunet;
 
