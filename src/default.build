@@ -1,0 +1,87 @@
+<?xml version="1.0"?>
+<project default="build" basedir=".">
+  <property name="debug" value="false" />
+  <property name="define" value="" />
+  <property name="lib.dir" value="../lib"/>
+  <property name="build.dir" value="build" />
+  <property name="exe" value="FuseDht.exe" />
+  <property name="dll" value="Fushare.dll" />
+  
+  <target name="build">
+    <call target="buildProject" />
+  </target>
+  
+  <target name="debug">
+    <property name="debug" value="true" />
+    <call target="buildProject" />
+  </target>
+  
+  <target name="unit">
+    <property name="define" value="FUSE_DEBUG,FUSE_NUNIT,FUSHARE_NUNIT" />
+    <call target="buildProject" />
+  </target>
+  
+  <target name="l4n">
+    <property name="debug" value="false" />
+    <property name="define" value="LOG4NET" />
+    <call target="buildProject" />
+  </target>
+  
+  <target name="clean">
+    <delete>
+      <fileset basedir="${build.dir}">
+        <include name="*.exe" />
+        <include name="*.dll" />
+      </fileset>
+    </delete>
+  </target>
+  
+  <target name="buildProject">
+    <mkdir dir="${build.dir}" failonerror="true"/>
+    <copy todir="${build.dir}">
+      <fileset basedir="${lib.dir}">
+        <include name="*.dll" />
+      </fileset>
+    </copy>
+    <csc unsafe="true"
+         target="library"
+         debug="${debug}"
+         output="${build.dir}/Fushare.dll"
+         define="${define}">
+      <sources failonempty="true">
+        <include name="Common/LocalHT.cs"/>
+        <include name="Common/Logger.cs"/>
+        <include name="Filesystem/Constants.cs"/>
+        <include name="Filesystem/FuseDhtConfig.cs"/>
+        <include name="Filesystem/RedirectFS-FH.cs"/>
+        <include name="Filesystem/FuseFS.cs"/>
+        <include name="Filesystem/FuseDhtHelper.cs"/>
+        <include name="Filesystem/FuseDhtHelperFactory.cs"/>
+        <include name="Filesystem/FuseDhtUtil.cs"/>
+        <include name="Filesystem/DhtDataFile.cs"/>
+        <include name="Filesystem/FuseDhtStructureException.cs" />
+        <include name="Filesystem/DhtMetadataFile.cs" />
+        <include name="Filesystem/DhtFileManager.cs" />
+      </sources>
+      <references>
+        <include name="System.Runtime.Remoting.dll"/>
+        <include name="${build.dir}/NUnit.Framework.dll" />
+        <include name="${build.dir}/Brunet.dll" />
+        <include name="${build.dir}/Brunet.Dht.dll" />
+        <include name="${build.dir}/Brunet.XmlRpc.dll" />
+        <include name="${build.dir}/Ipop.XmlRpcClient.dll" />
+        <include name="${build.dir}/Ipop.IBlockingQueue.dll" />
+        <include name="${build.dir}/Mono.Fuse.dll" />
+        <include name="${build.dir}/CookComputing.XmlRpcV2.dll" />
+        <include name="Mono.Posix.dll" />
+        <include name="${build.dir}/log4net.dll" />
+      </references>
+    </csc>
+    <copy todir="${lib.dir}">
+      <fileset basedir="${build.dir}">
+        <include name="Fushare.dll" />
+      </fileset>
+    </copy>
+  </target>
+</project>
+
