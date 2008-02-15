@@ -51,6 +51,20 @@
       <sources failonempty="true">
         <include name="Common/LocalHT.cs"/>
         <include name="Common/Logger.cs"/>
+        <include name="Common/AdrSerializer.cs"/>
+        <include name="Common/BrunetDhtEntry.cs"/>
+        <include name="Common/DictionaryData.cs"/>
+        <include name="Common/DictionaryDataDecorator.cs"/>
+        <include name="Common/DictionaryDataUtil.cs"/>
+        <include name="Common/Enums.cs"/>
+        <include name="Common/FingerprintedData.cs"/>
+        <include name="Common/FragmentableData.cs"/>
+        <include name="Common/FragmentationInfo.cs"/>
+        <include name="Common/FushareTestBase.cs"/>
+        <include name="Common/IDictionaryData.cs"/>
+        <include name="Common/IDto.cs"/>
+        <include name="Common/ISerializer.cs"/>
+        <include name="Common/RegularData.cs"/>
         <include name="Filesystem/Constants.cs"/>
         <include name="Filesystem/FuseDhtConfig.cs"/>
         <include name="Filesystem/RedirectFS-FH.cs"/>
@@ -62,6 +76,12 @@
         <include name="Filesystem/FuseDhtStructureException.cs" />
         <include name="Filesystem/DhtMetadataFile.cs" />
         <include name="Filesystem/DhtFileManager.cs" />
+        <include name="Settings/FushareConfig.cs" />
+        <include name="Settings/ServiceConfigSection.cs" />
+        <include name="Services/BrunetDht.cs" />
+        <include name="Services/DictionaryServiceFactory.cs" />
+        <include name="Services/IDhtService.cs" />
+        <include name="Services/IDictionaryService.cs" />
       </sources>
       <references>
         <include name="System.Runtime.Remoting.dll"/>

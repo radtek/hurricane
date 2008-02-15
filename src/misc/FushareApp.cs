@@ -10,6 +10,7 @@ namespace Fushare {
 
     public static void Main(string[] args) {
       Logger.LoadConfig();
+      FushareConfigHandler.Read("fushare.config");
       try {
         using (FuseFS fs = new FuseFS()) {
           fs.InitAndStartFS(args);

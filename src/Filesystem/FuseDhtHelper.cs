@@ -10,6 +10,7 @@ using Mono.Unix.Native;
 using Brunet;
 using Brunet.Dht;
 using Ipop;
+using Fushare.Services;
 #if FUSE_NUNIT
 using NUnit.Framework;
 #endif
@@ -23,7 +24,7 @@ namespace Fushare.Filesystem {
     #region Fields
     public const int DHT_PUT_RETRY_TIMES = 3;
     private static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(FuseDhtHelper));
-    private IDht _dht;
+    private BrunetDht _dht;
     private string _shadowdir;
     private readonly string _metadir;
     private readonly string _dht_addr;
@@ -44,28 +45,26 @@ namespace Fushare.Filesystem {
       get { return _dht_addr; }
     }
     
-    public FuseDhtHelper(IDht dht, int xmlRpcPort, string shadowdir) {
-      _dht = dht;
+    public FuseDhtHelper(int xmlRpcPort, string shadowdir) {
+      _dht = (BrunetDht)DictionaryServiceFactory.GetServiceInstance(typeof(BrunetDht));
       this._shadowdir = shadowdir;
       this._metadir = Path.Combine(Path.Combine(_shadowdir, Constants.DIR_DHT_ROOT), Constants.DIR_META);
-      this._dht_addr = _dht.GetDhtInfo()["address"] as string;
-      if (!(dht is LocalHT)) {
-        try {
-          this._rpc = XmlRpcManagerClient.GetXmlRpcManager(xmlRpcPort);
-          object rs = _rpc.localproxy("ipop.Information");
-          if (rs != null) {
-            IDictionary dic = (IDictionary)rs;
-            _ipop_ns = dic["ipop_namespace"] as string;
-          } else {
-            _ipop_ns = string.Empty;
-          }
-        } catch (Exception e) {
-          Logger.WriteLineIf(LogLevel.Verbose, _log_props, e);
+      try {
+        this._rpc = XmlRpcManagerClient.GetXmlRpcManager(xmlRpcPort);
+        object rs = _rpc.localproxy("ipop.Information");
+        if (rs != null) {
+          IDictionary dic = (IDictionary)rs;
+          _ipop_ns = dic["ipop_namespace"] as string;
+          _dht_addr = ((IDictionary)dic["neighbors"])["self"] as string;
+        } else {
           _ipop_ns = string.Empty;
-        } finally {
-          Logger.WriteLineIf(LogLevel.Info, _log_props,
-              string.Format("IPOP Namespace: {0}", _ipop_ns));
         }
+      } catch (Exception e) {
+        Logger.WriteLineIf(LogLevel.Verbose, _log_props, e);
+        _ipop_ns = string.Empty;
+      } finally {
+        Logger.WriteLineIf(LogLevel.Info, _log_props,
+            string.Format("IPOP Namespace: {0}", _ipop_ns));
       }
     }
 
