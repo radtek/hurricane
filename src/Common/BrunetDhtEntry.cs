@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Text;
+using Brunet.Dht;
 
 namespace Fushare {
   /**
@@ -15,7 +16,7 @@ namespace Fushare {
     private string _key;
     private byte[] _value;
     private int _age;
-    private int _ttl;
+    private int _ttl = 3600;  //1 hour
     #endregion
 
     #region Properties
@@ -86,5 +87,9 @@ namespace Fushare {
       _ttl = (int)dict["ttl"];
     }
     #endregion
+
+    public DhtGetResult ToDhtGetResult() {
+      return new DhtGetResult(Value, Age, Ttl);
+    }
   }
 }

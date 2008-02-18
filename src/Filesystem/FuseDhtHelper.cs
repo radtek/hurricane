@@ -22,7 +22,7 @@ namespace Fushare.Filesystem {
   public class FuseDhtHelper {
 
     #region Fields
-    public const int DHT_PUT_RETRY_TIMES = 3;
+    public const int DhtPutRetryTimes = 3;
     private static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(FuseDhtHelper));
     private BrunetDht _dht;
     private string _shadowdir;
@@ -198,6 +198,29 @@ namespace Fushare.Filesystem {
       Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("Getting {0}", dht_key));
       DhtGetResult[] results = _dht.Get(dht_key);
       Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("Got {0} item(s)", results.Length));
+
+      #region Fragmentation logic
+      //Check the first value for frag info
+      DhtGetResult dgr = results[0];
+      DictionaryData dd = null;
+      try {
+         //dd = DictionaryData.CreateDictionaryData(dgr.value);
+         dd = DictionaryData.CreateDictionaryData(Convert.FromBase64String(dgr.valueString));
+      } catch (Exception ex) {
+        Logger.WriteLineIf(LogLevel.Error, _log_props,
+            ex);
+        throw ex;
+      }
+      if (dd is FragmentationInfo) {
+        FragmentationInfo frag_info = dd as FragmentationInfo;
+        Logger.WriteLineIf(LogLevel.Info, _log_props,
+            string.Format("Retrieved data is a FragmentationInfo: {0}", frag_info.ToString()));
+        BrunetDhtEntry bde = _dht.GetFragments(frag_info) as BrunetDhtEntry;
+        results = new DhtGetResult[] { bde.ToDhtGetResult() };
+      }
+
+      #endregion
+
       //We need the earliest expiration time of all the returned items
       DateTime dt = DateTime.MinValue;
       foreach (DhtGetResult result in results) {
@@ -236,20 +259,35 @@ namespace Fushare.Filesystem {
       string dht_key = state[0] as string;
       string base_dir_name = state[1] as string;
       string key = state[2] as string;
-      string value = Encoding.UTF8.GetString((byte[])state[3]);
+      byte[] value = (byte[])state[3];
       int ttl = (int)state[4];
       string s_file_path = state[5] as string;
       PutMode put_mode = (PutMode)state[6];
 
       bool result;
 
-      for (int i = 0; i < DHT_PUT_RETRY_TIMES; i++) {
-        if (put_mode == PutMode.Create) {
-          Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("Creating {0}, {1}", dht_key, new FileInfo(s_file_path).Name));
-          result = _dht.Create(dht_key, value, ttl);
-        } else {
-          Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("Putting {0}, {1}", dht_key, new FileInfo(s_file_path).Name));
-          result = _dht.Put(dht_key, value, ttl);
+      for (int i = 0; i < DhtPutRetryTimes; i++) {
+
+        #region Fragmentation logic
+        //Check the length of the value. If too large, fragment it.
+        int size_limit = 600;  //bytes
+        if (value.Length > size_limit) {
+          BrunetDhtEntry bde = new BrunetDhtEntry(dht_key, value, ttl);
+          FragmentationInfo frag_info = new FragmentationInfo(dht_key);
+          frag_info.PieceLength = size_limit;
+          result = _dht.PutFragments(bde, frag_info);
+        }  
+        #endregion
+
+        else {
+          string value_string = Encoding.UTF8.GetString(value);
+          if (put_mode == PutMode.Create) {
+            Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format("Creating {0}, {1}", dht_key, new FileInfo(s_file_path).Name));
+            result = _dht.Create(dht_key, value_string, ttl);
+          } else {
+            Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format("Putting {0}, {1}", dht_key, new FileInfo(s_file_path).Name));
+            result = _dht.Put(dht_key, value_string, ttl);
+          } 
         }
         Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("Put/Create returned: {0}", result));
 

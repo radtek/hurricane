@@ -30,6 +30,9 @@ namespace Fushare {
       }
     }
 
+    /**
+     * Optional when constructed from client
+     */
     public int PieceNum {
       get {
         return _piece_num;
@@ -42,6 +45,7 @@ namespace Fushare {
     /**
      * The piece length affects all the length of the pieces except the last
      * one, which is irregular.
+     * Optional when parsed from incoming value.
      */
     public int PieceLength {
       get {
@@ -53,6 +57,18 @@ namespace Fushare {
     }
     #endregion
 
+    /**
+     * @param baseKey this field is always mandatory.
+     */
+    public FragmentationInfo(string baseKey) {
+      _base_key = baseKey;
+    }
+
+    /**
+     * Default ctor. Properties need to be set after object constructed.
+     */
+    public FragmentationInfo() { }
+    
     public override IDictionary ToDictionary() {
       IDictionary dict = InitIDictionaryFromType();
       dict.Add("base_key", _base_key);
@@ -71,6 +87,15 @@ namespace Fushare {
       _base_key = (string)dict["base_key"];
       _piece_num = (int)dict["piece_num"];
       _piece_length = (int)dict["piece_length"];
+    }
+
+    public override string ToString() {
+      StringBuilder sb = new StringBuilder();
+      sb.Append("FragmentationInfo: \t");
+      sb.Append("BaseKey: " + BaseKey + ";\t");
+      sb.Append("PieceNum: " + PieceNum + ";\t");
+      sb.Append("PieceLength: " + PieceLength+ " (bytes);");
+      return sb.ToString();
     }
   }
 }

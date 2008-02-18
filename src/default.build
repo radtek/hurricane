@@ -37,6 +37,7 @@
   </target>
   
   <target name="buildProject">
+    <echo>debug = ${debug}, define = ${define}</echo>
     <mkdir dir="${build.dir}" failonerror="true"/>
     <copy todir="${build.dir}">
       <fileset basedir="${lib.dir}">

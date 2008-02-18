@@ -486,14 +486,19 @@ namespace Fushare.Filesystem {
             if (shouldCallDht) {
               //blocking, get the file and then return
               AutoResetEvent re = new AutoResetEvent(false);
-              _helper.DhtGet(basedir.Name, keydir.Name, FuseDhtHelper.OpMode.Sync, finfo.Name, re);
-              DateTime t = DateTime.UtcNow;
-              re.WaitOne();
-              Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-                  string.Format("Waited on expectedFileArrived Event for {0}", 
-                  Convert.ToString((DateTime.UtcNow - t).TotalMilliseconds)));
-              //the file arrived, so we do this again
-              _util.WriteToParamFile(basedir.Name, keydir.Name, Constants.FILE_INVALIDATE, "0");
+              try {
+                _helper.DhtGet(basedir.Name, keydir.Name, FuseDhtHelper.OpMode.Sync, finfo.Name, re);
+                DateTime t = DateTime.UtcNow;
+                re.WaitOne();
+                Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+                    string.Format("Waited on expectedFileArrived Event for {0}",
+                    Convert.ToString((DateTime.UtcNow - t).TotalMilliseconds)));
+                //the file arrived, so we do this again
+                _util.WriteToParamFile(basedir.Name, keydir.Name, Constants.FILE_INVALIDATE, "0");
+              } catch (Exception ex) {
+                //Log and just let the redirect FS read the content and return
+                Logger.WriteLineIf(LogLevel.Verbose, _log_props, ex);
+              }
               Errno e = this._rfs.OnGetPathStatus(path, out buf);
               Logger.WriteLineIf(LogLevel.Verbose, _log_props,
                   string.Format("\tFilePermission of the path={0}", buf.st_mode));

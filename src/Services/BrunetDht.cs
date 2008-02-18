@@ -69,22 +69,27 @@ namespace Fushare.Services {
       MemBlock fragments = new MemBlock();
       int largest_age = 0;  
       int smallest_ttl = Int32.MaxValue;
-      int retries = 3;  //After that we fail the operation
+
       /* 
        * @TODO: It doesn't have to be sequential but let's first get it work with
        * this approach 
        */
       for (int i = 0; i < piece_num; i++) {
-        string key = BuildFragmentKey(base_key, i);
+        string piece_key = BuildFragmentKey(base_key, i);
         bool succ = true; //set to false iff bad things happen
+        int retries = 3;  //After that we fail the operation
         do {
-          DhtGetResult[] dgrs = _dht.Get(key);
+          Console.WriteLine("Getting: {0}", piece_key);
+          DhtGetResult[] dgrs = _dht.Get(piece_key);
           try {
             //It should have only one entry. If not, just let the the exception caught
             //and retry.
             DhtGetResult dgr = dgrs[0];
             FingerprintedData fpd =
                 (FingerprintedData)DictionaryData.CreateDictionaryData(Convert.FromBase64String(dgr.valueString));
+                //(FingerprintedData)DictionaryData.CreateDictionaryData(dgr.value);
+            Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+                string.Format("Piece {0} retrieved and successfully parsed", piece_key));
             RegularData rd = fpd.InnerData as RegularData;
             fragments = MemBlock.Concat(fragments, MemBlock.Reference(rd.PayLoad));
             if (smallest_ttl > dgr.ttl)
@@ -100,7 +105,7 @@ namespace Fushare.Services {
         if (retries == 0) {
           //Quit because retries exhausted.
           throw new Exception(string.Format("Retries exhausted when retrieving" +
-              "and deserializing piece : {0}", key));
+              "and deserializing piece : {0}", piece_key));
         }
       }
       //Got the fragments correctly
@@ -114,7 +119,7 @@ namespace Fushare.Services {
      */
     public bool PutFragments(BrunetDhtEntry bde, FragmentationInfo fragInfo) {
       string info_key = bde.Key;
-      int ttl = bde.Ttl;
+      int ttl = bde.Ttl;  //This ttl is used by every piece and the frag info
       MemBlock data = MemBlock.Reference(bde.Value);
       string base_key =  fragInfo.BaseKey;
       int piece_length = 0;
@@ -128,25 +133,34 @@ namespace Fushare.Services {
         FingerprintedData fpd = new FingerprintedData(new RegularData(piece));
         fragments.Add(fpd);
       }
+
       //Update the piece number in fragInfo.
+      Logger.WriteLineIf(LogLevel.Info, _log_props,
+          string.Format("Data fragmented into {0} pieces", fragments.Count));
       fragInfo.PieceNum = fragments.Count;
 
       //Put pieces
       int index = 0;
       foreach (FingerprintedData fpd in fragments) {
         byte[] serializedFpd = fpd.SerializeTo();
+        Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+            string.Format("Size after serialization {0}", serializedFpd.Length));
         int i = index++;
         bool succ = true;
         int retries = 3;
         string piece_key = BuildFragmentKey(base_key, i);
         do {
           succ = _dht.Put(piece_key,
-              Convert.ToBase64String(serializedFpd), ttl);
+              Convert.ToBase64String(serializedFpd), ttl); //Base64 String
+              //Encoding.UTF8.GetString(serializedFpd), ttl); //Base64 String
         } while (!succ && retries-- > 0);
         if (retries == 0) {
           Logger.WriteLineIf(LogLevel.Error, _log_props,
               string.Format("Retries exhausted when putting piece : {0}", piece_key));
           return false;
+        } else {
+          Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+              string.Format("Piece {0} successfully put to DHT", piece_key));
         }
       }
 
@@ -154,18 +168,22 @@ namespace Fushare.Services {
       bool succ_info = true;
       int retries_info = 3;
       do {
-        succ_info = _dht.Put(info_key, Encoding.UTF8.GetString(fragInfo.SerializeTo()), ttl);
+        succ_info = _dht.Put(info_key, Convert.ToBase64String(fragInfo.SerializeTo()), ttl);
+        //succ_info = _dht.Put(info_key, Convert.ToBase64String(fragInfo.SerializeTo()), ttl);
       } while (!succ_info && retries_info-- > 0) ;
       if (retries_info == 0) {
         Logger.WriteLineIf(LogLevel.Error, _log_props,
               string.Format("Retries exhausted when putting fragInfo : {0}", info_key));
         return false;
+      } else {
+        Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+            string.Format("FragmentationInfo successfully put to DHT with key {0}", info_key));
       }
       //If code reaches here without problems, then we can call it successful.
       return true;
     }
 
-    private string BuildFragmentKey(string baseKey, int index) {
+    public static string BuildFragmentKey(string baseKey, int index) {
       return baseKey + ":" + index.ToString();
     }
   

@@ -6,6 +6,7 @@
   <property name="build.dir" value="build" />
   <property name="exe" value="*.exe" />
   <property name="dll" value="*.dll" />
+  <property name="target" value = "build" />
 
   <target name="build">
     <call target="buildProject" />
@@ -25,6 +26,7 @@
   <target name="l4n">
     <property name="debug" value="false" />
     <property name="define" value="LOG4NET" />
+    <property name="target" value = "l4n" />
     <call target="buildProject" />
   </target>
 
@@ -38,6 +40,8 @@
   </target>
 
   <target name="buildProject">
+    <nant buildfile="../default.build" target="${target}">
+    </nant>
     <mkdir dir="${build.dir}" failonerror="true"/>
     <copy todir="${build.dir}">
       <fileset basedir="${lib.dir}">
