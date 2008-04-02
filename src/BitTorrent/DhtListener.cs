@@ -7,7 +7,6 @@ using System.Text;
 using System.Web;
 using System.Net;
 using MonoTorrent.Tracker;
-using Ipop;
 
 namespace Fushare.BitTorrent {
   public class DhtListener : ListenerBase {

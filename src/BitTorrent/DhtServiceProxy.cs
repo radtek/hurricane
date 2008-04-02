@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections;
 using System.Text;
-using Ipop;
-using Brunet.Dht;
+using Brunet.Rpc;
+using Brunet.DistributedServices;
 using System.Diagnostics;
 using MonoTorrent.Tracker;
 using Brunet;
@@ -18,15 +18,12 @@ namespace Fushare.BitTorrent {
     public static DhtServiceProxy GetDhtServiceProxy(DhtType dhtType, int port) {
       switch (dhtType) {
         case DhtType.Local:
-          if (!_dhts.ContainsKey(DhtType.Local)) {
-            IDht dht = new LocalHT();
-            _dhts[DhtType.Local] = new DhtServiceProxy(dht);
-          }
-          return _dhts[DhtType.Local];
+        //@TODO remove local option
+          return null;
         case DhtType.BrunetDht:
         default:
           if (!_dhts.ContainsKey(DhtType.BrunetDht)) {
-            IDht dht = Ipop.DhtServiceClient.GetXmlRpcDhtClient(port);
+            IDht dht = DhtServiceClient.GetXmlRpcDhtClient(port);
             _dhts[DhtType.BrunetDht] = new DhtServiceProxy(dht);
           }
           return _dhts[DhtType.BrunetDht];

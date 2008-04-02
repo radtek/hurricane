@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections;
 using System.Text;
-using Brunet.Dht;
+using Brunet.DistributedServices;
 using Brunet;
 using System.Security.Cryptography;
 #if FUSE_NUNIT
@@ -10,14 +10,14 @@ using NUnit.Framework;
 #endif
 using System.Diagnostics;
 using Fushare.Filesystem;
-using Ipop;
+using Brunet.Rpc;
 
 namespace Fushare {
   /**
    * LocalHT only uses TableServer to read and store data locally but provide the same interface
    * as IDht for testing purpose.
    */
-  public class LocalHT : Ipop.IDht {
+  public class LocalHT : IDht {
     #region Fields
     private TableServer _ts;
     private static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(LocalHT));
@@ -37,7 +37,7 @@ namespace Fushare {
       AHAddress addr = new AHAddress(new RNGCryptoServiceProvider());
       Node brunetNode = new StructuredNode(addr);
       RpcManager rpc = RpcManager.GetInstance(brunetNode);
-      this._ts = new TableServer(brunetNode, rpc);
+      this._ts = new TableServer(brunetNode);
       this._node = brunetNode;
 
 #if FUSE_DEBUG

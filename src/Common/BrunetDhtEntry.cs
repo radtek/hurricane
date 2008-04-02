@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Text;
-using Brunet.Dht;
+using Brunet.DistributedServices;
 
 namespace Fushare {
   /**
@@ -66,7 +66,7 @@ namespace Fushare {
       _ttl = ttl;
     }
 
-    public BrunetDhtEntry(string key, Brunet.Dht.DhtGetResult dgr)
+    public BrunetDhtEntry(string key, Brunet.DistributedServices.DhtGetResult dgr)
       : this(key, dgr.value, dgr.age, dgr.ttl) { }
     #endregion
 

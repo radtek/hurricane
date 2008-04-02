@@ -68,8 +68,7 @@
         <include name="${build.dir}/Brunet.dll" />
         <include name="${build.dir}/Brunet.Dht.dll" />
         <include name="${build.dir}/Brunet.XmlRpc.dll" />
-        <include name="${build.dir}/Ipop.XmlRpcClient.dll" />
-        <include name="${build.dir}/Ipop.IBlockingQueue.dll" />
+        <include name="${build.dir}/Brunet.DhtService.dll" />
         <include name="${build.dir}/Mono.Fuse.dll" />
         <include name="${build.dir}/CookComputing.XmlRpcV2.dll" />
         <include name="Mono.Posix.dll" />

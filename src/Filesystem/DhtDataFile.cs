@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using System.Text;
 using System.IO;
-using Brunet.Dht;
+using Brunet.DistributedServices;
 using Brunet;
 #if FUSE_NUNIT
 using NUnit.Framework;

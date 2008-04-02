@@ -8,16 +8,16 @@ using System.Diagnostics;
 using System.Security.Cryptography;
 using Mono.Unix.Native;
 using Brunet;
-using Brunet.Dht;
-using Ipop;
+using Brunet.DistributedServices;
 using Fushare.Services;
+using Brunet.Rpc;
 #if FUSE_NUNIT
 using NUnit.Framework;
 #endif
 
 namespace Fushare.Filesystem {  
   /// <summary>
-  /// Deal with Dht operations for FuseDht class
+  /// Deals with Dht operations for FuseDht class
   /// </summary>
   public class FuseDhtHelper {
 
@@ -51,20 +51,16 @@ namespace Fushare.Filesystem {
       this._metadir = Path.Combine(Path.Combine(_shadowdir, Constants.DIR_DHT_ROOT), Constants.DIR_META);
       try {
         this._rpc = XmlRpcManagerClient.GetXmlRpcManager(xmlRpcPort);
-        object rs = _rpc.localproxy("ipop.Information");
-        if (rs != null) {
-          IDictionary dic = (IDictionary)rs;
-          _ipop_ns = dic["ipop_namespace"] as string;
-          _dht_addr = ((IDictionary)dic["neighbors"])["self"] as string;
-        } else {
-          _ipop_ns = string.Empty;
-        }
+        object rs = _rpc.localproxy("Information.Info");
+        IDictionary dic = (IDictionary)rs;
+        _ipop_ns = dic["IpopNamespace"] as string;
+        _dht_addr = ((IDictionary)dic["neighbors"])["self"] as string;
       } catch (Exception e) {
         Logger.WriteLineIf(LogLevel.Verbose, _log_props, e);
         _ipop_ns = string.Empty;
       } finally {
         Logger.WriteLineIf(LogLevel.Info, _log_props,
-            string.Format("IPOP Namespace: {0}", _ipop_ns));
+            string.Format("IPOP Namespace: [{0}]", _ipop_ns));
       }
     }
 

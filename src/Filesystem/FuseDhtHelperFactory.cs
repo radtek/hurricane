@@ -1,7 +1,6 @@
-using Ipop;
 using System;
 using System.Collections;
-using Brunet.Dht;
+using Brunet.DistributedServices;
 using Brunet;
 
 

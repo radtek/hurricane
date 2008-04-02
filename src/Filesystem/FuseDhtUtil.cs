@@ -10,7 +10,7 @@ using NUnit.Framework;
 #endif
 using Mono.Unix;
 using Brunet;
-using Brunet.Dht;
+using Brunet.DistributedServices;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 

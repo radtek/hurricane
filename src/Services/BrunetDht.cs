@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Collections;
 using System.Text;
-using Ipop;
 #if FUSHARE_NUNIT
 using NUnit.Framework; 
 #endif
-using Brunet.Dht;
+using Brunet.DistributedServices;
 using Brunet;
+using Brunet.Rpc;
 
 namespace Fushare.Services {
   /**
@@ -27,7 +27,7 @@ namespace Fushare.Services {
     }
 
     public BrunetDht(Uri uri) {
-      _dht = Ipop.DhtServiceClient.GetXmlRpcDhtClient(uri.Port);
+      _dht = DhtServiceClient.GetXmlRpcDhtClient(uri.Port);
     }
 
     #endregion
