@@ -10,15 +10,17 @@ using NUnit.Framework;
 using Fushare.Services;
 
 namespace Fushare {
-  /**
-   * Main config file of fushare application.
-   * 
-   */
+  /// <summary>
+  /// Main config file of fushare application.
+  /// </summary>
   [XmlType("fushareConfig")]
   public class FushareConfig {
     public ServiceConfigSection serviceConfig;
   }
 
+  /// <summary>
+  /// Reads and writes FushareConfig
+  /// </summary>
   public class FushareConfigHandler {
     private static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(FushareConfigHandler));
 
@@ -49,7 +51,7 @@ namespace Fushare {
       serializer.Serialize(configStream, config);
     }
 
-    public static void OnServiceHandlersSet(object sender, EventArgs e) {
+    static void OnServiceHandlersSet(object sender, EventArgs e) {
       ServiceConfigSection config = (ServiceConfigSection)sender;
       foreach (ServiceHandler handler in config.serviceHandlers) {
         Type type = Type.GetType(handler.type);

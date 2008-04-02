@@ -5,8 +5,13 @@ using Fushare.Filesystem;
 using System.Threading;
 
 namespace Fushare {
+  /// <summary>
+  /// Program entry point.
+  /// </summary>
   class FushareApp {
-    private static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(FushareApp));
+    #region Fields
+    private static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(FushareApp)); 
+    #endregion
 
     public static void Main(string[] args) {
       Logger.LoadConfig();
@@ -18,10 +23,10 @@ namespace Fushare {
       } catch (System.Net.WebException) {
         Console.Error.WriteLine("Soap/XmlRpc Dht interface not started. Please start it first");
       } catch (Exception ex) {
-        Console.Error.WriteLine("System cannot started");
+        Console.Error.WriteLine("System cannot start. Aborting...");
         Logger.WriteLineIf(LogLevel.Fatal, _log_props, 
             ex);
-        //if caught unhandled exception, terminates.
+        // If caught unhandled exception, terminates.
         Thread.CurrentThread.Abort();
       }
     }
