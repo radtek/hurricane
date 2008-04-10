@@ -198,24 +198,28 @@ namespace OpenDHTLib
 
         #region Helper
         public delegate object ProcessDelegate(byte[] data);
-        public abstract object GetValue(byte[] data);
+        protected abstract object GetValue(byte[] data);
 
-        protected object[] GetValues(string key)
+        /// <summary>
+        /// Returns all the values with the given key all at once.
+        /// </summary>
+        public object[] GetValues(string key) {
+          return GetValues(Encoding.UTF8.GetBytes(key));
+        }
+
+        /// <summary>
+        /// Returns all the values with the given key all at once.
+        /// </summary>
+        public object[] GetValues(byte[] key)
         {
             ArrayList ret = new ArrayList();
             byte[] pm = new byte[0];
             do
             {
                 object[] get = Get(key, Maxvals, pm);
-
                 pm = (byte[])get[1];
-                get = (object[])get[0];
-                foreach (object obj in get)
-                {
-                    object val = GetValue((byte[])obj);
-                    if (val != null)
-                        ret.Add(val);
-                }
+                object[] vals = (object[])get[0];
+                ret.AddRange(vals);
             }
             while (pm.Length != 0);
 
@@ -264,12 +268,12 @@ namespace OpenDHTLib
             }
         }
 
-        public static byte[] GetBytes(string str)
+        internal static byte[] GetBytes(string str)
         {
             return Encoding.UTF8.GetBytes(str);
         }
 
-        public static string GetString(byte[] data)
+        internal static string GetString(byte[] data)
         {
             string ret = string.Empty;
             try

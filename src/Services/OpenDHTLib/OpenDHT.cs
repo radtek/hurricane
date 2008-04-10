@@ -38,19 +38,19 @@ namespace OpenDHTLib
         /// </summary>
         /// <param name="data">UTF-8 encoded string</param>
         /// <returns></returns>
-        public override object GetValue(byte[] data)
+        protected override object GetValue(byte[] data)
         {
             return GetString(data);
         }
 
-        public static string[] GetValues(object[] values)
+        private static string[] GetValues(object[] values)
         {
             ArrayList ret = new ArrayList();
             ret.AddRange(values);
             return (string[])ret.ToArray(typeof(string));
         }
 
-        public static OpenDHTMessageDetails[] GetDetailsValues(object[] values)
+        protected static OpenDHTMessageDetails[] GetDetailsValues(object[] values)
         {
             ArrayList ret = new ArrayList();
             ret.AddRange(values);
@@ -61,6 +61,7 @@ namespace OpenDHTLib
         {
             return OpenDHT.GetValues(GetValues(key));
         }
+
         public OpenDHTMessageDetails[] GetDetailsStringValues(string key)
         {
             return OpenDHT.GetDetailsValues(GetDetailsValues(key));

@@ -80,6 +80,10 @@ namespace OpenDHTLib
             get { return (byte[])data.Clone(); }
             set { data = (byte[])value.Clone(); }
         }
+
+        /// <summary>
+        /// The string representation of Value
+        /// </summary>
         public string Content
         {
             get { return OpenDHT.GetString(Value); }
