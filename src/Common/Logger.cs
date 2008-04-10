@@ -8,24 +8,69 @@ using log4net.Config;
 #endif
 
 namespace Fushare {
+  /// <summary>
+  /// Log level used by multiple logging systems
+  /// </summary>
   public enum LogLevel {
-    Off, Fatal, Error, Warning, Info, Verbose, All
+    /// <summary>
+    /// No logs
+    /// </summary>
+    Off, 
+    /// <summary>
+    /// Fatal in log4net and Fail in <c>System.Diagnostics</c>
+    /// </summary>
+    Fatal, 
+    /// <summary>
+    /// Non-fatal errors
+    /// </summary>
+    Error, 
+    /// <summary>
+    /// Warning in both
+    /// </summary>
+    Warning, 
+    /// <summary>
+    /// Useful information
+    /// </summary>
+    Info, 
+    /// <summary>
+    /// Debug in log4net and verbose in <c>System.Diagnostics</c>
+    /// </summary>
+    Verbose, 
+    /// <summary>
+    /// All, not used in <c>System.Diagnostics</c>
+    /// </summary>
+    All
   }
 
+  /// <summary>
+  /// Logger for the fushare system. Supports <c>System.Diagnostics</c> and log4net
+  /// </summary>
   public class Logger {
+    #region Switches used by Systen.Diagnostics
     public static readonly TraceSwitch TrackerLog = new TraceSwitch("trackerLog", "Logs in tracker");
+    public static readonly BooleanSwitch FilesysLog = new BooleanSwitch("filesysLog", "Logs in FUSE File system"); 
+    #endregion
 
+    /// <summary>
+    /// Types of logging systems
+    /// </summary>
     public enum TraceType {
       Trace, Debug, Log4Net
     }
 
-    /**
-     * Load the config file from ./l4n.config
-     */
+    /// <summary>
+    /// Loads the config file from ./l4n.config
+    /// </summary>
     public static void LoadConfig() {
       LoadConfig("l4n.config");
     }
 
+    /// <summary>
+    /// Loads config file for the logger.
+    /// </summary>
+    /// <remarks>
+    /// Currently only for log4net. 
+    /// </remarks>
     public static void LoadConfig(string configFile) {
 #if LOG4NET
       XmlConfigurator.Configure(new System.IO.FileInfo(configFile));
@@ -58,17 +103,52 @@ namespace Fushare {
       return dic;
     }
 
+    /// <summary>
+    /// Prepares properties for some of the loggers used in this system that aren't
+    /// associated with a particular class but named with a <c>string</c> typed 
+    /// name.
+    /// </summary>
+    /// <param name="loggerName"></param>
+    /// <returns></returns>
+    public static IDictionary PrepareNamedLoggerProperties(string loggerName) {
+      IDictionary dict = new System.Collections.Specialized.ListDictionary();
+#if LOG4NET
+      ILog log = LogManager.GetLogger(loggerName);
+      dict.Add("logger", log); 
+#endif
+      return dict;
+    }
+
     #region Log Methods
-    /**
-     * Main method for multi-tool logging.
-     * Which logging tool to use depends on the MACROS defined.
-     * @warning Well, this really could be optimized in terms of speed, 
-     * but let's just keep the simplicity.
-     * 
-     * @param args DEBUG || TRACE: args[0] object to log; args[1]: (optional) string category
-     *                     LOG4NET: args[0]: object message; args[1]: (optional) Exception
-     * @note params object[] args is not used to pass multiple message objects
-     */
+
+    /// <summary>
+    /// Main method for multi-tool logging.
+    /// </summary>
+    /// <remarks>
+    /// Which logging tool to use depends on the MACROS defined.
+    /// </remarks>
+    /// <param name="level">level of logging</param>
+    /// <param name="props">properties of logging</param>
+    /// <param name="args">
+    /// <list type="table">
+    /// <item>
+    /// <term>
+    /// DEBUG || TRACE
+    /// </term>
+    /// <description>
+    /// args[0] object to log; args[1]: (optional) string category
+    /// </description>
+    /// </item>
+    /// <item>
+    /// <term>
+    /// LOG4NET
+    /// </term>
+    /// <description>
+    /// args[0]: object message; args[1]: (optional) Exception
+    /// </description>
+    /// </item>
+    /// </list>
+    /// </param>
     public static void WriteLineIf(LogLevel level, IDictionary props, params object[] args) {
       if (args.Length == 0) {
         throw new ArgumentException("Object(s) to log needed.");

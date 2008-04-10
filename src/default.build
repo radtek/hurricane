@@ -65,6 +65,7 @@
         <include name="Common/IDto.cs"/>
         <include name="Common/ISerializer.cs"/>
         <include name="Common/RegularData.cs"/>
+        <include name="Common/XmlRpcTracer.cs" />
         <include name="Filesystem/Constants.cs"/>
         <include name="Filesystem/FuseDhtConfig.cs"/>
         <include name="Filesystem/RedirectFS-FH.cs"/>
