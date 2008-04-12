@@ -25,6 +25,7 @@ namespace Fushare.Filesystem {
 
     #region Fields
     private static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(FuseFS));
+    private static readonly IDictionary _fslog_props = Logger.PrepareNamedLoggerProperties("Filesys");
     private FuseDhtHelper _helper;
     private FuseDhtUtil _util;
     private string _shadowdir;
@@ -34,7 +35,7 @@ namespace Fushare.Filesystem {
     private int _dht_port = 51515;
     private int _xmlrpc_port = 10000;
     private IDictionary _helper_options = new ListDictionary();
-    
+
     #endregion
 
     public bool ParseArguments(string[] args) {
@@ -85,11 +86,14 @@ namespace Fushare.Filesystem {
           default:
             if (string.IsNullOrEmpty(base.MountPoint)) {
               base.MountPoint = args[i];
-              Console.WriteLine("MountPoint", args[i]);
+              Console.WriteLine("MountPoint: {0}", args[i]);
+              Logger.WriteLineIf(LogLevel.Info, _log_props, string.Format(
+                  "MountPoint: {0}", args[i]));
             } else if (string.IsNullOrEmpty(this._shadowdir)) {
               _shadowdir = args[i];
               _helper_options.Add("shadow_dir", _shadowdir);
-              Console.WriteLine("Shadow", args[i]);
+              Console.WriteLine("Shadow: {0}", args[i]);
+              Logger.WriteLineIf(LogLevel.Info, _log_props, string.Format("Shadow: {0}", args[i]));
             }
             break;
         }
@@ -100,14 +104,14 @@ namespace Fushare.Filesystem {
     public void InitAndStartFS(string[] args) {
       string[] unhandled = this.ParseFuseArguments(args);
       foreach (string key in this.FuseOptions.Keys) {
-        Console.WriteLine("Option={1}", key, this.FuseOptions[key]);
+        Console.WriteLine("Option {0}={1}", key, this.FuseOptions[key]);
       }
       if (!this.ParseArguments(unhandled))
         return;
       this.InitFuseDhtSystem();
       this.Start();
     }
-    
+
     public void InitFuseDhtSystem() {
       _helper_options.Add("helper_type", _helper_type);
       _helper_options.Add("dht_port", _dht_port);
@@ -115,19 +119,19 @@ namespace Fushare.Filesystem {
 
       this._rfs = new RedirectFHFSHelper(this._shadowdir);
       this._util = new FuseDhtUtil(this._shadowdir);
-      Console.WriteLine("Connecting to {0}", _helper_type);
+      Logger.WriteLineIf(LogLevel.Info, _log_props, string.Format("Connecting to {0}", _helper_type));
       this._helper = FuseDhtHelperFactory.GetFuseDhtHelper(this._helper_options);
       this._util.InitDhtRootFileStructure();
       this._util.CreateSelfBaseDir(this._helper.DhtAddress);
       if (_auto_renew) {
-        DhtFileManager.StartAsThread(Path.Combine(Path.Combine(_shadowdir, Constants.DIR_DHT_ROOT), Constants.DIR_META), _helper); 
+        DhtFileManager.StartAsThread(Path.Combine(Path.Combine(_shadowdir, Constants.DIR_DHT_ROOT), Constants.DIR_META), _helper);
       }
     }
 
     protected override Errno OnRenamePath(string from, string to) {
       Logger.WriteLineIf(LogLevel.Verbose, _log_props,
           string.Format("OnRenamePath, from={0}, to={1}", from, to));
-      
+
       //Don't allow renaming of keydir and basedir
       string[] paths = FuseDhtUtil.ParsePath(from);
       switch (paths.Length - 1) {
@@ -143,19 +147,19 @@ namespace Fushare.Filesystem {
               return Errno.EACCES;
             }
             //all right, allow you to rename, but only on the same lvl
-            if(FuseDhtUtil.ParsePath(to).Length - 1 != Constants.LVL_BASE_DIR) {
+            if (FuseDhtUtil.ParsePath(to).Length - 1 != Constants.LVL_BASE_DIR) {
               return Errno.EACCES;
             }
             //ok
             return this._rfs.OnRenamePath(from, to);
           }
-        default :
+        default:
           return Errno.EACCES;
       }
     }
 
     protected override Errno OnCreateDirectory(string path, FilePermissions mode) {
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props,
           string.Format("OnCreateDirectory, path={0}, mode={1}", path, mode));
 
       //dht/basedir or dht/basedir/keydir
@@ -165,9 +169,9 @@ namespace Fushare.Filesystem {
         return Errno.EACCES;
       }
       this._rfs.OnCreateDirectory(path, mode);
-      
+
       //sucessfully created. Initialize the directory structure
-      if(paths.Length == Constants.LVL_KEY_DIR + 1 && !paths[Constants.LVL_BASE_DIR].Equals(Constants.DIR_KEY_DIR_GENERATOR)) {
+      if (paths.Length == Constants.LVL_KEY_DIR + 1 && !paths[Constants.LVL_BASE_DIR].Equals(Constants.DIR_KEY_DIR_GENERATOR)) {
         string s_path = Path.Combine(_shadowdir, path);
         DirectoryInfo keydir = new DirectoryInfo(s_path);
         DirectoryInfo basedir = keydir.Parent;
@@ -186,7 +190,7 @@ namespace Fushare.Filesystem {
 
     protected override Errno OnReadDirectory(string path, OpenedPathInfo fi,
         out IEnumerable<DirectoryEntry> subPaths) {
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props,
           string.Format("OnReadDirectory, path={0}, handle={1}", path, fi.Handle));
 
       //only block read of "cache"
@@ -247,7 +251,7 @@ namespace Fushare.Filesystem {
       if (fdone.Length != 0) {
         int done;
         bool succ = Int32.TryParse(File.ReadAllText(fdone[0].FullName), out done);
-        
+
         if (succ && done == 0) {
           Logger.WriteLineIf(LogLevel.Verbose, _log_props,
             ".done found and equals 0");
@@ -310,11 +314,11 @@ namespace Fushare.Filesystem {
     }
 
     protected override Errno OnReleaseHandle(string path, OpenedPathInfo info) {
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props,
           string.Format("OnReleaseHandle, path={0}, handle={1}, openflags={2}", path, info.Handle, info.OpenFlags));
-      
+
       Errno ret = this._rfs.OnReleaseHandle(path, info);
-      if(ret != 0) {
+      if (ret != 0) {
         return ret;
       }
 
@@ -336,7 +340,8 @@ namespace Fushare.Filesystem {
               if ((OpenFlags.O_WRONLY == (info.OpenFlags & OpenFlags.O_WRONLY)
                   || OpenFlags.O_RDWR == (info.OpenFlags & OpenFlags.O_RDWR))
                 && FuseDhtUtil.IsValidMyFileName(filename)) {
-                string value = File.ReadAllText(Path.Combine(_shadowdir, path.Remove(0, 1)));
+                //string value = File.ReadAllText(Path.Combine(_shadowdir, path.Remove(0, 1)));
+                byte[] value = File.ReadAllBytes(Path.Combine(_shadowdir, path.Remove(0, 1)));
                 byte[] dht_val = FuseDhtUtil.GenerateDhtValue(filename, value);
 
                 int? ttl = (int?)_util.ReadParam(basedir, key, Constants.FILE_TTL);
@@ -392,7 +397,7 @@ namespace Fushare.Filesystem {
     }
 
     protected override Errno OnReadSymbolicLink(string path, out string target) {
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props,
           string.Format("OnReadSymbolicLink, path={0}", path));
       Errno err = this._rfs.OnReadSymbolicLink(path, out target);
 
@@ -415,14 +420,14 @@ namespace Fushare.Filesystem {
         default:
           break;
       }
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props,
           string.Format("Linked to {0}", target));
       return err;
     }
 
 
     protected override Errno OnGetPathStatus(string path, out Stat buf) {
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props,
           string.Format("OnGetPathStatus, path={0}", path));
 
       string[] paths = FuseDhtUtil.ParsePath(path);
@@ -500,7 +505,7 @@ namespace Fushare.Filesystem {
                 Logger.WriteLineIf(LogLevel.Verbose, _log_props, ex);
               }
               Errno e = this._rfs.OnGetPathStatus(path, out buf);
-              Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+              Logger.WriteLineIf(LogLevel.Verbose, _fslog_props,
                   string.Format("\tFilePermission of the path={0}", buf.st_mode));
               return e;
             }
@@ -510,30 +515,30 @@ namespace Fushare.Filesystem {
           break;
       }
 
-      
+
       Errno ret = this._rfs.OnGetPathStatus(path, out buf);
-     
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props,
           string.Format("\tFilePermission of the path={0}", buf.st_mode));
       return ret;
     }
 
     #region Unmodified Methods
     protected override Errno OnRemoveFile(string path) {
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnRemoveFile, path={0}", path));
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnRemoveFile, path={0}", path));
       return this._rfs.OnRemoveFile(path);
     }
 
     protected override Errno OnRemoveDirectory(string path) {
 
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnRemoveDirectory, path={0}", path));
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnRemoveDirectory, path={0}", path));
       return this._rfs.OnRemoveDirectory(path);
     }
 
     protected override unsafe Errno OnWriteHandle(string path, OpenedPathInfo info,
         byte[] buf, long offset, out int bytesWritten) {
 
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnWriteHandle, path={0}, handle={1}, buflength={2}, offset={3}", path, info.Handle, buf.Length, offset));
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnWriteHandle, path={0}, handle={1}, buflength={2}, offset={3}", path, info.Handle, buf.Length, offset));
 
       return this._rfs.OnWriteHandle(path, info, buf, offset, out bytesWritten);
     }
@@ -541,153 +546,153 @@ namespace Fushare.Filesystem {
     protected override unsafe Errno OnReadHandle(string path, OpenedPathInfo info, byte[] buf,
         long offset, out int bytesRead) {
 
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnReadHandle, path={0}, handle={1}, buflength={2}, offset={3}", path, info.Handle, buf.Length, offset));
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnReadHandle, path={0}, handle={1}, buflength={2}, offset={3}", path, info.Handle, buf.Length, offset));
 
       return this._rfs.OnReadHandle(path, info, buf, offset, out bytesRead);
     }
 
     protected override Errno OnChangePathPermissions(string path, FilePermissions mode) {
 
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnChangePathPermissions, path={0}, filepermission={1}", path, mode));
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnChangePathPermissions, path={0}, filepermission={1}", path, mode));
 
       return this._rfs.OnChangePathPermissions(path, mode);
     }
 
     protected override Errno OnOpenHandle(string path, OpenedPathInfo info) {
 
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnOpenHandle, path={0}, openflags={1}", path, info.OpenFlags));
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnOpenHandle, path={0}, openflags={1}", path, info.OpenFlags));
 
       return this._rfs.OnOpenHandle(path, info);
     }
 
     protected override Errno OnFlushHandle(string path, OpenedPathInfo info) {
 
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnFlushHandle, path={0}, handle={1}", path, info.Handle));
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnFlushHandle, path={0}, handle={1}", path, info.Handle));
 
       return this._rfs.OnFlushHandle(path, info);
     }
 
     protected override Errno OnCreateHandle(string path, OpenedPathInfo info, FilePermissions mode) {
 
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnCreateHandle, path={0}, openflags={1}, filepermission={2}", path, info.OpenAccess, mode));
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnCreateHandle, path={0}, openflags={1}, filepermission={2}", path, info.OpenAccess, mode));
 
       return this._rfs.OnCreateHandle(path, info, mode);
     }
 
     protected override Errno OnGetHandleStatus(string path, OpenedPathInfo info, out Stat buf) {
 
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnGetHandleStatus, path={0}, handle={1}", path, info.Handle));
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnGetHandleStatus, path={0}, handle={1}", path, info.Handle));
 
       return this._rfs.OnGetHandleStatus(path, info, out buf);
     }
 
     protected override Errno OnOpenDirectory(string path, OpenedPathInfo info) {
 
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnOpenDirectory, path={0}", path));
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnOpenDirectory, path={0}", path));
 
       return this._rfs.OnOpenDirectory(path, info);
     }
 
     protected override Errno OnAccessPath(string path, AccessModes mask) {
 
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnAccessPath, path={0}, mask={1}", path, mask));
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnAccessPath, path={0}, mask={1}", path, mask));
 
       return this._rfs.OnAccessPath(path, mask);
     }
 
     protected override Errno OnReleaseDirectory(string path, OpenedPathInfo info) {
 
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnReleaseDirectory, path={0}, handle={1}", path, info.Handle));
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnReleaseDirectory, path={0}, handle={1}", path, info.Handle));
 
       return this._rfs.OnReleaseDirectory(path, info);
     }
 
     protected override Errno OnCreateSpecialFile(string path, FilePermissions mode, ulong rdev) {
 
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnCreateSpecialFile, path={0}, mode={1}, rdev={2}", path, mode, rdev));
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnCreateSpecialFile, path={0}, mode={1}, rdev={2}", path, mode, rdev));
 
       return this._rfs.OnCreateSpecialFile(path, mode, rdev);
     }
 
     protected override Errno OnCreateSymbolicLink(string from, string to) {
 
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnCreateSymbolicLink, from={0}, to={1}", from, to));
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnCreateSymbolicLink, from={0}, to={1}", from, to));
 
       return this._rfs.OnCreateSymbolicLink(from, to);
     }
 
     protected override Errno OnGetFileSystemStatus(string path, out Statvfs stbuf) {
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnGetFileSystemStatus, path={0}", path));
-      Errno rs =  this._rfs.OnGetFileSystemStatus(path, out stbuf);
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnGetFileSystemStatus, path={0}", path));
+      Errno rs = this._rfs.OnGetFileSystemStatus(path, out stbuf);
       return rs;
     }
 
     protected override Errno OnSynchronizeHandle(string path, OpenedPathInfo info, bool onlyUserData) {
 
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnSynchronizeHandle, path={0}, handle={1}, onlyUserData={2}", path, info.Handle, onlyUserData));
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnSynchronizeHandle, path={0}, handle={1}, onlyUserData={2}", path, info.Handle, onlyUserData));
 
       return this._rfs.OnSynchronizeHandle(path, info, onlyUserData);
     }
 
     protected override Errno OnSetPathExtendedAttribute(string path, string name, byte[] value, XattrFlags flags) {
 
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnSetPathExtendedAttribute, path={0}, name={1}, value={2}, flags={3}", path, name, Encoding.UTF8.GetString(value), flags));
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnSetPathExtendedAttribute, path={0}, name={1}, value={2}, flags={3}", path, name, Encoding.UTF8.GetString(value), flags));
 
       return this._rfs.OnSetPathExtendedAttribute(path, name, value, flags);
     }
 
     protected override Errno OnGetPathExtendedAttribute(string path, string name, byte[] value, out int bytesWritten) {
 
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnGetPathExtendedAttribute, path={0}, name={1}, value={2}", path, name, Encoding.UTF8.GetString(value)));
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnGetPathExtendedAttribute, path={0}, name={1}, value={2}", path, name, Encoding.UTF8.GetString(value)));
 
       return this._rfs.OnGetPathExtendedAttribute(path, name, value, out bytesWritten);
     }
 
     protected override Errno OnListPathExtendedAttributes(string path, out string[] names) {
 
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnListPathExtendedAttributes, path={0}", path));
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnListPathExtendedAttributes, path={0}", path));
 
       return this._rfs.OnListPathExtendedAttributes(path, out names);
     }
 
     protected override Errno OnRemovePathExtendedAttribute(string path, string name) {
 
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnRemovePathExtendedAttribute, path={0}, name={1}", path, name));
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnRemovePathExtendedAttribute, path={0}, name={1}", path, name));
 
       return this._rfs.OnRemovePathExtendedAttribute(path, name);
     }
 
     protected override Errno OnCreateHardLink(string from, string to) {
 
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnCreateHardLink, from={0}, to={1}", from, to));
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnCreateHardLink, from={0}, to={1}", from, to));
 
       return this._rfs.OnCreateHardLink(from, to);
     }
 
     protected override Errno OnChangePathOwner(string path, long uid, long gid) {
 
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnChangePathOwner, path={0}, uid={1}, gid={2}", path, uid, gid));
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnChangePathOwner, path={0}, uid={1}, gid={2}", path, uid, gid));
 
       return this._rfs.OnChangePathOwner(path, uid, gid);
     }
 
     protected override Errno OnTruncateFile(string path, long size) {
 
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnTruncateFile, path={0}, size={1}", path, size));
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnTruncateFile, path={0}, size={1}", path, size));
 
       return this._rfs.OnTruncateFile(path, size);
     }
 
     protected override Errno OnTruncateHandle(string path, OpenedPathInfo info, long size) {
 
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnTruncateHandle, path={0}, handle={1}, size={2}", path, info.Handle, size));
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnTruncateHandle, path={0}, handle={1}, size={2}", path, info.Handle, size));
 
       return this._rfs.OnTruncateHandle(path, info, size);
     }
 
     protected override Errno OnChangePathTimes(string path, ref Utimbuf buf) {
 
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("OnChangePathTimes, path={0}, buf={1}", path, buf));
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnChangePathTimes, path={0}, buf={1}", path, buf));
 
       return this._rfs.OnChangePathTimes(path, ref buf);
     }
@@ -695,7 +700,7 @@ namespace Fushare.Filesystem {
     #endregion
   }
 
-#if FUSE_NUNIT 
+#if FUSE_NUNIT
   [TestFixture]
   /**
    * Just test some Mono.Fuse system and Main class features in here

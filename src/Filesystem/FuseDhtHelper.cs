@@ -15,7 +15,7 @@ using Brunet.Rpc;
 using NUnit.Framework;
 #endif
 
-namespace Fushare.Filesystem {  
+namespace Fushare.Filesystem {
   /// <summary>
   /// Deals with Dht operations for FuseDht class
   /// </summary>
@@ -29,7 +29,7 @@ namespace Fushare.Filesystem {
     private readonly string _metadir;
     private readonly string _dht_addr;
     private readonly string _ipop_ns;
-    private IXmlRpcManager _rpc; 
+    private IXmlRpcManager _rpc;
     #endregion
 
     /**
@@ -44,7 +44,7 @@ namespace Fushare.Filesystem {
     public string DhtAddress {
       get { return _dht_addr; }
     }
-    
+
     public FuseDhtHelper(int xmlRpcPort, string shadowdir) {
       _dht = (BrunetDht)DictionaryServiceFactory.GetServiceInstance(typeof(BrunetDht));
       this._shadowdir = shadowdir;
@@ -134,7 +134,7 @@ namespace Fushare.Filesystem {
 
       //Handle the exception if this casting fails
       ISoapDht dht = (ISoapDht)_dht;
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("Getting {0}", dht_key));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format("Getting {0}", dht_key));
       IBlockingQueue bq = dht.GetAsBlockingQueue(dht_key);
       int i = 0;
       bool set = false;
@@ -144,7 +144,7 @@ namespace Fushare.Filesystem {
         // so we'll do this instead.
         try {
           DhtGetResult result = (DhtGetResult)bq.Dequeue();
-          Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("Got #{0} item", i++));
+          Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format("Got #{0} item", i++));
           DhtDataFile file = new DhtDataFile(s_parent_path, result);
           file.WriteToFile();
           DateTime end = DateTime.UtcNow - new TimeSpan(0, 0, file.Age) + new TimeSpan(0, 0, file.TTL);
@@ -152,26 +152,26 @@ namespace Fushare.Filesystem {
             //if hasn't been set, set it. Otherwise only set if we can get a smaller datetime
             dt = end;
           }
-          if(waitingFileName != null && file.Name.Equals(waitingFileName)) {
+          if (waitingFileName != null && file.Name.Equals(waitingFileName)) {
             //notify the waiting thread that the expected file arrives
-            Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("Got the expected file"));
+            Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format("Got the expected file"));
             re.Set();
             set = true;
           }
         } catch (Exception e) {
-          Logger.WriteLineIf(LogLevel.Verbose, _log_props,e);
+          Logger.WriteLineIf(LogLevel.Verbose, _log_props, e);
           break;
         }
       }
       //set again in case no such filename in Dht
       File.WriteAllText(Path.Combine(s_parent_path, Constants.FILE_DONE), "1"); //done
-      string refresh = Path.Combine(new DirectoryInfo(s_parent_path).Parent.GetDirectories(Constants.DIR_ETC)[0].FullName, 
+      string refresh = Path.Combine(new DirectoryInfo(s_parent_path).Parent.GetDirectories(Constants.DIR_ETC)[0].FullName,
         Constants.FILE_REFRESH);
       //we use utc to compare, but we write local time string for easy to read
       File.WriteAllText(refresh, dt.ToLocalTime().ToString());
       if (!set) {
         //no filename matched. So I release the waiting thread at the end
-        re.Set(); 
+        re.Set();
       }
     }
 
@@ -191,27 +191,58 @@ namespace Fushare.Filesystem {
                            + key + Path.DirectorySeparatorChar
                            + Constants.DIR_CACHE;
 
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("Getting {0}", dht_key));
-      DhtGetResult[] results = _dht.Get(dht_key);
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("Got {0} item(s)", results.Length));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
+          "Getting {0}", dht_key));
+      DhtGetResult[] results = null;
+      int item_count = 0;
+      int retries = 3;
+      for (; item_count == 0 && retries > 0; retries--) {
+        if (retries < 3) {
+          Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
+              "Retrying..."));
+        }
+        results = _dht.Get(dht_key) as DhtGetResult[]; 
+        item_count = results.Length;
+        if (item_count == 0) {
+          Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
+              "Got nothing"));
+        } else {
+          Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
+              "Got {0} item(s)", item_count));
+        }
+      }
+
+      if (item_count == 0) {
+        //Do nothing
+        return;
+      }
 
       #region Fragmentation logic
       //Check the first value for frag info
       DhtGetResult dgr = results[0];
       DictionaryData dd = null;
       try {
-         //dd = DictionaryData.CreateDictionaryData(dgr.value);
-         dd = DictionaryData.CreateDictionaryData(Convert.FromBase64String(dgr.valueString));
+        dd = DictionaryData.CreateDictionaryData(dgr.value);
+        //dd = DictionaryData.CreateDictionaryData(Convert.FromBase64String(dgr.valueString));
       } catch (Exception ex) {
         Logger.WriteLineIf(LogLevel.Error, _log_props,
             ex);
         throw ex;
       }
+      
       if (dd is FragmentationInfo) {
         FragmentationInfo frag_info = dd as FragmentationInfo;
         Logger.WriteLineIf(LogLevel.Info, _log_props,
             string.Format("Retrieved data is a FragmentationInfo: {0}", frag_info.ToString()));
-        BrunetDhtEntry bde = _dht.GetFragments(frag_info) as BrunetDhtEntry;
+        BrunetDhtEntry bde = null;
+        try {
+           bde = _dht.GetFragments(frag_info) as BrunetDhtEntry;
+        } catch (Exception ex) {
+          Logger.WriteLineIf(LogLevel.Error, _log_props, string.Format("Can't get fragments."), ex);
+          //Do nothing but quit.
+          return;
+        }
+        //Only 1 entry (if any) in this array
         results = new DhtGetResult[] { bde.ToDhtGetResult() };
       }
 
@@ -220,7 +251,8 @@ namespace Fushare.Filesystem {
       //We need the earliest expiration time of all the returned items
       DateTime dt = DateTime.MinValue;
       foreach (DhtGetResult result in results) {
-        DhtDataFile file = new DhtDataFile(s_parent_path, result);
+        RegularData rd = (RegularData)DictionaryData.CreateDictionaryData(result.value);
+        DhtDataFile file = new DhtDataFile(s_parent_path, rd.PayLoad, dgr.age, dgr.ttl);
         file.WriteToFile();
         DateTime end = DateTime.UtcNow - new TimeSpan(0, 0, file.Age) + new TimeSpan(0, 0, file.TTL);
         if (dt == DateTime.MinValue || end < dt) {
@@ -272,20 +304,21 @@ namespace Fushare.Filesystem {
           FragmentationInfo frag_info = new FragmentationInfo(dht_key);
           frag_info.PieceLength = size_limit;
           result = _dht.PutFragments(bde, frag_info);
-        }  
+        }
         #endregion
 
         else {
-          string value_string = Encoding.UTF8.GetString(value);
+          RegularData rd = new RegularData(value);
+          byte[] dht_key_bytes = Encoding.UTF8.GetBytes(dht_key);
           if (put_mode == PutMode.Create) {
             Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format("Creating {0}, {1}", dht_key, new FileInfo(s_file_path).Name));
-            result = _dht.Create(dht_key, value_string, ttl);
+            result = _dht.Create(dht_key_bytes, rd.SerializeTo(), ttl);
           } else {
             Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format("Putting {0}, {1}", dht_key, new FileInfo(s_file_path).Name));
-            result = _dht.Put(dht_key, value_string, ttl);
-          } 
+            result = _dht.Put(dht_key_bytes, rd.SerializeTo(), ttl);
+          }
         }
-        Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("Put/Create returned: {0}", result));
+        Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format("Put/Create returned: {0}", result));
 
         FileInfo fi = new FileInfo(s_file_path);
         if (!result) {
@@ -293,7 +326,7 @@ namespace Fushare.Filesystem {
           if (s_file_path.EndsWith(Constants.FILE_OFFLINE)) {
             //file.offline -> file.offline.1
             s_file_path += "." + i.ToString();
-          } else if(s_file_path.Remove(s_file_path.Length - 2).EndsWith(Constants.FILE_OFFLINE)) {
+          } else if (s_file_path.Remove(s_file_path.Length - 2).EndsWith(Constants.FILE_OFFLINE)) {
             s_file_path = s_file_path.Remove(s_file_path.Length - 2) + "." + i.ToString();
           } else {
             //file -> file.offline
@@ -305,16 +338,16 @@ namespace Fushare.Filesystem {
           s_file_path = FuseDhtUtil.TrimPathExtension(s_file_path);
           //append .uploaded
           fi.MoveTo(s_file_path + Constants.FILE_UPLOADED);
-          DhtMetadataFile file = new DhtMetadataFile(ttl, 
+          DhtMetadataFile file = new DhtMetadataFile(ttl,
               s_file_path + Constants.FILE_UPLOADED);
-          Logger.WriteLineIf(LogLevel.Verbose, _log_props,string.Format("Dropping file {0} to meta folder. {1}", file._meta_filename, DateTime.Now));
+          Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format("Dropping file {0} to meta folder. {1}", file._meta_filename, DateTime.Now));
           DhtMetadataFileHandler.WriteAsXml(_metadir, file);
           break;
-        } 
+        }
       }
     }
 
-    
+
   }
 
 #if FUSE_NUNIT

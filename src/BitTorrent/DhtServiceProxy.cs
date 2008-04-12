@@ -63,7 +63,7 @@ namespace Fushare.BitTorrent {
       foreach (DhtGetResult r in results) {
         try {
           Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-              string.Format("Raw stringValue of the peer to be deserialized: {0}", r.valueString));
+              string.Format("Raw stringValue of the peer to be deserialized: {0}", Encoding.UTF8.GetString(r.value)));
           PeerEntry entry = new PeerEntry(r.value);
           //Debug.WriteLineIf(Logger.TrackerLog.TraceVerbose, string.Format("Peer entry {0} built:\n{1}", index++,entry.ToString()));
           Logger.WriteLineIf(LogLevel.Verbose, _log_props,

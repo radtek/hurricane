@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections;
 using System.Text;
@@ -28,6 +28,7 @@ namespace Fushare.Services {
 
     public BrunetDht(Uri uri) {
       _dht = DhtServiceClient.GetXmlRpcDhtClient(uri.Port);
+      new XmlRpcTracer().Attach(_dht as CookComputing.XmlRpc.IXmlRpcProxy);
     }
 
     #endregion
@@ -35,33 +36,44 @@ namespace Fushare.Services {
     #region IDictionaryService Members
 
     public override void Put(object key, object value) {
-      string str_key = key as string;
-      string str_value = value.ToString();
-      _dht.Put(str_key, str_value, DefaultTtl);
+      _dht.Put(key, value, DefaultTtl);
     }
 
+    /// <summary>
+    /// Returns result from IDht
+    /// </summary>
+    /// <param name="key">string or byte[] typed key</param>
+    /// <returns>Values in <c>DhtGetResult[]</c></returns>
+    /// <remarks>string typed key is converted to byte[] using UTF-8 on the receiver</remarks>
     public override object Get(object key) {
-      DhtGetResult[] dgrs = Get(key as string);
+      DhtGetResult[] dgrs = _dht.Get(key);
       return dgrs;
     }
 
     #endregion
 
-    public DhtGetResult[] Get(string key) {
-      return _dht.Get(key);
-    }
-
-    public bool Put(string key, string value, int ttl) {
+    /// <summary>
+    /// Put key/value pair into Brunet DHT
+    /// </summary>
+    /// <param name="key">string or byte[] typed key</param>
+    /// <param name="value">string or byte[] typed value</param>
+    /// <param name="ttl">Time-To-Live in seconds</param>
+    /// <returns>true if successful, false if not</returns>
+    public bool Put(object key, object value, int ttl) {
       return _dht.Put(key, value, ttl);
     }
 
-    public bool Create(string key, string value, int ttl) {
+    /// <summary>
+    /// Same as Put except that it fails in case of key collision
+    /// </summary>
+    /// <param name="key">string or byte[] typed key</param>
+    /// <param name="value">string or byte[] typed value</param>
+    /// <param name="ttl">Time-To-Live in seconds</param>
+    /// <returns>true if successful, false if not</returns>
+    public bool Create(object key, object value, int ttl) {
       return _dht.Create(key, value, ttl);
     }
 
-    /**
-     * Note: binary data are passed to Brunet Dht as Base64 string
-     */
     public DictionaryData GetFragments(FragmentationInfo info) {
       BrunetDhtEntry ret = null;
       string base_key = info.BaseKey;
@@ -76,18 +88,23 @@ namespace Fushare.Services {
        */
       for (int i = 0; i < piece_num; i++) {
         string piece_key = BuildFragmentKey(base_key, i);
-        bool succ = true; //set to false iff bad things happen
+        bool succ = false; //set to false iff bad things happen
         int retries = 3;  //After that we fail the operation
-        do {
-          Console.WriteLine("Getting: {0}", piece_key);
-          DhtGetResult[] dgrs = _dht.Get(piece_key);
+        for (; !succ && retries > 0; retries--) {
+          if (retries == 3) {
+            Logger.WriteLineIf(LogLevel.Verbose, _log_props, 
+                string.Format("Getting: {0}", piece_key));
+          } else {
+            Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+                string.Format("Retrying..."));
+          }
           try {
+            DhtGetResult[] dgrs = _dht.Get(piece_key);
             //It should have only one entry. If not, just let the the exception caught
             //and retry.
             DhtGetResult dgr = dgrs[0];
             FingerprintedData fpd =
-                (FingerprintedData)DictionaryData.CreateDictionaryData(Convert.FromBase64String(dgr.valueString));
-                //(FingerprintedData)DictionaryData.CreateDictionaryData(dgr.value);
+                (FingerprintedData)DictionaryData.CreateDictionaryData(dgr.value);
             Logger.WriteLineIf(LogLevel.Verbose, _log_props,
                 string.Format("Piece {0} retrieved and successfully parsed", piece_key));
             RegularData rd = fpd.InnerData as RegularData;
@@ -96,27 +113,36 @@ namespace Fushare.Services {
               smallest_ttl = dgr.ttl;
             if (largest_age < dgr.age)
               largest_age = dgr.age;
+            //Now it's safe to say, this attempt succeeded.
+            succ = true;
           } catch (Exception ex) {
             Logger.WriteLineIf(LogLevel.Error, _log_props,
                 ex);
             succ = false;
           }
-        } while (!succ && retries-- > 0);  //if succ then we are good
-        if (retries == 0) {
+        } //if succ then we are good
+
+        if (retries <= 0) {
           //Quit because retries exhausted.
-          throw new Exception(string.Format("Retries exhausted when retrieving" +
-              "and deserializing piece : {0}", piece_key));
+          throw new Exception(string.Format("Retries exhausted when retrieving "
+              + "and deserializing piece : {0}", piece_key));
+        } else {
+          Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
+              "Done with piece {0}", piece_key));
         }
       }
       //Got the fragments correctly
-      ret = new BrunetDhtEntry(base_key, fragments,
+      ret = new BrunetDhtEntry(base_key, (new RegularData(fragments)).SerializeTo(),
           largest_age, smallest_ttl);
       return ret;
     }
 
-    /**
-     * Note: binary data are parsed as Base64 string from Brunet Dht
-     */
+    /// <summary>
+    /// Puts fragments to Dht.
+    /// </summary>
+    /// <param name="bde">The data object.</param>
+    /// <param name="fragInfo">Object that contains the meta info.</param>
+    /// <returns></returns>
     public bool PutFragments(BrunetDhtEntry bde, FragmentationInfo fragInfo) {
       string info_key = bde.Key;
       int ttl = bde.Ttl;  //This ttl is used by every piece and the frag info
@@ -146,15 +172,23 @@ namespace Fushare.Services {
         Logger.WriteLineIf(LogLevel.Verbose, _log_props,
             string.Format("Size after serialization {0}", serializedFpd.Length));
         int i = index++;
-        bool succ = true;
+        bool succ = false;
         int retries = 3;
         string piece_key = BuildFragmentKey(base_key, i);
-        do {
-          succ = _dht.Put(piece_key,
-              Convert.ToBase64String(serializedFpd), ttl); //Base64 String
-              //Encoding.UTF8.GetString(serializedFpd), ttl); //Base64 String
-        } while (!succ && retries-- > 0);
-        if (retries == 0) {
+        for (; !succ && retries > 0; retries--) {
+          if (retries < 3) {
+            Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+                string.Format("Retrying..."));
+          }
+
+          succ = _dht.Put(Encoding.UTF8.GetBytes(piece_key), serializedFpd, ttl);
+          if (!succ) {
+            Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+                      string.Format("Put failed."));
+          }
+        }
+
+        if (retries <= 0) {
           Logger.WriteLineIf(LogLevel.Error, _log_props,
               string.Format("Retries exhausted when putting piece : {0}", piece_key));
           return false;
@@ -165,19 +199,25 @@ namespace Fushare.Services {
       }
 
       //Put info
-      bool succ_info = true;
+      bool succ_info = false;
       int retries_info = 3;
-      do {
-        succ_info = _dht.Put(info_key, Convert.ToBase64String(fragInfo.SerializeTo()), ttl);
-        //succ_info = _dht.Put(info_key, Convert.ToBase64String(fragInfo.SerializeTo()), ttl);
-      } while (!succ_info && retries_info-- > 0) ;
-      if (retries_info == 0) {
+      for (; !succ_info && retries_info > 0; retries_info-- ) {
+        if (retries_info < 3) {
+          Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+              string.Format("Retrying..."));
+        }
+        succ_info = _dht.Put(Encoding.UTF8.GetBytes(info_key), fragInfo.SerializeTo(), ttl);
+      }
+
+      if (retries_info <= 0) {
         Logger.WriteLineIf(LogLevel.Error, _log_props,
-              string.Format("Retries exhausted when putting fragInfo : {0}", info_key));
+            string.Format("Retries exhausted when putting FragmentationInfo : {0}", 
+            info_key));
         return false;
       } else {
         Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-            string.Format("FragmentationInfo successfully put to DHT with key {0}", info_key));
+            string.Format("FragmentationInfo successfully put to DHT with key {0}", 
+            info_key));
       }
       //If code reaches here without problems, then we can call it successful.
       return true;
@@ -186,8 +226,7 @@ namespace Fushare.Services {
     public static string BuildFragmentKey(string baseKey, int index) {
       return baseKey + ":" + index.ToString();
     }
-  
-    
+
   }
 
 
@@ -205,34 +244,34 @@ namespace Fushare.Services {
 
     #region IDht Members
 
-    public string BeginGet(string key) {
-      throw new Exception("The method or operation is not implemented.");
+    public string BeginGet(object key) {
+      throw new NotImplementedException();
     }
 
-    public DhtGetResult ContinueGet(string token) {
-      throw new Exception("The method or operation is not implemented.");
+    public bool Create(object key, object value, int ttl) {
+      throw new NotImplementedException();
     }
 
-    public bool Create(string key, string value, int ttl) {
-      throw new Exception("The method or operation is not implemented.");
-    }
-
-    public void EndGet(string token) {
-      throw new Exception("The method or operation is not implemented.");
-    }
-
-    public DhtGetResult[] Get(string key) {
+    public DhtGetResult[] Get(object key) {
       int age = 1000;
       return new DhtGetResult[] { new DhtGetResult(_ht[key] as string, age) };
     }
 
-    public IDictionary GetDhtInfo() {
-      throw new Exception("The method or operation is not implemented.");
-    }
-
-    public bool Put(string key, string value, int ttl) {
+    public bool Put(object key, object value, int ttl) {
       _ht.Add(key, value);
       return true;
+    }
+
+    public DhtGetResult ContinueGet(string token) {
+      throw new NotImplementedException();
+    }
+
+    public void EndGet(string token) {
+      throw new NotImplementedException();
+    }
+
+    public IDictionary GetDhtInfo() {
+      throw new NotImplementedException();
     }
 
     #endregion

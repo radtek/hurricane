@@ -37,24 +37,27 @@ namespace Fushare.Filesystem {
 
     #endregion
 
-    public DhtDataFile(string parentDirPath, DhtGetResult dgr) {
+    public DhtDataFile(string parentDirPath, byte[] serializedDdf, int age, int ttl) {
       this._parent_dir_path = parentDirPath;
-      this._age = dgr.age;
-      this._ttl = dgr.ttl;
-      IDictionary val = FuseDhtUtil.ParseDhtValue(dgr.value);
+      this._age = age;
+      this._ttl = ttl;
+      IDictionary val = FuseDhtUtil.ParseDhtValue(serializedDdf);
       if (val != null) {
         _fuse_value = val;
         _filename = (string)_fuse_value[Constants.DHT_VALUE_ATTR_FN];
         _real_filename = _filename;
         //_content = _fuse_value[Constants.DHT_VALUE_ATTR_VAL] as byte[];
-        _content = Encoding.UTF8.GetBytes(_fuse_value[Constants.DHT_VALUE_ATTR_VAL] as string);
+        _content = _fuse_value[Constants.DHT_VALUE_ATTR_VAL] as byte[];
       } else {
         //Cannot be parsed as IDictionary
-        _content = dgr.value;
+        _content = serializedDdf;
         this._filename = GenFileName();
         _real_filename = _filename;
       }
     }
+
+    public DhtDataFile(string parentDirPath, DhtGetResult dgr)
+        : this(parentDirPath, dgr.value, dgr.age, dgr.ttl) { }
 
     public int Age {
       get { return _age; }
