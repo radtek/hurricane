@@ -45,6 +45,14 @@
     <DebugType>full</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'l4npf|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\l4npf\</OutputPath>
+    <DefineConstants>TRACE;LOG4NET,FUSHARE_PF</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Brunet, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -99,6 +107,7 @@
       <HintPath>..\lib\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Data" />
     <Reference Include="System.Web" />
     <Reference Include="System.Xml" />
   </ItemGroup>
@@ -118,6 +127,7 @@
     <Compile Include="Common\FingerprintedData.cs" />
     <Compile Include="Common\FragmentableData.cs" />
     <Compile Include="Common\ISerializer.cs" />
+    <Compile Include="Common\Profiler.cs" />
     <Compile Include="Common\RegularData.cs" />
     <Compile Include="Common\XmlRpcTracer.cs" />
     <Compile Include="Filesystem\Constants.cs" />
@@ -134,8 +144,10 @@
     <Compile Include="Filesystem\IPathHandlerFactory.cs" />
     <Compile Include="Filesystem\PathHandlerFactory.cs" />
     <Compile Include="Filesystem\RedirectFS-FH.cs" />
+    <Compile Include="Services\BrunetDht.Async.cs" />
     <Compile Include="Services\BrunetDht.cs" />
     <Compile Include="Common\FragmentedDataManager.cs" />
+    <Compile Include="Services\BrunetDhtClientOperations.cs" />
     <Compile Include="Services\OpenDht.cs" />
     <Compile Include="Services\DictionaryServiceFactory.cs" />
     <Compile Include="Services\IDictionaryService.cs" />
@@ -159,6 +171,9 @@
     <None Include="default.build" />
     <None Include="Filesystem\default.build" />
     <None Include="BitTorrent\default.build" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Common\Constants\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSHARP.Targets" />
   <ProjectExtensions>

@@ -9,7 +9,7 @@ namespace Fushare {
    */
   public class FragmentationInfo : DictionaryData {
     #region Fileds
-    private string _base_key;
+    private byte[] _base_key;
     private int _piece_length = 1024;  //in bytes, used when serializing
     private int _piece_num;
     #endregion
@@ -21,12 +21,18 @@ namespace Fushare {
      * It is just a base name
      * that all data pieces have in common and can extend with.
      */
-    public string BaseKey {
+    public byte[] BaseKey {
       get {
         return _base_key;
       }
       set {
         _base_key = value;
+      }
+    }
+
+    public string BaseKeyUTF8String {
+      get {
+        return Encoding.UTF8.GetString(_base_key);
       }
     }
 
@@ -60,7 +66,11 @@ namespace Fushare {
     /**
      * @param baseKey this field is always mandatory.
      */
-    public FragmentationInfo(string baseKey) {
+    public FragmentationInfo(string baseKey)
+      : this(Encoding.UTF8.GetBytes(baseKey)) {
+    }
+
+    public FragmentationInfo(byte[] baseKey) {
       _base_key = baseKey;
     }
 
@@ -84,7 +94,7 @@ namespace Fushare {
         throw new ArgumentException(string.Format("Wrong type of dictionary data. Expected: {0}, Was: {1}."
             , expected.ToString(), t.ToString()));
       }
-      _base_key = (string)dict["base_key"];
+      _base_key = (byte[])dict["base_key"];
       _piece_num = (int)dict["piece_num"];
       _piece_length = (int)dict["piece_length"];
     }
@@ -92,7 +102,7 @@ namespace Fushare {
     public override string ToString() {
       StringBuilder sb = new StringBuilder();
       sb.Append("FragmentationInfo: \t");
-      sb.Append("BaseKey: " + BaseKey + ";\t");
+      sb.Append("BaseKey: " + Encoding.UTF8.GetString(BaseKey) + ";\t");
       sb.Append("PieceNum: " + PieceNum + ";\t");
       sb.Append("PieceLength: " + PieceLength+ " (bytes);");
       return sb.ToString();

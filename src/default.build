@@ -26,7 +26,13 @@
     <property name="define" value="LOG4NET" />
     <call target="buildProject" />
   </target>
-  
+ 
+  <target name="l4npf">
+    <property name="debug" value="false" />
+    <property name="define" value="LOG4NET,FUSHARE_PROFILING" />
+    <call target="buildProject" />
+  </target>
+
   <target name="clean">
     <delete>
       <fileset basedir="${build.dir}">
@@ -80,6 +86,8 @@
         <include name="Settings/FushareConfig.cs" />
         <include name="Settings/ServiceConfigSection.cs" />
         <include name="Services/BrunetDht.cs" />
+        <include name="Services/BrunetDht.Async.cs" />
+        <include name="Services/BrunetDhtClientOperations.cs" />
         <include name="Services/DictionaryServiceFactory.cs" />
         <include name="Services/IDhtService.cs" />
         <include name="Services/IDictionaryService.cs" />

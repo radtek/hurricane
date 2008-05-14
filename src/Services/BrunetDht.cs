@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections;
 using System.Text;
+using System.Threading;
 #if FUSHARE_NUNIT
 using NUnit.Framework; 
 #endif
@@ -14,10 +15,11 @@ namespace Fushare.Services {
    * Derives the the DhtService with the Implementation against Brunet Dht.
    * 
    */
-  public class BrunetDht : DhtService {
+  public partial class BrunetDht : DhtService {
     private IDht _dht;
     private static IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(BrunetDht));
     public const int DefaultTtl = 3600;  //Default ttl : 1 hour
+    private Uri _svc_uri;
 
     #region Constructors
     public BrunetDht() { }
@@ -26,8 +28,9 @@ namespace Fushare.Services {
       _dht = dht;
     }
 
-    public BrunetDht(Uri uri) {
-      _dht = DhtServiceClient.GetXmlRpcDhtClient(uri.Port);
+    public BrunetDht(Uri uri)
+      : this(DhtServiceClient.GetXmlRpcDhtClient(uri.Port)) {
+      this._svc_uri = uri;
       new XmlRpcTracer().Attach(_dht as CookComputing.XmlRpc.IXmlRpcProxy);
     }
 
@@ -75,24 +78,52 @@ namespace Fushare.Services {
     }
 
     public DictionaryData GetFragments(FragmentationInfo info) {
+      return this.GetFragments(info, true);
+    }
+
+    public DictionaryData GetFragments(FragmentationInfo info, bool concurrently) {
       BrunetDhtEntry ret = null;
-      string base_key = info.BaseKey;
+      byte[] base_key = info.BaseKey;
       int piece_num = info.PieceNum;
-      MemBlock fragments = new MemBlock();
-      int largest_age = 0;  
-      int smallest_ttl = Int32.MaxValue;
+      MemBlock fragments;
+      int largest_age;  
+      int smallest_ttl;
 
       /* 
        * @TODO: It doesn't have to be sequential but let's first get it work with
        * this approach 
        */
+      
+#if FUSHARE_PF
+      DateTime get_started = DateTime.UtcNow; 
+#endif
+      fragments = GetFragsSequentially(base_key, piece_num, out largest_age, out smallest_ttl);
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props, 
+          string.Format("Fragments successfully got from DHT"));
+#if FUSHARE_PF
+      DateTime get_finished = DateTime.UtcNow;
+      TimeSpan get_time = get_finished - get_started;
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+          string.Format("Total time used to get {0}: {1} seconds", base_key, get_time)); 
+#endif
+      //Got the fragments correctly
+      ret = new BrunetDhtEntry(base_key, (new RegularData(fragments)).SerializeTo(),
+          largest_age, smallest_ttl);
+      return ret;
+    }
+
+    private MemBlock GetFragsSequentially(byte[] base_key, int piece_num, 
+      out int largest_age, out int smallest_ttl) {
+      largest_age = 0;
+      smallest_ttl = Int32.MaxValue;
+      MemBlock fragments = new MemBlock();
       for (int i = 0; i < piece_num; i++) {
-        string piece_key = BuildFragmentKey(base_key, i);
+        byte[] piece_key = BuildFragmentKey(base_key, i);
         bool succ = false; //set to false iff bad things happen
         int retries = 3;  //After that we fail the operation
         for (; !succ && retries > 0; retries--) {
           if (retries == 3) {
-            Logger.WriteLineIf(LogLevel.Verbose, _log_props, 
+            Logger.WriteLineIf(LogLevel.Verbose, _log_props,
                 string.Format("Getting: {0}", piece_key));
           } else {
             Logger.WriteLineIf(LogLevel.Verbose, _log_props,
@@ -131,10 +162,14 @@ namespace Fushare.Services {
               "Done with piece {0}", piece_key));
         }
       }
-      //Got the fragments correctly
-      ret = new BrunetDhtEntry(base_key, (new RegularData(fragments)).SerializeTo(),
-          largest_age, smallest_ttl);
-      return ret;
+      return fragments;
+    }
+
+    /// <summary>
+    /// Puts fragments and chooses the concurrent option
+    /// </summary>
+    public bool PutFragments(BrunetDhtEntry bde, FragmentationInfo fragInfo) {
+      return this.PutFragments(bde, fragInfo, true);
     }
 
     /// <summary>
@@ -142,12 +177,12 @@ namespace Fushare.Services {
     /// </summary>
     /// <param name="bde">The data object.</param>
     /// <param name="fragInfo">Object that contains the meta info.</param>
-    /// <returns></returns>
-    public bool PutFragments(BrunetDhtEntry bde, FragmentationInfo fragInfo) {
-      string info_key = bde.Key;
+    /// <param name="concurrently">Puts concurrently if set to true</param>
+    public bool PutFragments(BrunetDhtEntry bde, FragmentationInfo fragInfo, 
+      bool concurrently) {
+      byte[] info_key = bde.Key;
       int ttl = bde.Ttl;  //This ttl is used by every piece and the frag info
       MemBlock data = MemBlock.Reference(bde.Value);
-      string base_key =  fragInfo.BaseKey;
       int piece_length = 0;
       int offset = 0;
       IList<FingerprintedData> fragments = new List<FingerprintedData>();
@@ -165,6 +200,30 @@ namespace Fushare.Services {
           string.Format("Data fragmented into {0} pieces", fragments.Count));
       fragInfo.PieceNum = fragments.Count;
 
+#if FUSHARE_PF
+      DateTime put_started = DateTime.UtcNow;
+#endif
+      bool succ;
+      if (!concurrently) {
+        succ = PutFragsSequentially(fragInfo, info_key, ttl, fragments);
+      } else {
+        succ  = PutFragsConcurrently(fragInfo, info_key, ttl, fragments);
+      }
+
+#if FUSHARE_PF
+      DateTime put_finished = DateTime.UtcNow;
+      TimeSpan put_time = put_finished - put_started;
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+          string.Format("Total time used to put {0}: {1} seconds", fragInfo.BaseKey, 
+          put_time)); 
+#endif
+
+      return succ;
+    }
+
+    private bool PutFragsSequentially(FragmentationInfo fragInfo, 
+        byte[] infoKey, int ttl, IList<FingerprintedData> fragments) {
+      string info_key_string = Encoding.UTF8.GetString(infoKey);
       //Put pieces
       int index = 0;
       foreach (FingerprintedData fpd in fragments) {
@@ -174,14 +233,15 @@ namespace Fushare.Services {
         int i = index++;
         bool succ = false;
         int retries = 3;
-        string piece_key = BuildFragmentKey(base_key, i);
+        byte[] piece_key = BuildFragmentKey(fragInfo.BaseKey, i);
+        string piece_key_string = Encoding.UTF8.GetString(piece_key);
         for (; !succ && retries > 0; retries--) {
           if (retries < 3) {
             Logger.WriteLineIf(LogLevel.Verbose, _log_props,
                 string.Format("Retrying..."));
           }
 
-          succ = _dht.Put(Encoding.UTF8.GetBytes(piece_key), serializedFpd, ttl);
+          succ = _dht.Put(piece_key, serializedFpd, ttl);
           if (!succ) {
             Logger.WriteLineIf(LogLevel.Verbose, _log_props,
                       string.Format("Put failed."));
@@ -190,41 +250,45 @@ namespace Fushare.Services {
 
         if (retries <= 0) {
           Logger.WriteLineIf(LogLevel.Error, _log_props,
-              string.Format("Retries exhausted when putting piece : {0}", piece_key));
+              string.Format("Retries exhausted when putting piece : {0}", 
+              piece_key_string));
           return false;
         } else {
           Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-              string.Format("Piece {0} successfully put to DHT", piece_key));
+              string.Format("Piece {0} successfully put to DHT", piece_key_string));
         }
       }
 
       //Put info
       bool succ_info = false;
       int retries_info = 3;
-      for (; !succ_info && retries_info > 0; retries_info-- ) {
+      for (; !succ_info && retries_info > 0; retries_info--) {
         if (retries_info < 3) {
           Logger.WriteLineIf(LogLevel.Verbose, _log_props,
               string.Format("Retrying..."));
         }
-        succ_info = _dht.Put(Encoding.UTF8.GetBytes(info_key), fragInfo.SerializeTo(), ttl);
+        succ_info = _dht.Put(infoKey, fragInfo.SerializeTo(), ttl);
       }
 
       if (retries_info <= 0) {
         Logger.WriteLineIf(LogLevel.Error, _log_props,
-            string.Format("Retries exhausted when putting FragmentationInfo : {0}", 
-            info_key));
+            string.Format("Retries exhausted when putting FragmentationInfo : {0}",
+            info_key_string));
         return false;
       } else {
         Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-            string.Format("FragmentationInfo successfully put to DHT with key {0}", 
-            info_key));
+            string.Format("FragmentationInfo successfully put to DHT with key {0}",
+            info_key_string));
       }
-      //If code reaches here without problems, then we can call it successful.
       return true;
     }
 
     public static string BuildFragmentKey(string baseKey, int index) {
       return baseKey + ":" + index.ToString();
+    }
+
+    public static byte[] BuildFragmentKey(byte[] baseKey, int index) {
+      return Encoding.UTF8.GetBytes(BuildFragmentKey(Encoding.UTF8.GetString(baseKey), index));
     }
 
   }

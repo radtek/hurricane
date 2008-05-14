@@ -30,6 +30,13 @@
     <call target="buildProject" />
   </target>
 
+  <target name="l4npf">
+    <property name="debug" value="false" />
+    <property name="define" value="LOG4NET" />
+    <property name="target" value ="l4npf" />
+    <call target="buildProject" />
+  </target>
+
   <target name="clean">
     <delete>
       <fileset basedir="${build.dir}">

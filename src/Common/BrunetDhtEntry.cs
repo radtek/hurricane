@@ -13,7 +13,7 @@ namespace Fushare {
    */
   public class BrunetDhtEntry : DictionaryData {
     #region Fields
-    private string _key;
+    private byte[] _key;
     private byte[] _value;
     private int _age;
     private int _ttl = 3600;  //1 hour
@@ -32,9 +32,15 @@ namespace Fushare {
       }
     }
 
-    public string Key {
+    public byte[] Key {
       get {
         return _key;
+      }
+    }
+
+    public string KeyUTF8String {
+      get {
+        return Encoding.UTF8.GetString(_key);
       }
     }
 
@@ -52,7 +58,7 @@ namespace Fushare {
     #endregion
 
     #region Constructors
-    public BrunetDhtEntry(string key, byte[] value, int age, int ttl)
+    public BrunetDhtEntry(byte[] key, byte[] value, int age, int ttl)
       : this(key, value, ttl) {
       _age = age;
     }
@@ -60,13 +66,13 @@ namespace Fushare {
     /**
      * Ctor that doesn't set age.
      */
-    public BrunetDhtEntry(string key, byte[] value, int ttl) {
+    public BrunetDhtEntry(byte[] key, byte[] value, int ttl) {
       _key = key;
       _value = value;
       _ttl = ttl;
     }
 
-    public BrunetDhtEntry(string key, Brunet.DistributedServices.DhtGetResult dgr)
+    public BrunetDhtEntry(byte[] key, Brunet.DistributedServices.DhtGetResult dgr)
       : this(key, dgr.value, dgr.age, dgr.ttl) { }
     #endregion
 
@@ -81,7 +87,7 @@ namespace Fushare {
     }
 
     public override void FromDictionary(System.Collections.IDictionary dict) {
-      _key = dict["key"] as string;
+      _key = dict["key"] as byte[];
       _value = dict["value"] as byte[];
       _age = (int)dict["age"];
       _ttl = (int)dict["ttl"];

@@ -300,7 +300,7 @@ namespace Fushare.Filesystem {
         //Check the length of the value. If too large, fragment it.
         int size_limit = 600;  //bytes
         if (value.Length > size_limit) {
-          BrunetDhtEntry bde = new BrunetDhtEntry(dht_key, value, ttl);
+          BrunetDhtEntry bde = new BrunetDhtEntry(Encoding.UTF8.GetBytes(dht_key), value, ttl);
           FragmentationInfo frag_info = new FragmentationInfo(dht_key);
           frag_info.PieceLength = size_limit;
           result = _dht.PutFragments(bde, frag_info);
