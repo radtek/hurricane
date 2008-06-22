@@ -29,7 +29,7 @@
  
   <target name="l4npf">
     <property name="debug" value="false" />
-    <property name="define" value="LOG4NET,FUSHARE_PROFILING" />
+    <property name="define" value="LOG4NET,FUSHARE_PF" />
     <call target="buildProject" />
   </target>
 

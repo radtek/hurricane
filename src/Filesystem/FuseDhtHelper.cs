@@ -196,12 +196,13 @@ namespace Fushare.Filesystem {
       DhtGetResult[] results = null;
       int item_count = 0;
       int retries = 3;
+      byte[] dht_key_bytes = Encoding.UTF8.GetBytes(dht_key);
       for (; item_count == 0 && retries > 0; retries--) {
         if (retries < 3) {
           Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
               "Retrying..."));
         }
-        results = _dht.Get(dht_key) as DhtGetResult[]; 
+        results = _dht.Get(dht_key_bytes) as DhtGetResult[]; 
         item_count = results.Length;
         if (item_count == 0) {
           Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
@@ -297,8 +298,11 @@ namespace Fushare.Filesystem {
       for (int i = 0; i < DhtPutRetryTimes; i++) {
 
         #region Fragmentation logic
-        //Check the length of the value. If too large, fragment it.
-        int size_limit = 600;  //bytes
+        // Check the length of the value. If too large, fragment it.
+        // The final size after fingerprints added will be bigger and Brunet Dht
+        // TableServer can store up to 1024 bytes per item. So we set it to
+        // 900 bytes.
+        int size_limit = 900;
         if (value.Length > size_limit) {
           BrunetDhtEntry bde = new BrunetDhtEntry(Encoding.UTF8.GetBytes(dht_key), value, ttl);
           FragmentationInfo frag_info = new FragmentationInfo(dht_key);

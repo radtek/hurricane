@@ -81,6 +81,7 @@ namespace Fushare.Services {
       return this.GetFragments(info, true);
     }
 
+    /// <exception cref="Exception">Operation Failed</exception>
     public DictionaryData GetFragments(FragmentationInfo info, bool concurrently) {
       BrunetDhtEntry ret = null;
       byte[] base_key = info.BaseKey;
@@ -97,21 +98,35 @@ namespace Fushare.Services {
 #if FUSHARE_PF
       DateTime get_started = DateTime.UtcNow; 
 #endif
-      fragments = GetFragsSequentially(base_key, piece_num, out largest_age, out smallest_ttl);
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props, 
-          string.Format("Fragments successfully got from DHT"));
+      if (!concurrently) {
+        fragments = GetFragsSequentially(base_key, piece_num, out largest_age, out smallest_ttl);
+      } else {
+        fragments = GetFragsConcurrently(base_key, piece_num, out largest_age, out smallest_ttl);
+      }
+
 #if FUSHARE_PF
       DateTime get_finished = DateTime.UtcNow;
       TimeSpan get_time = get_finished - get_started;
       Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-          string.Format("Total time used to get {0}: {1} seconds", base_key, get_time)); 
+        string.Format("Total time used to get {0}: {1} seconds", 
+        Encoding.UTF8.GetString(base_key), get_time)); 
 #endif
-      //Got the fragments correctly
-      ret = new BrunetDhtEntry(base_key, (new RegularData(fragments)).SerializeTo(),
-          largest_age, smallest_ttl);
-      return ret;
+      if (fragments != null) {
+        Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+            string.Format("Fragments successfully got from DHT"));
+
+        //Got the fragments correctly
+        ret = new BrunetDhtEntry(base_key, (new RegularData(fragments)).SerializeTo(),
+            largest_age, smallest_ttl);
+        return ret;
+      } else {
+        Logger.WriteLineIf(LogLevel.Error, _log_props,
+          string.Format("DHT Get of fragments failed"));
+        throw new Exception("DHT Get of fragments failed.");
+      }
     }
 
+    /// <returns>The memblock assembled from pieces. Null if operation failed.</returns>
     private MemBlock GetFragsSequentially(byte[] base_key, int piece_num, 
       out int largest_age, out int smallest_ttl) {
       largest_age = 0;
@@ -159,7 +174,8 @@ namespace Fushare.Services {
               + "and deserializing piece : {0}", piece_key));
         } else {
           Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
-              "Done with piece {0}", piece_key));
+              "Done with piece {0}", 
+              Encoding.UTF8.GetString(piece_key)));
         }
       }
       return fragments;
@@ -214,8 +230,8 @@ namespace Fushare.Services {
       DateTime put_finished = DateTime.UtcNow;
       TimeSpan put_time = put_finished - put_started;
       Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-          string.Format("Total time used to put {0}: {1} seconds", fragInfo.BaseKey, 
-          put_time)); 
+        string.Format("Total time used to put {0}: {1} seconds", 
+        Encoding.UTF8.GetString(fragInfo.BaseKey), put_time));
 #endif
 
       return succ;
@@ -289,6 +305,13 @@ namespace Fushare.Services {
 
     public static byte[] BuildFragmentKey(byte[] baseKey, int index) {
       return Encoding.UTF8.GetBytes(BuildFragmentKey(Encoding.UTF8.GetString(baseKey), index));
+    }
+
+    public static int GetPieceIndexFromFragmentKey(byte[] fragKey) {
+      string keyStr = Encoding.UTF8.GetString(fragKey);
+      int commaIndx = keyStr.LastIndexOf(':');
+      string indexStr = keyStr.Substring(commaIndx + 1);
+      return Int32.Parse(indexStr);
     }
 
   }
