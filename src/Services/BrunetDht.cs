@@ -16,7 +16,7 @@ namespace Fushare.Services {
    * 
    */
   public partial class BrunetDht : DhtService {
-    private IDht _dht;
+    private IXmlRpcDht _dht;
     private static IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(BrunetDht));
     public const int DefaultTtl = 3600;  //Default ttl : 1 hour
     private Uri _svc_uri;
@@ -24,7 +24,7 @@ namespace Fushare.Services {
     #region Constructors
     public BrunetDht() { }
 
-    internal BrunetDht(IDht dht) {
+    internal BrunetDht(IXmlRpcDht dht) {
       _dht = dht;
     }
 
@@ -101,7 +101,8 @@ namespace Fushare.Services {
       if (!concurrently) {
         fragments = GetFragsSequentially(base_key, piece_num, out largest_age, out smallest_ttl);
       } else {
-        fragments = GetFragsConcurrently(base_key, piece_num, out largest_age, out smallest_ttl);
+        //fragments = GetFragsConcurrently(base_key, piece_num, out largest_age, out smallest_ttl);
+        fragments = GetFragsInBulk(base_key, piece_num, out largest_age, out smallest_ttl);
       }
 
 #if FUSHARE_PF
@@ -223,7 +224,8 @@ namespace Fushare.Services {
       if (!concurrently) {
         succ = PutFragsSequentially(fragInfo, info_key, ttl, fragments);
       } else {
-        succ  = PutFragsConcurrently(fragInfo, info_key, ttl, fragments);
+        //succ  = PutFragsConcurrently(fragInfo, info_key, ttl, fragments);
+        succ = PutFragsInBulk(fragInfo, info_key, ttl, fragments);
       }
 
 #if FUSHARE_PF
@@ -358,6 +360,14 @@ namespace Fushare.Services {
     }
 
     public IDictionary GetDhtInfo() {
+      throw new NotImplementedException();
+    }
+
+    public string BeginPut(object key, object value, int ttl) {
+      throw new NotImplementedException();
+    }
+
+    public bool EndPut(string token) {
       throw new NotImplementedException();
     }
 

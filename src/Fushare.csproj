@@ -148,6 +148,7 @@
     <Compile Include="Services\BrunetDht.cs" />
     <Compile Include="Common\FragmentedDataManager.cs" />
     <Compile Include="Services\BrunetDhtClientOperations.cs" />
+    <Compile Include="Services\BrunetDht.Bulk.cs" />
     <Compile Include="Services\OpenDht.cs" />
     <Compile Include="Services\DictionaryServiceFactory.cs" />
     <Compile Include="Services\IDictionaryService.cs" />

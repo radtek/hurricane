@@ -87,6 +87,7 @@
         <include name="Settings/ServiceConfigSection.cs" />
         <include name="Services/BrunetDht.cs" />
         <include name="Services/BrunetDht.Async.cs" />
+        <include name="Services/BrunetDht.Bulk.cs" />
         <include name="Services/BrunetDhtClientOperations.cs" />
         <include name="Services/DictionaryServiceFactory.cs" />
         <include name="Services/IDhtService.cs" />
