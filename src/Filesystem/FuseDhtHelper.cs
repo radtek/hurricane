@@ -22,7 +22,7 @@ namespace Fushare.Filesystem {
   public class FuseDhtHelper {
 
     #region Fields
-    public const int DhtPutRetryTimes = 3;
+    public const int DhtPutRetryTimes = 1;
     private static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(FuseDhtHelper));
     private BrunetDht _dht;
     private string _shadowdir;

@@ -25,6 +25,7 @@ namespace Fushare.Services {
     public BrunetDht() { }
 
     internal BrunetDht(IXmlRpcDht dht) {
+      dht.Timeout = 360000; // 3 minutes
       _dht = dht;
     }
 
@@ -195,6 +196,7 @@ namespace Fushare.Services {
     /// <param name="bde">The data object.</param>
     /// <param name="fragInfo">Object that contains the meta info.</param>
     /// <param name="concurrently">Puts concurrently if set to true</param>
+    /// <returns>True if the operation succeeds.</returns>
     public bool PutFragments(BrunetDhtEntry bde, FragmentationInfo fragInfo, 
       bool concurrently) {
       byte[] info_key = bde.Key;

@@ -70,45 +70,86 @@ namespace Fushare.Services {
         index++;
       }
 
-      bool[] result;
+      bool[] results;
       try {
-        result = _dht.BulkPut(parameters);
+        results = _dht.BulkPut(parameters);
       } catch (Exception ex) {
-        Console.WriteLine(ex);
+        // Network related operation, log the exception and let it be handled
+        // upper stream caller.
+        Logger.WriteLineIf(LogLevel.Error, _log_props,
+          string.Format("Exception caught in BulkPut"));
+        Logger.WriteLineIf(LogLevel.Error, _log_props,
+          ex);
         throw;
       }
 
-      foreach (bool succ in result) {
-        if (!succ) {
-          Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-                    string.Format("Put failed."));
-          // @TODO Could insert some retrying code here.
+      IList<int> failed_pieces = new List<int>();
+      for (int i = 0; i < results.Length; i++) {
+        bool result = results[i];
+        if (!result) {
+          failed_pieces.Add(i);
+        }
+      }
+
+      // Log failed pieces
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+        string.Format("Failed {0} pieces are:", failed_pieces.Count));
+      StringBuilder sb = new StringBuilder();
+      foreach (int pieceIndx in failed_pieces) {
+        sb.Append(pieceIndx);
+        sb.Append(" ");
+      }
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+        sb.ToString());
+
+      // Decide whether to retry.
+      if (failed_pieces.Count > 20) {
+        Logger.WriteLineIf(LogLevel.Info, _log_props,
+          string.Format("Too many pieces failed. Returning..."));
+        return false;
+      }
+
+      //Retry failed pieces.
+      foreach (int pieceIndx in failed_pieces) {
+        Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+          string.Format("Retrying piece {0}", index));
+        bool succ_retries = PutWithRetries((byte[])parameters[index]["key"], (byte[])
+          parameters[index]["value"], (int)parameters[index]["ttl"], 2);
+        if (!succ_retries) {
+          // Cannot succeed on this piece even after retry...
           return false;
         }
       }
 
       //Put info
-      bool succ_info = false;
-      int retries_info = 3;
-      for (; !succ_info && retries_info > 0; retries_info--) {
-        if (retries_info < 3) {
+      bool succ_info = PutWithRetries(infoKey, fragInfo.SerializeTo(), ttl, 2);
+      return succ_info;
+    }
+
+    /// <param name="retries">Should be >= 0. Zero means no retry.</param>
+    private bool PutWithRetries(byte[] key, byte[] value, int ttl, int retries) {
+      bool succ = false;
+      string key_string = Encoding.UTF8.GetString(key);
+      int retires_local = retries;
+      for (; !succ && retires_local > 0; retires_local--) {
+        if (retires_local < retries) {
           Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-              string.Format("Retrying..."));
+            string.Format("Retrying..."));
         }
-        succ_info = _dht.Put(infoKey, fragInfo.SerializeTo(), ttl);
+        succ = _dht.Put(key, value, ttl);
       }
 
-      if (retries_info <= 0) {
+      if (retires_local <= 0) {
         Logger.WriteLineIf(LogLevel.Error, _log_props,
-            string.Format("Retries exhausted when putting FragmentationInfo : {0}",
-            info_key_string));
+          string.Format("Retries exhausted when putting {0}",
+          key_string));
         return false;
       } else {
         Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-            string.Format("FragmentationInfo successfully put to DHT with key {0}",
-            info_key_string));
+          string.Format("{0} successfully put.",
+          key_string));
+        return true;
       }
-      return true;
     }
   }
 }
