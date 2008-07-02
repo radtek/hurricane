@@ -12,6 +12,8 @@ namespace Fushare.Services {
     /// Does bulk Brunet DHT gets by calling the bulk DHT operation API of its 
     /// XML-RPC interface.
     /// </summary>
+    /// <returns>Null if not all the pieces are successfully retrieved and parsed.</returns>
+    /// <exception cref="Exception">Parsing errors.</exception>
     private MemBlock GetFragsInBulk(byte[] base_key, int piece_num,
       out int largest_age, out int smallest_ttl) {
       largest_age = 0;
@@ -25,26 +27,37 @@ namespace Fushare.Services {
       }
 
       DhtGetResult[] dgrs = _dht.BulkGet(keys);
-      try {
-        int key_index = 0;
-        foreach (DhtGetResult dgr in dgrs) {
-          FingerprintedData fpd =
-              (FingerprintedData)DictionaryData.CreateDictionaryData(dgr.value);
-          Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-              string.Format("Piece {0} retrieved and successfully parsed", 
-              Encoding.UTF8.GetString(keys[key_index++])));
-          RegularData rd = fpd.InnerData as RegularData;
-          fragments = MemBlock.Concat(fragments, MemBlock.Reference(rd.PayLoad));
-          if (smallest_ttl > dgr.ttl)
-            smallest_ttl = dgr.ttl;
-          if (largest_age < dgr.age)
-            largest_age = dgr.age;
-          //Now it's safe to say, this attempt succeeded.
+      for (int i = 0; i < dgrs.Length; i++) {
+        DhtGetResult dgr = dgrs[i];
+        if (dgr == null) {
+          Logger.WriteLineIf(LogLevel.Error, _log_props,
+            string.Format("Piece #{0} is null. Retrying...", i));
+          dgr = GetWithRetries(keys[i], 2);
+          if (dgr == null) {
+            Logger.WriteLineIf(LogLevel.Error, _log_props,
+              string.Format("Piece #{0} is null after retries. Skipping " +
+              "further parsing and returning...", i));
+            return null;
+          }
         }
-      } catch (Exception ex) {
-        Logger.WriteLineIf(LogLevel.Error, _log_props,
-            ex);
-        throw ex;
+        FingerprintedData fpd;
+        try {
+          fpd =
+            (FingerprintedData)DictionaryData.CreateDictionaryData(dgr.value);
+        } catch (Exception ex) {
+          Logger.WriteLineIf(LogLevel.Error, _log_props,
+              ex);
+          throw ex;
+        }
+        Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+            string.Format("Piece #{0} retrieved and successfully parsed", i));
+        RegularData rd = fpd.InnerData as RegularData;
+        fragments = MemBlock.Concat(fragments, MemBlock.Reference(rd.PayLoad));
+        if (smallest_ttl > dgr.ttl)
+          smallest_ttl = dgr.ttl;
+        if (largest_age < dgr.age)
+          largest_age = dgr.age;
+        //Now it's safe to say, this attempt succeeded.
       }
 
       return fragments;
@@ -124,6 +137,36 @@ namespace Fushare.Services {
       //Put info
       bool succ_info = PutWithRetries(infoKey, fragInfo.SerializeTo(), ttl, 2);
       return succ_info;
+    }
+
+    /// <returns>Null if nothing got after retries</returns>
+    private DhtGetResult GetWithRetries(byte[] key, int retries) {
+      bool succ = false;
+      DhtGetResult ret = null;
+      string key_string = Encoding.UTF8.GetString(key);
+      int retires_local = retries;
+      for (; !succ && retires_local > 0; retires_local--) {
+        if (retires_local < retries) {
+          Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+            string.Format("Retrying..."));
+        }
+        DhtGetResult[] results = _dht.Get(key);
+        if (results.Length > 0) {
+          succ = true;
+          ret = results[0];
+        }
+      }
+
+      if (retires_local <= 0) {
+        Logger.WriteLineIf(LogLevel.Error, _log_props,
+          string.Format("Retries exhausted when getting {0}",
+          key_string));
+      } else {
+        Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+          string.Format("{0} successfully got.",
+          key_string));
+      }
+      return ret;
     }
 
     /// <param name="retries">Should be >= 0. Zero means no retry.</param>
