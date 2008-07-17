@@ -83,6 +83,7 @@ namespace Fushare.Services {
     }
 
     /// <exception cref="Exception">Operation Failed</exception>
+    /// <returns>A BrunetDhtEntry that has the whole chunk of data</returns>
     public DictionaryData GetFragments(FragmentationInfo info, bool concurrently) {
       BrunetDhtEntry ret = null;
       byte[] base_key = info.BaseKey;

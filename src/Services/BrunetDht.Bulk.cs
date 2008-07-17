@@ -125,9 +125,9 @@ namespace Fushare.Services {
       //Retry failed pieces.
       foreach (int pieceIndx in failed_pieces) {
         Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-          string.Format("Retrying piece {0}", index));
-        bool succ_retries = PutWithRetries((byte[])parameters[index]["key"], (byte[])
-          parameters[index]["value"], (int)parameters[index]["ttl"], 2);
+          string.Format("Retrying piece {0}", pieceIndx));
+        bool succ_retries = PutWithRetries((byte[])parameters[pieceIndx]["key"], (byte[])
+          parameters[pieceIndx]["value"], (int)parameters[pieceIndx]["ttl"], 2);
         if (!succ_retries) {
           // Cannot succeed on this piece even after retry...
           return false;
