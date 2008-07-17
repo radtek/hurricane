@@ -101,9 +101,9 @@ namespace Fushare {
 
     public override string ToString() {
       StringBuilder sb = new StringBuilder();
-      sb.Append("FragmentationInfo: \t");
-      sb.Append("BaseKey: " + Encoding.UTF8.GetString(BaseKey) + ";\t");
-      sb.Append("PieceNum: " + PieceNum + ";\t");
+      sb.Append("FragmentationInfo:\n");
+      sb.Append("BaseKey: " + Encoding.UTF8.GetString(BaseKey) + ";\n");
+      sb.Append("PieceNum: " + PieceNum + ";\n");
       sb.Append("PieceLength: " + PieceLength+ " (bytes);");
       return sb.ToString();
     }

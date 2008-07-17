@@ -4,33 +4,55 @@ using System.Collections.Specialized;
 using System.Text;
 
 namespace Fushare {
-  /**
-   * Represents data in a Dictionary.
-   */
+  /// <summary>
+  /// Represents data in a Dictionary.
+  /// </summary>
+  /// <remarks>
+  /// <b>Callers:</b><br>
+  /// Use DictionaryData CreateDictionaryData(byte[] serializedObj, ISerializer 
+  /// serializer) to create DictionaryData from bytes; Use byte[] SerializeTo(
+  /// ISerializer serializer) to convert object to bytes.<br>
+  /// <b>Inheritors:</b><br>
+  /// Implement ToDictionary and FromDictionary to control the behavior of 
+  /// (object, IDictionary) mapping.
+  /// Use InitIDictionaryFromType in ToDictionary.
+  /// You also have to implement a default constructor.
+  /// </remarks>
   public abstract class DictionaryData : IDictionaryData, IDto {
     
     #region Fields
-    /**
-     * Key used byte the _data_type in the dictionary representaton of data.
-     * It is defined here to enforce the key name used by inherited classes.
-     */
+  
+    /// <summary>
+    /// Key used byte the _data_type in the dictionary representation of data.
+    /// </summary>
+    /// <remarks>
+    /// It is defined here to enforce the key name used by inherited classes.
+    /// </remarks>
     public const string DataTypeKey = "data_type";
 
     #endregion
 
     #region Constructors
-    /**
-     * Allow fields to be set after instantiated
-     */
-    public DictionaryData() { } 
+    /// <summary>
+    /// Use CreateDictionaryData instead to construct an instance. 
+    /// </summary>
+    /// <remarks>
+    /// Allows fields to be set after been instantiated.
+    /// </remarks>
+    internal DictionaryData() { } 
 
     #endregion
 
     #region IDictionaryData Members
     
-    /**
-     * Make sure that the type information is inserted to the dictionary 
-     */
+    /// <summary>
+    /// Converts this object to an IDictionary instance.
+    /// </summary>
+    /// <remarks>
+    /// <b>Inheritors:</b><br>
+    /// Make sure that the type information is inserted to the dictionary by
+    /// InitIDictionaryFromType method.
+    /// </remarks>
     public abstract IDictionary ToDictionary();
 
     /**
@@ -42,23 +64,27 @@ namespace Fushare {
 
     #region IDto Members
 
-    /**
-     * Choose AdrSerializer by default
-     */
+    /// <summary>
+    /// Serializes this object with AdrSerializer
+    /// </summary>
     public byte[] SerializeTo() {
       return SerializeTo(new AdrSerializer());
     }
 
-    /**
-     * Serializer has to be able to deal with IDictionary
-     */
+    /// <summary>
+    /// Serializes this object
+    /// </summary>
+    /// <remarks>
+    /// Its behavior is decided by ToDictionary method, depending on how it's
+    /// implemented by inheritors.
+    /// </remarks>
     public virtual byte[] SerializeTo(ISerializer serializer) {
       return serializer.Serialize(ToDictionary());
     }
 
-    /**
-     * Choose AdrSerializer by default
-     */
+    /// <summary>
+    /// bytes -> IDictionary -> object instance.
+    /// </summary>
     public void DeserializeFrom(byte[] serializedObj) {
       DeserializeFrom(serializedObj, new AdrSerializer());
     }
@@ -72,9 +98,13 @@ namespace Fushare {
 
     #region Public Static Methods
 
-    /**
-     * Creates DictionaryData filled by entries in the IDictionary.
-     */
+    /// <summary>
+    /// Creates DictionaryData filled by entries in the IDictionary.
+    /// </summary>
+    /// <remarks>
+    /// Its behavior is decided by FromDictionary method, depending on how it's
+    /// implemented by inheritors.
+    /// </remarks>
     public static DictionaryData CreateDictionaryData(IDictionary dict) {
       //every dictionary must have type information
       //if not, exception should be thrown
@@ -85,14 +115,17 @@ namespace Fushare {
       return d;
     }
 
-    /**
-     * Creates instance and filled with serialized object.
-     */
+    /// <summary>
+    /// Creates an DictionaryData instance and fill it with serialized object.
+    /// </summary>
     public static DictionaryData CreateDictionaryData(byte[] serializedObj, ISerializer serializer) {
       IDictionary dict = (IDictionary)serializer.Deserialize(serializedObj);
       return CreateDictionaryData(dict);
     }
 
+    /// <summary>
+    /// Uses AdrSerializer deserialization.
+    /// </summary>
     public static DictionaryData CreateDictionaryData(byte[] serializedObj) {
       return CreateDictionaryData(serializedObj, new AdrSerializer());
     }
@@ -100,10 +133,14 @@ namespace Fushare {
     #endregion
 
     #region Protected Static Helper Methods
-    /**
-     * Derived classes could use this method to initialize the IDictionary with datatype added
-     * at the beginning of ToDictionary
-     */
+
+    /// <summary>
+    /// Derived classes could use this method to initialize the IDictionary with datatype added
+    /// at the beginning of ToDictionary
+    /// </summary>
+    /// <remarks>
+    /// datatype is represented using int in the dictionary.
+    /// </remarks>
     protected IDictionary InitIDictionaryFromType() {
       IDictionary dict = new ListDictionary();
       dict.Add(DictionaryData.DataTypeKey, (int)DictionaryDataUtil.GetDictionaryDataType(this.GetType()));
@@ -118,7 +155,7 @@ namespace Fushare {
     protected static DictionaryData PrepareDictionaryData(DictionaryDataType type) {
       Type t = DictionaryDataUtil.GetDataType(type);
       return (DictionaryData)Activator.CreateInstance(t);
-    } 
+    }
     #endregion
   }
 }
