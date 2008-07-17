@@ -5,9 +5,7 @@ using System.Xml.Serialization;
 using Fushare.Services;
 
 namespace Fushare {
-  /// <summary>
-  /// Section which incharges 
-  /// </summary>
+
   public class ServiceConfigSection {
     private ServiceHandler[] _service_handlers;
     public ServiceMapping[] _service_mappings;

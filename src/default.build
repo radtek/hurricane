@@ -92,6 +92,10 @@
         <include name="Services/DictionaryServiceFactory.cs" />
         <include name="Services/IDhtService.cs" />
         <include name="Services/IDictionaryService.cs" />
+        <include name="BitTorrent/DhtListener.cs" />
+        <include name="BitTorrent/DhtServiceProxy.cs" />
+        <include name="BitTorrent/PeerEntry.cs" />
+        <include name="BitTorrent/DhtTracker.cs" />
       </sources>
       <references>
         <include name="System.Runtime.Remoting.dll"/>
@@ -102,7 +106,10 @@
         <include name="${build.dir}/Brunet.DhtService.dll" />
         <include name="${build.dir}/Mono.Fuse.dll" />
         <include name="${build.dir}/CookComputing.XmlRpcV2.dll" />
+        <include name="${build.dir}/MonoTorrent.dll" />
         <include name="Mono.Posix.dll" />
+        <include name="System.Net.dll" />
+        <include name="System.Web.dll" />
         <include name="${build.dir}/log4net.dll" />
       </references>
     </csc>

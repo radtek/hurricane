@@ -31,23 +31,16 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Diagnostics;
-using System.Collections.Specialized;
-using System.Collections;
+using System.Collections.Generic;
 using System.Web;
-using System.Net;
 
 using MonoTorrent.Tracker;
 using MonoTorrent.Common;
-using Fushare;
+using MonoTorrent.TorrentWatcher;
+using MonoTorrent.Tracker.Listeners;
+using Fushare.BitTorrent;
 
-#if TRACKER_NUNIT
-using NUnit.Framework;
-#endif
-
-
-namespace Fushare.BitTorrent {
-  using Tracker = MonoTorrent.Tracker.Tracker;
-
+namespace TrackerApp {
   /// <summary>
   /// This is a sample implementation of how you could create a custom ITrackable
   /// </summary>
@@ -73,84 +66,59 @@ namespace Fushare.BitTorrent {
     /// The files in the torrent
     /// </summary>
     public TorrentFile[] Files {
-      get { return files; }
+      get {
+        return files;
+      }
     }
 
     /// <summary>
     /// The infohash of the torrent
     /// </summary>
     public byte[] InfoHash {
-      get { return infoHash; }
+      get {
+        return infoHash;
+      }
     }
 
     /// <summary>
     /// The name of the torrent
     /// </summary>
     public string Name {
-      get { return name; }
+      get {
+        return name;
+      }
     }
   }
 
   class MySimpleTracker {
-    #region Fields
-    private static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(MySimpleTracker));
-
-    MonoTorrent.Tracker.Tracker tracker;
+    Tracker tracker;
     TorrentFolderWatcher watcher;
     const string TORRENT_DIR = "Torrents";
-    ListenerBase _listener;
-    int _interval = 20; //in seconds 
-    #endregion
 
-    #region Constructors
     ///<summary>Start the Tracker. Start Watching the TORRENT_DIR Directory for new Torrents.</summary>
-    public MySimpleTracker(IDictionary options)
-    {
-      /* The following code not necessary when found a way to set DhtListener listen to all the prefixes
-      System.Net.IPEndPoint listenpoint = new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, 10000);
-      Console.WriteLine("Listening at: {0}", listenpoint);
-      IPAddress[] addrs = null;
-      try {
-        addrs = Dns.GetHostAddresses(Dns.GetHostName());
-        if (addrs == null || addrs.Length == 0) {
-          throw new Exception();
-        }
-      } catch (Exception e) {
-        Debug.WriteLineIf(Logger.TrackerLog.TraceError, e);
-        addrs = new IPAddress[1];
-        addrs[0] = IPAddress.Loopback;
-      }
-      IList<string> prefixes = new List<string>();
-      foreach (IPAddress addr in addrs) {
-        string prefix = string.Format("http://{0}:{1}/", addr.ToString(), 10000);
-        prefixes.Add(prefix);
-        Debug.WriteLineIf(Logger.TrackerLog.TraceInfo, string.Format("Listening to {0}", prefix));
-      }
-      ListenerBase listener = new DhtListener(prefixes, t);
-      */
+    public MySimpleTracker() {
+      #region Changes to use DhtTracker
+      Fushare.BitTorrent.DhtTracker dht_tracker = new Fushare.BitTorrent.DhtTracker();
+      tracker = dht_tracker.Tracker;
+      dht_tracker.Start(); 
+      #endregion
 
-      _listener = new DhtListener((int)options["tracker_port"], (DhtType)options["dht_type"],
-          (int)options["dht_port"]);
-      _interval = (int)options["interval"];
-      tracker = new Tracker();
-      tracker.RegisterListener(_listener);
       SetupTorrentWatcher();
-      StartTracker();
-    } 
-    #endregion
 
-    public void StartTracker() {
-      _listener.Start();
-      watcher.StartWatching();
-      watcher.ForceScan();
+
       while (true) {
         lock (tracker)
           foreach (SimpleTorrentManager m in tracker) {
-            Console.WriteLine("Name: {0}", m.Trackable.Name);
-            Console.WriteLine("Complete: {1}   Incomplete: {2}   Downloaded: {0}", m.Downloaded, m.Complete, m.Count - m.Complete);
+            Console.Write("Name: {0}   ", m.Trackable.Name);
+            Console.WriteLine("Complete: {1}   Incomplete: {2}   Downloaded: {0}", m.Downloaded, m.Complete, m.Incomplete);
+            IList<Peer> peers = m.GetPeers();
+            foreach (Peer pr in peers) {
+              Console.WriteLine(pr.ClientAddress);
+            }
             Console.WriteLine();
-            System.Threading.Thread.Sleep(_interval * 1000);
           }
+
+        System.Threading.Thread.Sleep(10000);
       }
     }
 
@@ -158,20 +126,32 @@ namespace Fushare.BitTorrent {
       watcher = new TorrentFolderWatcher(Path.GetFullPath(TORRENT_DIR), "*.torrent");
       watcher.TorrentFound += delegate(object sender, TorrentWatcherEventArgs e) {
         try {
+          // This is a hack to work around the issue where a file triggers the event
+          // before it has finished copying. As the filesystem still has an exclusive lock
+          // on the file, monotorrent can't access the file and throws an exception.
+          // The best way to handle this depends on the actual application. 
+          // Generally the solution is: Wait a few hundred milliseconds
+          // then try load the file.
+          System.Threading.Thread.Sleep(500);
+
           Torrent t = Torrent.Load(e.TorrentPath);
+
           // There is also a predefined 'InfoHashTrackable' MonoTorrent.Tracker which
           // just stores the infohash and name of the torrent. This is all that the tracker
           // needs to run. So if you want an ITrackable that "just works", then use InfoHashTrackable.
+
+          // ITrackable trackable = new InfoHashTrackable(t);
           ITrackable trackable = new CustomITrackable(t);
           lock (tracker)
             tracker.Add(trackable);
         } catch (Exception ex) {
-          //Debug.WriteLine("Error loading torrent from disk: {0}", ex.Message);
-          //Debug.WriteLine("Stacktrace: {0}", ex.ToString());
-          Logger.WriteLineIf(LogLevel.Error, _log_props,
-              "Error loading torrent from disk", ex);
+          Debug.WriteLine("Error loading torrent from disk: {0}", ex.Message);
+          Debug.WriteLine("Stacktrace: {0}", ex.ToString());
         }
       };
+
+      watcher.Start();
+      watcher.ForceScan();
     }
 
     void watcher_TorrentLost(object sender, TorrentWatcherEventArgs e) {
@@ -206,79 +186,55 @@ namespace Fushare.BitTorrent {
     }
 
     public static void Main(string[] args) {
-      //default values
-      DhtType t = DhtType.BrunetDht;
-      int tracker_port = 10000;
-      int dht_port = 51515;
-      int interval = 20;
-      string l4n_config = null;
+      Debug.Listeners.Add(new TextWriterTraceListener(Console.Out));
+      Fushare.Logger.LoadConfig("l4n.trackerapp.config");
+      Fushare.FushareConfigHandler.Read("fushare.config");
 
-      for (int i = 0; i < args.Length; i++) {
-        switch (args[i]) {
-          case "-l4n":
-            if (i == args.Length - 1) {
-              //no next value
-              Console.Error.WriteLine("No l4n config specified");
-              return;
-            }
-            l4n_config = args[++i];
+      Console.WriteLine("Welcome to the MonoTorrent tracker");
+      Console.WriteLine("1. Start the tracker");
+      Console.WriteLine("2. Start a benchmark");
+
+      Console.Write("Choice: ");
+      int val = 0;
+      while (true) {
+        if (int.TryParse(Console.ReadLine(), out val)) {
+          if (val == 1 || val == 2)
             break;
-          case "-l":
-            t = DhtType.Local;
-            break;
-          case "-tp":
-            if (i == args.Length - 1) {
-              //no next value
-              Console.Error.WriteLine("No tracker port specified");
-              return;
-            }
-            if (!Int32.TryParse(args[++i], out tracker_port)) {
-              Console.Error.WriteLine("Invalid tracker port");
-              return;
-            }
-            break;
-          case "-dp":
-            if (i == args.Length - 1) {
-              //no next value
-              Console.Error.WriteLine("No dht service specified");
-              return;
-            }
-            if (!Int32.TryParse(args[++i], out dht_port)) {
-              Console.Error.WriteLine("Invalid dht service port");
-              return;
-            }
-            break;
-          case "-i":
-            if (i == args.Length - 1) {
-              //no next value
-              Console.Error.WriteLine("No interval specified");
-              return;
-            }
-            if (!Int32.TryParse(args[++i], out interval)) {
-              Console.Error.WriteLine("Invalid dht service port");
-              return;
-            }
-            break;
-          default:
-            Console.Error.WriteLine("Invalid arguments");
-            return;
         }
       }
 
-      if (string.IsNullOrEmpty(l4n_config)) {
-        Logger.LoadConfig();
+      if (val == 1) {
+        Debug.WriteLine("starting FrontendEngine");
+        new MySimpleTracker();
       } else {
-        Logger.LoadConfig(l4n_config);
+        Console.Clear();
+        Console.Write("How many active torrents will be simulated: ");
+        int torrents = GetInt();
+        Console.Write("How many active peers per torrent: ");
+        int peers = GetInt();
+        Console.Write("How many requests per second: ");
+        int requests = GetInt();
+
+        StressTest test = new StressTest();
+        test.Initialise(torrents, peers, requests);
+        test.StartThreadedStress();
+
+        while (true) {
+          Console.WriteLine("Measured announces/sec:  {0:0.00}", test.RequestRate);
+          Console.WriteLine("Total Annoucne Requests: {0:0.00}", test.TotalTrackerRequests);
+          Console.WriteLine("Actual announces/sec:    {0:0.00}", test.TotalRequests);
+          Console.WriteLine(Environment.NewLine);
+          test.TotalRequests = 0;
+          System.Threading.Thread.Sleep(1000);
+        }
       }
-      //Debug.WriteLine(string.Format("Starting DhtTracker FrontendEngine at port: {0}", tracker_port));
-      Logger.WriteLineIf(LogLevel.Info, _log_props, string.Format("Starting DhtTracker FrontendEngine at port: {0}", tracker_port));
-      IDictionary c = new ListDictionary();
-      c.Add("dht_type", t);
-      c.Add("tracker_port", tracker_port);
-      c.Add("dht_port", dht_port);
-      c.Add("interval", interval);
-      MySimpleTracker tracker = new MySimpleTracker(c);
-      tracker.StartTracker();
+    }
+
+    private static int GetInt() {
+      int ret = 0;
+      while (!int.TryParse(Console.ReadLine(), out ret)) {
+      }
+      return ret;
     }
   }
 }

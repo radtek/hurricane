@@ -16,6 +16,10 @@ namespace Fushare {
   [XmlType("fushareConfig")]
   public class FushareConfig {
     public ServiceConfigSection serviceConfig;
+    /// <summary>
+    /// The prefix that DhtTracker passes to start System.Net.HttpListener
+    /// </summary>
+    public string dhtTrackerListeningPrefix;
   }
 
   /// <summary>
@@ -23,30 +27,52 @@ namespace Fushare {
   /// </summary>
   public class FushareConfigHandler {
     private static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(FushareConfigHandler));
+    private static FushareConfig _config;
+
+    public static FushareConfig ConfigObject {
+      get {
+        if (_config == null) {
+          throw new InvalidOperationException(
+            "ConfigObject not set. Use Read method first.");
+        } else {
+          return _config;
+        }
+      }
+    }
 
     public static FushareConfig Read(string configFile) {
+      return Read(configFile, false);
+    }
+
+    /// <param name="reload">Enforces reload of config file</param>
+    public static FushareConfig Read(string configFile, bool reload) {
+      if (_config != null && reload == false) {
+        return _config;
+      }
       using (FileStream fs = new FileStream(configFile, FileMode.Open)) {
         return Read(fs);
       }
     }
 
-    public static FushareConfig Read(Stream configStream) {
+    private static FushareConfig Read(Stream configStream) {
       //Register event handler
       ServiceConfigSection.ServiceHandlersSet += new EventHandler(OnServiceHandlersSet);
       XmlSerializer serializer = new XmlSerializer(typeof(FushareConfig));
       FushareConfig config = (FushareConfig)serializer.Deserialize(configStream);
+      _config = config;
       return config;
     }
 
     public static void Write(string configFile,
       FushareConfig config) {
+      _config = config;
       using (FileStream fs = new FileStream(configFile, FileMode.Create,
             FileAccess.Write)) {
         Write(fs, config);
       }
     }
 
-    public static void Write(Stream configStream, FushareConfig config) {
+    private static void Write(Stream configStream, FushareConfig config) {
       XmlSerializer serializer = new XmlSerializer(typeof(FushareConfig));
       serializer.Serialize(configStream, config);
     }
