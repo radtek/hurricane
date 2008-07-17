@@ -112,6 +112,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BitTorrent\DhtTracker.cs" />
     <Compile Include="Common\BrunetDhtEntry.cs" />
     <Compile Include="Common\CommonUtil.cs" />
     <Compile Include="Common\DictionaryData.cs" />
@@ -160,6 +161,7 @@
     <Compile Include="Services\OpenDHTLib\OpenDHTMessage.cs" />
     <Compile Include="Services\OpenDHTLib\OpenDHTMessageDetails.cs" />
     <Compile Include="Services\ServiceController.cs" />
+    <Compile Include="Common\Namespaces.cs" />
     <Compile Include="Settings\FushareConfig.cs" />
     <Compile Include="BitTorrent\DhtListener.cs" />
     <Compile Include="BitTorrent\DhtServiceProxy.cs" />
@@ -172,9 +174,6 @@
     <None Include="default.build" />
     <None Include="Filesystem\default.build" />
     <None Include="BitTorrent\default.build" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Common\Constants\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSHARP.Targets" />
   <ProjectExtensions>
