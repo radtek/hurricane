@@ -88,12 +88,6 @@ namespace Fushare {
     }
 
     public override void FromDictionary(IDictionary dict) {
-      DictionaryDataType t = (DictionaryDataType)dict[DataTypeKey];
-      DictionaryDataType expected = DictionaryDataUtil.GetDictionaryDataType(this.GetType());
-      if (t != expected) {
-        throw new ArgumentException(string.Format("Wrong type of dictionary data. Expected: {0}, Was: {1}."
-            , expected.ToString(), t.ToString()));
-      }
       _base_key = (byte[])dict["base_key"];
       _piece_num = (int)dict["piece_num"];
       _piece_length = (int)dict["piece_length"];
