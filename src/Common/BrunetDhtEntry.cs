@@ -11,6 +11,9 @@ namespace Fushare {
    * DictionaryData instead of DictionaryDataDecorator is that
    * the inner data is optional (shared with non-fushare users)
    */
+  [Obsolete("This class shouldn't be a subclass of DictionaryData,"
+  + " which is suppose to model client-side types instead of a service-"
+  + "dependent DTO. Use DhtGetResult.")]
   public class BrunetDhtEntry : DictionaryData {
     #region Fields
     private byte[] _key;

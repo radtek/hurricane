@@ -19,15 +19,22 @@ namespace Fushare.BitTorrent {
     private static IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(DhtTracker));
     #endregion
 
+    /// <summary>
+    /// Gets The original tracker that MonoTorrent provides. 
+    /// </summary>
     public Tracker Tracker {
       get {
         return _tracker;
       }
     }
 
-    public DhtTracker() {
-      string listening_prefix = FushareConfigHandler.ConfigObject.
-        dhtTrackerListeningPrefix;
+    /// <summary>
+    /// Constructs DhtTracker using the given DhtSerivceProxy instance.
+    /// </summary>
+    /// <param name="dhtProxy"></param>
+    public DhtTracker(DhtServiceProxy dhtProxy, string listeningPrefix) {
+      _dht_listener = new DhtListener(dhtProxy);
+      string listening_prefix = listeningPrefix;
       _http_listener = new MonoTorrent.Tracker.Listeners.HttpListener(
         listening_prefix);
       Logger.WriteLineIf(LogLevel.Info, _log_props, string.Format(
@@ -35,9 +42,7 @@ namespace Fushare.BitTorrent {
       // Subscribe the HttpListener events to do our nifty stuff.
       _http_listener.AnnounceReceived += this.OnAnnounceReceived;
       _http_listener.ScrapeReceived += this.OnScrapeReceived;
-      BrunetDht dht = (BrunetDht)DictionaryServiceFactory.GetServiceInstance(
-        typeof(BrunetDht));
-      _dht_listener = new DhtListener(new DhtServiceProxy(dht));
+
       _tracker = new Tracker();
 
       // This also subscribes the same above 2 events but does this AFTER them, 
@@ -48,7 +53,7 @@ namespace Fushare.BitTorrent {
     }
 
     /// <summary>
-    /// Start all the listeners in this tracker.
+    /// Starts all the listeners in this tracker.
     /// </summary>
     public void Start() {
       _dht_listener.Start();
@@ -62,11 +67,15 @@ namespace Fushare.BitTorrent {
     /// process to DhtListener where a list of peers are retrieved.
     /// </summary>
     private void OnAnnounceReceived(object sender, AnnounceParameters e) {
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+        string.Format("Annoucement received from {0}", e.RemoteAddress));
       _dht_listener.HandleAnnounceRequest(e);
     }
 
     private void OnScrapeReceived(object sender, ScrapeParameters e) {
-      // Do thing
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+        string.Format("Scrape received from {0}", e.RemoteAddress));
+      // Do nothing.
     }
   }
 }

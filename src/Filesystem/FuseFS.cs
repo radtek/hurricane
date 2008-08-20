@@ -29,6 +29,7 @@ namespace Fushare.Filesystem {
     private FuseDhtHelper _helper;
     private FuseDhtUtil _util;
     private string _shadowdir;
+    private string _fuse_root;
     private RedirectFHFSHelper _rfs;
     private bool _auto_renew;
     private FuseDhtHelperFactory.HelperType _helper_type = FuseDhtHelperFactory.HelperType.Dht;
@@ -38,7 +39,7 @@ namespace Fushare.Filesystem {
 
     #endregion
 
-    public bool ParseArguments(string[] args) {
+    private bool ParseArguments(string[] args) {
       for (int i = 0; i < args.Length; ++i) {
         switch (args[i]) {
           case "-h":
@@ -86,6 +87,7 @@ namespace Fushare.Filesystem {
           default:
             if (string.IsNullOrEmpty(base.MountPoint)) {
               base.MountPoint = args[i];
+              _fuse_root = args[i];
               Console.WriteLine("MountPoint: {0}", args[i]);
               Logger.WriteLineIf(LogLevel.Info, _log_props, string.Format(
                   "MountPoint: {0}", args[i]));
@@ -98,6 +100,10 @@ namespace Fushare.Filesystem {
             break;
         }
       }
+
+      PathUtil.Instance.Initialize(Path.GetDirectoryName(_fuse_root), 
+        Path.GetDirectoryName(_shadowdir));
+
       return true;
     }
 
@@ -323,6 +329,14 @@ namespace Fushare.Filesystem {
       }
 
       //successful closed.
+
+      bool executed = FuseController.Instance.Execute(new FuseRawPath(path), FuseMethod.Write);
+      if(executed) {
+        Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+          string.Format("Request from FuseRawPath : {0}. Returning.", path));
+        return 0;
+      }
+
       string[] paths = FuseDhtUtil.ParsePath(path);
       try {
         switch (paths.Length - 1) {
@@ -429,6 +443,23 @@ namespace Fushare.Filesystem {
     protected override Errno OnGetPathStatus(string path, out Stat buf) {
       Logger.WriteLineIf(LogLevel.Verbose, _fslog_props,
           string.Format("OnGetPathStatus, path={0}", path));
+
+      //Get the status from shadow path
+      Errno error = this._rfs.OnGetPathStatus(path, out buf);
+      if (error == Errno.ENOENT) {
+        // path doesn't exsit
+        bool executed = FuseController.Instance.Execute(
+          new FuseRawPath(path), FuseMethod.Read);
+        if (executed) {
+          // Since something new happened, check the path again
+          error = this._rfs.OnGetPathStatus(path, out buf);
+          Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+            string.Format("GetPathStatus after executed, path={0}, Permssion={1}, error={2}", 
+            path, buf.st_mode, error));
+          // Escapes the logic blew
+          return error;
+        }
+      }
 
       string[] paths = FuseDhtUtil.ParsePath(path);
 

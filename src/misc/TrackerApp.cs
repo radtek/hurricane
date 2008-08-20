@@ -39,6 +39,7 @@ using MonoTorrent.Common;
 using MonoTorrent.TorrentWatcher;
 using MonoTorrent.Tracker.Listeners;
 using Fushare.BitTorrent;
+using Fushare.Services;
 
 namespace TrackerApp {
   /// <summary>
@@ -98,7 +99,10 @@ namespace TrackerApp {
     ///<summary>Start the Tracker. Start Watching the TORRENT_DIR Directory for new Torrents.</summary>
     public MySimpleTracker() {
       #region Changes to use DhtTracker
-      Fushare.BitTorrent.DhtTracker dht_tracker = new Fushare.BitTorrent.DhtTracker();
+      BrunetDht dht = (BrunetDht)DictionaryServiceFactory.GetServiceInstance(
+        typeof(BrunetDht));
+      DhtServiceProxy proxy = new DhtServiceProxy(dht);
+      Fushare.BitTorrent.DhtTracker dht_tracker = new Fushare.BitTorrent.DhtTracker(proxy, "http://*:24132");
       tracker = dht_tracker.Tracker;
       dht_tracker.Start(); 
       #endregion

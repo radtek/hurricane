@@ -1,6 +1,4 @@
 ﻿/**
- * namespace documentation. First line (util first dot) as brief. Used by doxygen.
- * 
  * @namespace Fushare::Services
  * Provides proxy and utility classes that interface with the services used by 
  * Fushare.

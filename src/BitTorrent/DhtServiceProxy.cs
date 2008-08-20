@@ -20,6 +20,10 @@ namespace Fushare.BitTorrent {
     IIntervalAlgorithm _interval_alg; 
     #endregion
 
+    /// <summary>
+    /// Instantiates DhtServiceProxy with BrunetDht.
+    /// </summary>
+    /// <param name="dht"></param>
     public DhtServiceProxy(BrunetDht dht) {
       _dht = dht;
       _interval_alg = new StaticIntervalAlgorithm();
@@ -79,6 +83,23 @@ namespace Fushare.BitTorrent {
       Logger.WriteLineIf(LogLevel.Info, _log_props,
           string.Format("{0} peer to DHT", succ ? "Successfully announced" : "Failed to be announced"));
       return succ;
+    }
+
+    /// <summary>
+    /// Puts torrent file value to DHT.
+    /// </summary>
+    public bool PutTorrent(byte[] dhtKey, byte[] torrent, int ttl) {
+      bool ret = _dht.Put(dhtKey, torrent, ttl);
+      return ret;
+    }
+
+    /// <summary>
+    /// Gets torrent file value from DHT.
+    /// </summary>
+    public byte[] GetTorrent(byte[] dhtKey) {
+      DhtGetResult torrentDgr = _dht.GetOneDatum(
+        dhtKey, true, BrunetDht.OneDatumMode.LastOne);
+      return torrentDgr.value;
     }
   }
 }

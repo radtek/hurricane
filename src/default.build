@@ -72,6 +72,8 @@
         <include name="Common/ISerializer.cs"/>
         <include name="Common/RegularData.cs"/>
         <include name="Common/XmlRpcTracer.cs" />
+        <include name="Common/Environment.cs" />
+        
         <include name="Filesystem/Constants.cs"/>
         <include name="Filesystem/FuseDhtConfig.cs"/>
         <include name="Filesystem/RedirectFS-FH.cs"/>
@@ -83,8 +85,21 @@
         <include name="Filesystem/FuseDhtStructureException.cs" />
         <include name="Filesystem/DhtMetadataFile.cs" />
         <include name="Filesystem/DhtFileManager.cs" />
+        <include name="Filesystem/Enums.cs" />
+        <include name="Filesystem/FuseContext.cs" />
+        <include name="Filesystem/FuseRequest.cs" />
+        <include name="Filesystem/FuseResponse.cs" />
+        <include name="Filesystem/IPathHandler.cs" />
+        <include name="Filesystem/IPathHandlerFactory.cs" />
+        <include name="Filesystem/PathHandlerFactory.cs" />
+        <include name="Filesystem/PathUtil.cs" />
+        <include name="Filesystem/FusharePath.cs" />
+        <include name="Filesystem/FuseController.cs" />
+        
         <include name="Settings/FushareConfig.cs" />
+        <include name="Settings/FushareConfigHandler.cs" />
         <include name="Settings/ServiceConfigSection.cs" />
+        
         <include name="Services/BrunetDht.cs" />
         <include name="Services/BrunetDht.Async.cs" />
         <include name="Services/BrunetDht.Bulk.cs" />
@@ -92,10 +107,14 @@
         <include name="Services/DictionaryServiceFactory.cs" />
         <include name="Services/IDhtService.cs" />
         <include name="Services/IDictionaryService.cs" />
+        
         <include name="BitTorrent/DhtListener.cs" />
         <include name="BitTorrent/DhtServiceProxy.cs" />
         <include name="BitTorrent/PeerEntry.cs" />
         <include name="BitTorrent/DhtTracker.cs" />
+        <include name="BitTorrent/BitTorrentManager.cs" />
+        <include name="BitTorrent/BitTorrentPathHandler.cs" />
+        <include name="BitTorrent/FilesystemWatcher.cs" />
       </sources>
       <references>
         <include name="System.Runtime.Remoting.dll"/>
@@ -111,6 +130,7 @@
         <include name="System.Net.dll" />
         <include name="System.Web.dll" />
         <include name="${build.dir}/log4net.dll" />
+        <include name="${build.dir}/System.ServiceModel.Web.dll" />
       </references>
     </csc>
     <copy todir="${lib.dir}">

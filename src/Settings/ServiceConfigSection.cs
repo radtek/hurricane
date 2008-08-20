@@ -5,57 +5,67 @@ using System.Xml.Serialization;
 using Fushare.Services;
 
 namespace Fushare {
-
+  /// <summary>
+  /// The configuration of external services used by Fushare.
+  /// </summary>
   public class ServiceConfigSection {
-    private ServiceHandler[] _service_handlers;
-    public ServiceMapping[] _service_mappings;
+    private ServiceHandlerMapping[] _service_handler_mappings;
+    private PathHandlerMapping[] _path_handler_mappings;
 
-    [XmlArrayItem(ElementName = "mapping")]
-    public ServiceMapping[] serviceMappings {
+    [XmlArrayItem(ElementName = "handler")]
+    public PathHandlerMapping[] pathHandlers {
       get {
-        return _service_mappings;
+        return _path_handler_mappings;
       }
       set {
-        _service_mappings = value;
+        _path_handler_mappings = value;
       }
     }
 
     [XmlArrayItem(ElementName = "handler")]
-    public ServiceHandler[] serviceHandlers {
+    public ServiceHandlerMapping[] serviceHandlers {
       get {
-        return _service_handlers;
+        return _service_handler_mappings;
       }
       set {
-        _service_handlers = value;
+        _service_handler_mappings = value;
         if (ServiceHandlersSet != null)
           ServiceHandlersSet(this, null);
       }
     }
 
-    /**
-     * Occurs when the XmlSerializer sets serviceshandlers.
-     * 
-     */
+    /// <summary>
+    /// Occurs when the XmlSerializer sets serviceshandlers.
+    /// </summary>
     public static event EventHandler ServiceHandlersSet;
   }
 
   /// <summary>
   /// Maps Service handler classes to the URIs where the services are hosted.
   /// </summary>
-  public class ServiceHandler {
+  public class ServiceHandlerMapping {
     public string type;
     public string uri;
   }
 
   /// <summary>
-  /// Decides which operation on which path should be dispatched to which service (class)
+  /// Decides which operation on which path should be dispatched to which handler (class)
   /// </summary>
   /// <remarks>
   /// The type filed should match the type field in one of the ServiceHandlers.
   /// </remarks>
-  public class ServiceMapping {
+  public class PathHandlerMapping {
+    /// <summary>
+    /// The path attribute can contain either a single URL path or a simple wildcard string (for example, *.aspx).
+    /// </summary>
     public string path;
-    public string operation;
+    /// <summary>
+    /// Comma Seperated enum value of FuseMethod, or *.
+    /// </summary>
+    public string verb;
+    /// <summary>
+    /// Specifies a comma-separated class/assembly combination. 
+    /// </summary>
     public string type;
   }
 }

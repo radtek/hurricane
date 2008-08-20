@@ -19,6 +19,10 @@ namespace Fushare.Services {
     private IXmlRpcDht _dht;
     private static IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(BrunetDht));
     public const int DefaultTtl = 3600;  //Default ttl : 1 hour
+    /// <summary>
+    /// Max piece size in bytes that is allowed in Brunet. 
+    /// </summary>
+    public const int BrunetMaxPieceSize = 900;
     private Uri _svc_uri;
 
     #region Constructors
@@ -57,25 +61,108 @@ namespace Fushare.Services {
     #endregion
 
     /// <summary>
-    /// Put key/value pair into Brunet DHT
+    /// Puts key/value pair into Brunet DHT
     /// </summary>
-    /// <param name="key">string or byte[] typed key</param>
-    /// <param name="value">string or byte[] typed value</param>
     /// <param name="ttl">Time-To-Live in seconds</param>
     /// <returns>true if successful, false if not</returns>
-    public bool Put(object key, object value, int ttl) {
-      return _dht.Put(key, value, ttl);
+    public bool Put(byte[] key, byte[]value, int ttl) {
+      return Put(key, value, ttl, BrunetMaxPieceSize, true);
     }
 
     /// <summary>
     /// Same as Put except that it fails in case of key collision
     /// </summary>
-    /// <param name="key">string or byte[] typed key</param>
-    /// <param name="value">string or byte[] typed value</param>
     /// <param name="ttl">Time-To-Live in seconds</param>
     /// <returns>true if successful, false if not</returns>
-    public bool Create(object key, object value, int ttl) {
+    public bool Create(byte[] key, byte[] value, int ttl) {
       return _dht.Create(key, value, ttl);
+    }
+
+    /// <summary>
+    /// Put with a size limit. Data larger than the limit will be splitted into
+    /// pieces and put to different under different DHT keys.
+    /// </summary>
+    /// <param name="maxSize">The size limit</param>
+    /// <param name="split">Whether to split the oversized data</param>
+    /// <exception cref="ArgumentException">Data larger than the limit and 
+    /// split specified as false</exception>
+    public bool Put(byte[] key, byte[] value, int ttl, int maxSize, bool split) {
+      bool result;
+      if (value.Length > maxSize) {
+        if (split) {
+          BrunetDhtEntry bde = new BrunetDhtEntry(key, value, ttl);
+          FragmentationInfo frag_info = new FragmentationInfo(key);
+          frag_info.PieceLength = maxSize;
+          result = PutFragments(bde, frag_info);
+        } else {
+          throw new ArgumentException("Data too large but split opted out.");
+        }
+      } else {
+        result = _dht.Put(key, value, ttl);
+      }
+
+      return result;
+    }
+
+    public enum OneDatumMode {
+      FirstOne,
+      LastOne,
+      NewestOne,
+      LengthiestOne
+    }
+
+    public DhtGetResult GetOneDatum(byte[] key, bool getPieces) {
+      return GetOneDatum(key, getPieces, OneDatumMode.LastOne);
+    }
+
+    /// <summary>
+    /// Gets the first data item of the given key and possibly gets the 
+    /// indicated pieces from DHT.
+    /// </summary>
+    /// <param name="getPieces">Whether to get pieces if the data at the 
+    /// specified DHT key is a FragmentationInfo</param>
+    public DhtGetResult GetOneDatum(byte[] key, bool getPieces, 
+      OneDatumMode mode) {
+      DhtGetResult[] results =  _dht.Get(key);
+      DhtGetResult ret;
+      if (results.Length == 0) {
+        ret = null;
+      } else {
+        DhtGetResult dgr;
+        if (mode == OneDatumMode.FirstOne) {
+          dgr = results[0];
+        } else if (mode == OneDatumMode.LastOne) {
+          dgr = results[results.Length - 1];
+        } else {
+          throw new NotImplementedException(
+            "This OneDatumMode not implemented.");
+        }
+        DictionaryData dd = null;
+        try {
+          dd = DictionaryData.CreateDictionaryData(dgr.value);
+        } catch (Exception ex) {
+          // Not an error in this case. Log with verbose level.
+          Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+              ex);
+        }
+        if (dd != null && dd is FragmentationInfo) {
+          FragmentationInfo frag_info = dd as FragmentationInfo;
+          BrunetDhtEntry bde = null;
+          try {
+            bde = GetFragments(frag_info) as BrunetDhtEntry;
+            RegularData rd = (RegularData)DictionaryData.CreateDictionaryData(
+              bde.Value);
+            //Only 1 entry (if any) in this array
+            ret = new DhtGetResult(rd.PayLoad, bde.Age, bde.Ttl);
+          } catch (Exception ex) {
+            Logger.WriteLineIf(LogLevel.Error, _log_props, string.Format("Can't get fragments."), ex);
+            ret = null;
+          }
+        } else {
+          ret = dgr;
+        }
+      }
+      return ret;
     }
 
     public DictionaryData GetFragments(FragmentationInfo info) {

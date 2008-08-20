@@ -8,9 +8,4 @@ namespace Fushare {
     BrunetDht,
     OpenDht /* Maybe in the future */
   }
-
-  public enum FSOpType {
-    Read,
-    Write
-  }
 }
