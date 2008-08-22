@@ -4,6 +4,7 @@ using System.Text;
 using System.Net;
 using System.IO;
 using System.Collections.Specialized;
+using System.Threading;
 using Mono.Unix;
 
 using Fushare.Filesystem;
@@ -59,8 +60,11 @@ namespace Fushare.BitTorrent {
           Logger.WriteLineIf(LogLevel.Verbose, _log_props,
             string.Format("Dhtkey in Base32: {0}", base32_dhtkey));
           byte[] torrent_dht_key = Brunet.Base32.Decode(base32_dhtkey);
+          ManualResetEvent waitHandle = new ManualResetEvent(false);
           Torrent torrent = _manager.GetFile(
-            torrent_dht_key, _manager.BTDownloadsDir);
+            torrent_dht_key, _manager.BTDownloadsDir, waitHandle);
+          // wait until downloading finishes
+          waitHandle.WaitOne();
           if (Fushare.Environment.OSVersion == OS.Unix) {
             UnixSymbolicLinkInfo unique_to_downloads = 
               new UnixSymbolicLinkInfo(shadow_full_path.PathString);

@@ -186,7 +186,7 @@ namespace Fushare.BitTorrent {
         string.Format("Torrent file succesfully put into DHT"));
       // Start downloading.
       string file_dir = new FileInfo(filePath).Directory.FullName;
-      StartDownload(torrent, file_dir);
+      StartDownload(torrent, file_dir, null);
     }
 
     /// <summary>
@@ -194,7 +194,7 @@ namespace Fushare.BitTorrent {
     /// </summary>
     /// <param name="torrentDhtKey">DHT key of the torrent</param>
     /// <param name="saveToPath">the shadow full path to save the file</param>
-    public Torrent GetFile(byte[] torrentDhtKey, string saveToDir) {
+    public Torrent GetFile(byte[] torrentDhtKey, string saveToDir, EventWaitHandle waitHandle) {
       byte[] torrent_bytes = _proxy.GetTorrent(torrentDhtKey);
 
       Torrent torrent = Torrent.Load(torrent_bytes);
@@ -205,7 +205,7 @@ namespace Fushare.BitTorrent {
         stream.Write(torrent_bytes, 0, torrent_bytes.Length);
       }
       
-      StartDownload(torrent, saveToDir);
+      StartDownload(torrent, saveToDir, waitHandle);
       return torrent;
     }
 
@@ -227,14 +227,14 @@ namespace Fushare.BitTorrent {
     /// </summary>
     /// <param name="torrentValue">Value of a torrent file</param>
     /// <param name="saveToSfp"></param>
-    public void StartDownload(byte[] torrentValue, string saveDir) {
+    public void StartDownload(byte[] torrentValue, string saveDir, EventWaitHandle waitHandle) {
       Torrent torrent = Torrent.Load(torrentValue);
-      StartDownload(torrent, saveDir);
+      StartDownload(torrent, saveDir, waitHandle);
     }
 
-    public void StartDownload(string torrentFilePath, string saveDir) {
+    public void StartDownload(string torrentFilePath, string saveDir, EventWaitHandle waitHandle) {
       Torrent torrent = Torrent.Load(torrentFilePath);
-      StartDownload(torrent, saveDir);
+      StartDownload(torrent, saveDir, waitHandle);
     }
 
     /// <summary>
@@ -242,7 +242,9 @@ namespace Fushare.BitTorrent {
     /// </summary>
     /// <param name="saveToSfp">
     /// The full path of the directory to save the downloaded file.</param>
-    public void StartDownload(Torrent torrent, string saveDir) {
+    /// <param name="waitHandle">Handle to wait on for the downloading to be 
+    /// finished. Pass null if no need to set the handle.</param>
+    public void StartDownload(Torrent torrent, string saveDir, EventWaitHandle waitHandle) {
       Logger.WriteLineIf(LogLevel.Verbose, _log_props,
         string.Format("Start downloading torrent {0} to directory {1}", 
         torrent.Name, saveDir));
@@ -300,6 +302,9 @@ namespace Fushare.BitTorrent {
                 kb_proto_uploaded / 1024,
                 kb_proto_downloaded / total_secs,
                 kb_proto_uploaded / total_secs));
+              if (waitHandle != null) {
+                waitHandle.Set();
+              }
             }
             break;
           default:
