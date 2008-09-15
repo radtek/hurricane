@@ -38,7 +38,7 @@ namespace Fushare.Filesystem {
       IPathHandler ret;
       //@todo Use regex.
       FusePath fuse_path = PathUtil.GetFusePathFromFuseRawPath(path);
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+      Logger.WriteLineIf(LogLevel.Verbose, FuseFS.FilesysLogProps,
         string.Format("Received request from FusePath {0}", fuse_path.PathString));
       if (fuse_path.PathString.EndsWith(".bt")) {
 
@@ -51,7 +51,7 @@ namespace Fushare.Filesystem {
           } catch (Exception ex) {
             // There is a good chance that the path shouldn't be read from 
             // BitTorrent, so we catch it here and don't pass it along
-            Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+            Logger.WriteLineIf(LogLevel.Verbose, FuseFS.FilesysLogProps,
               string.Format("Path can't be parsed at DhtKey. \n {0}", ex));
             return null;
           }
@@ -75,7 +75,7 @@ namespace Fushare.Filesystem {
             btconfig.dhtTrackerPort);
         }
       } else {
-        Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+        Logger.WriteLineIf(LogLevel.Verbose, FuseFS.FilesysLogProps,
           string.Format("Factory didn't find a handler for this path: {0}", path.PathString));
         type = null;
         ret = null;

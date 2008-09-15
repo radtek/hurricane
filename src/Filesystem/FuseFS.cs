@@ -39,6 +39,12 @@ namespace Fushare.Filesystem {
 
     #endregion
 
+    public static IDictionary FilesysLogProps {
+      get {
+        return _fslog_props;
+      }
+    }
+
     private bool ParseArguments(string[] args) {
       for (int i = 0; i < args.Length; ++i) {
         switch (args[i]) {
@@ -101,8 +107,8 @@ namespace Fushare.Filesystem {
         }
       }
 
-      PathUtil.Instance.Initialize(Path.GetDirectoryName(_fuse_root), 
-        Path.GetDirectoryName(_shadowdir));
+      PathUtil.Instance.Initialize(Path.GetFullPath(_fuse_root), 
+        Path.GetFullPath(_shadowdir));
 
       return true;
     }

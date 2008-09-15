@@ -9,6 +9,7 @@ using Mono.Unix;
 
 using Fushare.Filesystem;
 using MonoTorrent.Common;
+using Brunet.Rpc;
 
 namespace Fushare.BitTorrent {
   /// <summary>
@@ -19,25 +20,15 @@ namespace Fushare.BitTorrent {
     private static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(BitTorrentPathHandler));
 
     public BitTorrentPathHandler(string btBaseDir, int clientPort, int trackerPort) {
-      string hostName = Dns.GetHostName();
-      IPHostEntry entry = Dns.GetHostEntry(hostName);
-      IPAddress[] list = entry.AddressList;
-      IPAddress chosen = null;
-      foreach (IPAddress addr in list) {
-        // @TODO change to configurable, of course.
-        if (addr.ToString().StartsWith("10.250")) {
-          chosen = addr;
-          break;
-        }
-      }
-
-      if (chosen == null) {
-        throw new Exception("No suitable IP.");
-      }
+      string tracker_ip;
+      IXmlRpcManager rpc = XmlRpcManagerClient.GetXmlRpcManager(10000);
+      object rs = rpc.localproxy("Information.Info");
+      IDictionary dic = (IDictionary)rs;
+      tracker_ip = (string)dic["Virtual IP"];
 
       _manager = new BitTorrentManager(
         btBaseDir, clientPort,
-        string.Format("http://{0}:{1}/", chosen.ToString(), trackerPort));
+        string.Format("http://{0}:{1}/", tracker_ip.ToString(), trackerPort));
       // Start listening threads.
       _manager.Start();
     }

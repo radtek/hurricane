@@ -26,7 +26,8 @@ namespace Fushare.Filesystem {
       IPathHandler handler = PathHandlerFactory.Instance.GetHandler(method, path);
       if (handler != null) {
         Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-          string.Format("Got IPathHandler: {0}", handler.GetType()));
+          string.Format("Got IPathHandler: {0} for FuseRawPath: {1}", 
+          handler.GetType(), path.PathString));
         FuseRequest request = new FuseRequest(path, method);
         FuseResponse response = new FuseResponse();
         FuseContext context = new FuseContext(request, response);
