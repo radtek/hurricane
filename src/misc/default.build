@@ -55,20 +55,6 @@
         <include name="*.dll" />
       </fileset>
     </copy>
-    <!--<csc 
-         target="exe"
-         debug="${debug}"
-         output="${build.dir}/SampleBTClient.exe"
-         define="${define}">
-      <sources failonempty="true">
-        <include name="SampleBTClient.cs" />
-        <include name="Top10Listener.cs" />
-      </sources>
-      <references>
-        <include name="${build.dir}/MonoTorrent.dll" />
-        <include name="nunit.framework.dll" />
-      </references>
-    </csc>-->
     <csc 
          target="exe"
          debug="${debug}"

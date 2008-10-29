@@ -38,6 +38,7 @@
       <fileset basedir="${build.dir}">
         <include name="*.exe" />
         <include name="*.dll" />
+        <include name="${lib.dir}/Fushare.dll" />
       </fileset>
     </delete>
   </target>
@@ -130,7 +131,6 @@
         <include name="System.Net.dll" />
         <include name="System.Web.dll" />
         <include name="${build.dir}/log4net.dll" />
-        <include name="${build.dir}/System.ServiceModel.Web.dll" />
       </references>
     </csc>
     <copy todir="${lib.dir}">
