@@ -57,23 +57,23 @@
          output="${build.dir}/Fushare.dll"
          define="${define}">
       <sources failonempty="true">
-        <include name="Common/Logger.cs"/>
-        <include name="Common/AdrSerializer.cs"/>
-        <include name="Common/BrunetDhtEntry.cs"/>
-        <include name="Common/DictionaryData.cs"/>
-        <include name="Common/DictionaryDataDecorator.cs"/>
-        <include name="Common/DictionaryDataUtil.cs"/>
-        <include name="Common/Enums.cs"/>
-        <include name="Common/FingerprintedData.cs"/>
-        <include name="Common/FragmentableData.cs"/>
-        <include name="Common/FragmentationInfo.cs"/>
-        <include name="Common/FushareTestBase.cs"/>
-        <include name="Common/IDictionaryData.cs"/>
-        <include name="Common/IDto.cs"/>
-        <include name="Common/ISerializer.cs"/>
-        <include name="Common/RegularData.cs"/>
-        <include name="Common/XmlRpcTracer.cs" />
-        <include name="Common/Environment.cs" />
+        <include name="Core/Common/Logger.cs"/>
+        <include name="Core/Common/AdrSerializer.cs"/>
+        <include name="Core/Common/BrunetDhtEntry.cs"/>
+        <include name="Core/Common/DictionaryData.cs"/>
+        <include name="Core/Common/DictionaryDataDecorator.cs"/>
+        <include name="Core/Common/DictionaryDataUtil.cs"/>
+        <include name="Core/Common/Enums.cs"/>
+        <include name="Core/Common/FingerprintedData.cs"/>
+        <include name="Core/Common/FragmentableData.cs"/>
+        <include name="Core/Common/FragmentationInfo.cs"/>
+        <include name="Core/Common/FushareTestBase.cs"/>
+        <include name="Core/Common/IDictionaryData.cs"/>
+        <include name="Core/Common/IDto.cs"/>
+        <include name="Core/Common/ISerializer.cs"/>
+        <include name="Core/Common/RegularData.cs"/>
+        <include name="Core/Common/XmlRpcTracer.cs" />
+        <include name="Core/Common/Environment.cs" />
         
         <include name="Filesystem/Constants.cs"/>
         <include name="Filesystem/FuseDhtConfig.cs"/>
@@ -97,9 +97,9 @@
         <include name="Filesystem/FusharePath.cs" />
         <include name="Filesystem/FuseController.cs" />
         
-        <include name="Settings/FushareConfig.cs" />
-        <include name="Settings/FushareConfigHandler.cs" />
-        <include name="Settings/ServiceConfigSection.cs" />
+        <include name="Configuration/FushareConfig.cs" />
+        <include name="Configuration/FushareConfigHandler.cs" />
+        <include name="Configuration/ServiceConfigSection.cs" />
         
         <include name="Services/BrunetDht.cs" />
         <include name="Services/BrunetDht.Async.cs" />
@@ -109,13 +109,13 @@
         <include name="Services/IDhtService.cs" />
         <include name="Services/IDictionaryService.cs" />
         
-        <include name="BitTorrent/DhtListener.cs" />
-        <include name="BitTorrent/DhtServiceProxy.cs" />
-        <include name="BitTorrent/PeerEntry.cs" />
-        <include name="BitTorrent/DhtTracker.cs" />
-        <include name="BitTorrent/BitTorrentManager.cs" />
-        <include name="BitTorrent/BitTorrentPathHandler.cs" />
-        <include name="BitTorrent/FilesystemWatcher.cs" />
+        <include name="Services/BitTorrent/DhtListener.cs" />
+        <include name="Services/BitTorrent/DhtServiceProxy.cs" />
+        <include name="Services/BitTorrent/PeerEntry.cs" />
+        <include name="Services/BitTorrent/DhtTracker.cs" />
+        <include name="Services/BitTorrent/BitTorrentManager.cs" />
+        <include name="Services/BitTorrent/BitTorrentPathHandler.cs" />
+        <include name="Services/BitTorrent/FilesystemWatcher.cs" />
       </sources>
       <references>
         <include name="System.Runtime.Remoting.dll"/>
@@ -131,6 +131,7 @@
         <include name="System.Net.dll" />
         <include name="System.Web.dll" />
         <include name="${build.dir}/log4net.dll" />
+        <include name="${build.dir}/System.ServiceModel.Web.dll" />
       </references>
     </csc>
     <copy todir="${lib.dir}">
