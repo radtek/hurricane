@@ -39,6 +39,11 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>FuseDht</AssemblyName>
+    <RootNamespace>Fushare</RootNamespace>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -47,6 +52,12 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>FuseDht</AssemblyName>
+    <DebugSymbols>true</DebugSymbols>
+    <RootNamespace>Fushare</RootNamespace>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'l4npf|AnyCPU' ">
     <OutputPath>bin\l4npf\</OutputPath>
@@ -55,9 +66,16 @@
     <DebugType>pdbonly</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>FuseDht</AssemblyName>
+    <DebugSymbols>true</DebugSymbols>
+    <RootNamespace>Fushare</RootNamespace>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Mono.Fuse, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Mono.Fuse, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\lib\Mono.Fuse.dll</HintPath>
     </Reference>
@@ -67,7 +85,7 @@
     <Compile Include="FushareApp.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Fushare.csproj">
+    <ProjectReference Include="..\Fushare\Fushare.csproj">
       <Project>{BF49E836-A893-4487-BDC6-3CF146CCBC01}</Project>
       <Name>Fushare</Name>
     </ProjectReference>

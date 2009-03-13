@@ -1,0 +1,260 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{BF49E836-A893-4487-BDC6-3CF146CCBC01}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <NoStandardLibraries>false</NoStandardLibraries>
+    <AssemblyName>Fushare</AssemblyName>
+    <RootNamespace>Fushare</RootNamespace>
+    <StartupObject>
+    </StartupObject>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>2.0</OldToolsVersion>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkSubset>
+    </TargetFrameworkSubset>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>.\bin\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>.\bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'l4n|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\l4n\</OutputPath>
+    <DefineConstants>TRACE;LOG4NET</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DocumentationFile>
+    </DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'unit|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\unit\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;TRACKER_NUNIT,FUSE_NUNIT,LOG4NET,FUSHARE_NUNIT,FUSE_DEBUG</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'l4npf|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\l4npf\</OutputPath>
+    <DefineConstants>TRACE;LOG4NET,FUSHARE_PF</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DocumentationFile>
+    </DocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Brunet, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\Brunet.dll</HintPath>
+    </Reference>
+    <Reference Include="Brunet.BasicNode, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\Brunet.BasicNode.dll</HintPath>
+    </Reference>
+    <Reference Include="Brunet.Coordinate, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\Brunet.Coordinate.dll</HintPath>
+    </Reference>
+    <Reference Include="Brunet.Dht, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\Brunet.Dht.dll</HintPath>
+    </Reference>
+    <Reference Include="Brunet.DhtService, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\Brunet.DhtService.dll</HintPath>
+    </Reference>
+    <Reference Include="Brunet.IPAddresses, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\Brunet.IPAddresses.dll</HintPath>
+    </Reference>
+    <Reference Include="Brunet.XmlRpc, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\Brunet.XmlRpc.dll</HintPath>
+    </Reference>
+    <Reference Include="CookComputing.XmlRpcV2, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\CookComputing.XmlRpcV2.dll</HintPath>
+    </Reference>
+    <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\log4net.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Practices.ObjectBuilder2, Version=2.2.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\Microsoft.Practices.ObjectBuilder2.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Practices.Unity, Version=1.2.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\Microsoft.Practices.Unity.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Practices.Unity.Configuration, Version=1.2.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\Microsoft.Practices.Unity.Configuration.dll</HintPath>
+    </Reference>
+    <Reference Include="Mono.Fuse, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\Mono.Fuse.dll</HintPath>
+    </Reference>
+    <Reference Include="Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\Mono.Posix.dll</HintPath>
+    </Reference>
+    <Reference Include="MonoTorrent, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\MonoTorrent.dll</HintPath>
+    </Reference>
+    <Reference Include="NUnit.Framework, Version=2.2.8.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\nunit.framework.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.configuration" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.ServiceModel.Web, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\System.ServiceModel.Web.dll</HintPath>
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Web" />
+    <Reference Include="System.Web.Routing, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\System.Web.Routing.dll</HintPath>
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Bootstrapper.cs" />
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+    <Compile Include="Services\BitTorrent\BitTorrentPathHandler.cs" />
+    <Compile Include="Services\BitTorrent\CacheRegistry.cs" />
+    <Compile Include="Services\BitTorrent\TorrentHelper.cs" />
+    <Compile Include="Services\DhtException.cs" />
+    <Compile Include="Services\DhtResultEntry.cs" />
+    <Compile Include="Services\DhtResults.cs" />
+    <Compile Include="Services\DuplicateResourceKeyException.cs" />
+    <Compile Include="Services\ResourceException.cs" />
+    <Compile Include="Services\ResourceNotFoundException.cs" />
+    <Compile Include="Services\Util.cs" />
+    <Compile Include="Services\Dht\DhtService.cs" />
+    <Compile Include="Services\Dht\IDhtService.cs" />
+    <Compile Include="Settings.cs" />
+    <Compile Include="Util\Base32.cs" />
+    <Compile Include="Util\SerializableDictionary.cs" />
+    <Compile Include="Services\BitTorrent\TorrentFolderWatcher.cs" />
+    <Compile Include="Util\UrlBase64.cs" />
+    <Compile Include="Services\BitTorrent\BitTorrentManager.cs" />
+    <Compile Include="Services\BitTorrent\BitTorrentService.cs" />
+    <Compile Include="Services\BitTorrent\DhtTracker.cs" />
+    <Compile Include="Services\BitTorrent\TorrentFolderWatcherHelper.cs" />
+    <Compile Include="Core\Common\BrunetDhtEntry.cs" />
+    <Compile Include="Core\Common\DictionaryData.cs" />
+    <Compile Include="Core\Common\DictionaryDataDecorator.cs" />
+    <Compile Include="Core\Common\DictionaryDataUtil.cs" />
+    <Compile Include="Core\Common\Enums.cs" />
+    <Compile Include="Core\Common\FragmentationInfo.cs" />
+    <Compile Include="Core\Common\FushareTestBase.cs" />
+    <Compile Include="Core\Common\IDictionaryData.cs" />
+    <Compile Include="Core\Common\IDto.cs" />
+    <Compile Include="Core\Common\Logger.cs" />
+    <Compile Include="Core\Common\AdrSerializer.cs" />
+    <Compile Include="Core\Common\FingerprintedData.cs" />
+    <Compile Include="Core\Common\FragmentableData.cs" />
+    <Compile Include="Core\Common\ISerializer.cs" />
+    <Compile Include="Core\Common\Environment.cs" />
+    <Compile Include="Core\Common\RegularData.cs" />
+    <Compile Include="Core\Common\XmlRpcTracer.cs" />
+    <Compile Include="Core\Mvc\BasicControllerTypeMapper.cs" />
+    <Compile Include="Core\Mvc\DefaultFushareControllerFactory.cs" />
+    <Compile Include="Core\Mvc\FushareControllerBuilder.cs" />
+    <Compile Include="Core\Mvc\Enums.cs" />
+    <Compile Include="Core\Mvc\FushareContext.cs" />
+    <Compile Include="Core\Mvc\FushareRequest.cs" />
+    <Compile Include="Core\Mvc\FushareResponse.cs" />
+    <Compile Include="Core\Mvc\IControllerTypeMapper.cs" />
+    <Compile Include="Core\Mvc\IFushareControllerFactory.cs" />
+    <Compile Include="Core\Mvc\IFushareController.cs" />
+    <Compile Include="Filesystem\Constants.cs" />
+    <Compile Include="Filesystem\DhtDataFile.cs" />
+    <Compile Include="Filesystem\DhtFileManager.cs" />
+    <Compile Include="Filesystem\DhtMetadataFile.cs" />
+    <Compile Include="Filesystem\Enums.cs" />
+    <Compile Include="Filesystem\FuseController.cs" />
+    <Compile Include="Filesystem\FuseDhtConfig.cs" />
+    <Compile Include="Filesystem\FuseDhtHelper.cs" />
+    <Compile Include="Filesystem\FuseDhtHelperFactory.cs" />
+    <Compile Include="Filesystem\FuseDhtStructureException.cs" />
+    <Compile Include="Filesystem\FuseDhtUtil.cs" />
+    <Compile Include="Filesystem\FuseFS.cs" />
+    <Compile Include="Filesystem\FuseContext.cs" />
+    <Compile Include="Filesystem\FuseRequest.cs" />
+    <Compile Include="Filesystem\FuseResponse.cs" />
+    <Compile Include="Filesystem\FusharePath.cs" />
+    <Compile Include="Filesystem\IPathHandlerFactory.cs" />
+    <Compile Include="Filesystem\PathHandlerFactory.cs" />
+    <Compile Include="Filesystem\PathUtil.cs" />
+    <Compile Include="Filesystem\RedirectFS-FH.cs" />
+    <Compile Include="Services\BitTorrent\IBitTorrentService.cs" />
+    <Compile Include="Services\BrunetDht.Async.cs" />
+    <Compile Include="Services\BrunetDht.cs" />
+    <Compile Include="Services\BrunetDhtClientOperations.cs" />
+    <Compile Include="Services\BrunetDht.Bulk.cs" />
+    <Compile Include="Services\OpenDht.cs" />
+    <Compile Include="Services\DictionaryServiceFactory.cs" />
+    <Compile Include="Services\IDict.cs" />
+    <Compile Include="Filesystem\IPathHandler.cs" />
+    <Compile Include="Services\OpenDHTLib\IOpenDHT.cs" />
+    <Compile Include="Services\OpenDHTLib\IOpenDHTKeyValue.cs" />
+    <Compile Include="Services\OpenDHTLib\OpenDHT.cs" />
+    <Compile Include="Services\OpenDHTLib\OpenDHTBase.cs" />
+    <Compile Include="Services\OpenDHTLib\OpenDHTMessage.cs" />
+    <Compile Include="Services\OpenDHTLib\OpenDHTMessageDetails.cs" />
+    <Compile Include="Core\Common\Namespaces.cs" />
+    <Compile Include="Configuration\FushareConfig.cs" />
+    <Compile Include="Services\BitTorrent\DhtListener.cs" />
+    <Compile Include="Services\BitTorrent\DhtProxy.cs" />
+    <Compile Include="Services\BitTorrent\PeerEntry.cs" />
+    <Compile Include="Configuration\FushareConfigHandler.cs" />
+    <Compile Include="Configuration\ServiceConfigSection.cs" />
+    <Compile Include="Services\DhtBase.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="Core\Common\default.build" />
+    <None Include="default.build" />
+    <None Include="Filesystem\default.build" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSHARP.Targets" />
+  <ProjectExtensions>
+    <VisualStudio AllowExistingFolder="true" />
+  </ProjectExtensions>
+</Project>

@@ -4,6 +4,8 @@ using System.Text;
 using Fushare.Filesystem;
 using System.Threading;
 
+using Fushare.Configuration;
+
 namespace Fushare {
   /// <summary>
   /// Program entry point.

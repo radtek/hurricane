@@ -1,0 +1,18 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="Fushare.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="BitTorrentManagerBaseDirPath" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">C:\Documents and Settings\jx\Local Settings\Temp\fushare\test1\bt</Value>
+    </Setting>
+    <Setting Name="DhtTrackerListeningPort" Type="System.Int32" Scope="Application">
+      <Value Profile="(Default)">20000</Value>
+    </Setting>
+    <Setting Name="BitTorrentManagerSelfNamespace" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">jiangyan.ufl.edu</Value>
+    </Setting>
+    <Setting Name="DhtTrackerIPPrefix" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">192.168.1</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>

@@ -5,12 +5,13 @@ using System.IO;
 using System.Net;
 
 using Brunet;
+using Fushare.Configuration;
 
-namespace Fushare.BitTorrent {
+namespace Fushare.Services.BitTorrent {
   class BitTorrentTester {
     static void Main(string[] args) {
       Fushare.Logger.LoadConfig("l4n.trackerapp.config");
-      Fushare.FushareConfigHandler.Read("fushare.config");
+      FushareConfigHandler.Read("fushare.config");
 
       string filepath = args[0];
 
@@ -43,7 +44,7 @@ namespace Fushare.BitTorrent {
       } else {
         string key_base32 = args[2];
         byte[] dht_key = Base32.Decode(key_base32);
-        manager.GetFile(dht_key, filepath, null);
+        manager.GetData(dht_key, "", filepath, null);
       }
 
       // Why the program doesn't work correctly when this line was added?

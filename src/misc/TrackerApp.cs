@@ -38,7 +38,7 @@ using MonoTorrent.Tracker;
 using MonoTorrent.Common;
 using MonoTorrent.TorrentWatcher;
 using MonoTorrent.Tracker.Listeners;
-using Fushare.BitTorrent;
+using Fushare.Services.BitTorrent;
 using Fushare.Services;
 
 namespace TrackerApp {
@@ -93,7 +93,7 @@ namespace TrackerApp {
 
   class MySimpleTracker {
     Tracker tracker;
-    TorrentFolderWatcher watcher;
+    Fushare.Services.BitTorrent.TorrentFolderWatcher watcher;
     const string TORRENT_DIR = "Torrents";
 
     ///<summary>Start the Tracker. Start Watching the TORRENT_DIR Directory for new Torrents.</summary>
@@ -101,8 +101,8 @@ namespace TrackerApp {
       #region Changes to use DhtTracker
       BrunetDht dht = (BrunetDht)DictionaryServiceFactory.GetServiceInstance(
         typeof(BrunetDht));
-      DhtServiceProxy proxy = new DhtServiceProxy(dht);
-      Fushare.BitTorrent.DhtTracker dht_tracker = new Fushare.BitTorrent.DhtTracker(proxy, "http://*:24132");
+      DhtProxy proxy = new DhtProxy(dht, 0);
+      Fushare.Services.BitTorrent.DhtTracker dht_tracker = new Fushare.Services.BitTorrent.DhtTracker(proxy, "http://*:24132");
       tracker = dht_tracker.Tracker;
       dht_tracker.Start(); 
       #endregion
@@ -127,7 +127,7 @@ namespace TrackerApp {
     }
 
     private void SetupTorrentWatcher() {
-      watcher = new TorrentFolderWatcher(Path.GetFullPath(TORRENT_DIR), "*.torrent");
+      watcher = new Fushare.Services.BitTorrent.TorrentFolderWatcher(Path.GetFullPath(TORRENT_DIR), "*.torrent");
       watcher.TorrentFound += delegate(object sender, TorrentWatcherEventArgs e) {
         try {
           // This is a hack to work around the issue where a file triggers the event
@@ -192,7 +192,7 @@ namespace TrackerApp {
     public static void Main(string[] args) {
       Debug.Listeners.Add(new TextWriterTraceListener(Console.Out));
       Fushare.Logger.LoadConfig("l4n.trackerapp.config");
-      Fushare.FushareConfigHandler.Read("fushare.config");
+      Fushare.Configuration.FushareConfigHandler.Read("fushare.config");
 
       Console.WriteLine("Welcome to the MonoTorrent tracker");
       Console.WriteLine("1. Start the tracker");
