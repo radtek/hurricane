@@ -45,7 +45,7 @@ namespace Fushare.Services.BitTorrent {
     public string WriteTorrent(byte[] torrentBytes, string nameSpace, 
       string torrentName) {
       var pathToWrite = GetTorrentPath(nameSpace, torrentName);
-      Directory.CreateDirectory(Util.GetParent(pathToWrite, false).FullName);
+      Directory.CreateDirectory(IOUtil.GetParent(pathToWrite, false).FullName);
       using (FileStream stream = new FileStream(pathToWrite, 
         FileMode.Create)) {
         stream.Write(torrentBytes, 0, torrentBytes.Length);

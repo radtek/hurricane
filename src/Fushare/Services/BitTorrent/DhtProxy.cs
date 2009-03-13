@@ -41,7 +41,8 @@ namespace Fushare.Services.BitTorrent {
     /// </returns>
     public ICollection<PeerEntry> GetPeers(byte[] infoHash) {
       Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-          string.Format("Getting peers for infoHash: {0} (Base32)", Base32.Encode(infoHash)));
+          string.Format("Getting peers for infoHash: {0} (UrlBase64)", 
+          UrlBase64.Encode(infoHash)));
       ICollection<PeerEntry> peers = new List<PeerEntry>();
       // Fire DHT Get
       DhtResults results;
@@ -49,7 +50,8 @@ namespace Fushare.Services.BitTorrent {
         results = _dht.Get(infoHash);
       } catch (ResourceException ex) {
         Logger.WriteLineIf(LogLevel.Error, _log_props, string.Format(
-          "Exception caught when retrieving peers. \n{0}", ex));
+          "Exception caught when retrieving peers. Returning empty peers collection.\n{0}",
+          ex));
         // No big deal. We simply wait until the next time to query again.
         // Return empty collection.
         return peers;
@@ -64,9 +66,10 @@ namespace Fushare.Services.BitTorrent {
           Logger.WriteLineIf(LogLevel.Verbose, _log_props,
               string.Format("Peer entry #{0} built:\n{1}", index++, entry.ToString()));
           peers.Add(entry);
-        } catch (Exception e) {
-          Logger.WriteLineIf(LogLevel.Error, _log_props,
-              "Error occurred when deserializing result from DHT", e);
+        } catch (Exception ex) {
+          Logger.WriteLineIf(LogLevel.Error, _log_props, string.Format(
+            "Error occurred when deserializing result from DHT. Continue to parse next.\n{0}",
+            ex));
           // Ignore this entry and continue to parse others.
           continue;
         }

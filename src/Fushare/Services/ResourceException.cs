@@ -28,5 +28,13 @@ namespace Fushare.Services {
     }
 
     string _resourceKey = string.Empty;
+
+    public override string ToString() {
+      StringBuilder sb = new StringBuilder();
+      sb.Append(base.ToString());
+      sb.Append(System.Environment.NewLine);
+      sb.Append(string.Format("Resource Key: {0}", ResourceKey));
+      return sb.ToString();
+    }
   }
 }

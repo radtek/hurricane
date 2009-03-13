@@ -15,17 +15,17 @@ namespace Fushare.Services.Dht {
     #region IDhtService Members
 
     public void Put(string nameSpace, string name, byte[] value) {
-      var keyStr = Util.GetDhtKeyBytes(nameSpace, name);
+      var keyStr = ServiceUtil.GetDhtKeyBytes(nameSpace, name);
       _dht.Put(keyStr, value);
     }
 
     public void Create(string nameSpace, string name, byte[] value) {
-      var keyStr = Util.GetDhtKeyBytes(nameSpace, name);
+      var keyStr = ServiceUtil.GetDhtKeyBytes(nameSpace, name);
       _dht.Create(keyStr, value);
     }
 
     public byte[] Get(string nameSpace, string name) {
-      var keyStr = Util.GetDhtKeyBytes(nameSpace, name);
+      var keyStr = ServiceUtil.GetDhtKeyBytes(nameSpace, name);
       return _dht.Get(keyStr).Value;
     }
 

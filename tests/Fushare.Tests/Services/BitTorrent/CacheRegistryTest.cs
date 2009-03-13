@@ -27,7 +27,7 @@ namespace Fushare.Services.BitTorrent {
     public void Test() {
       string filename = Path.GetRandomFileName();
       string path = Path.Combine(Path.GetTempPath(), filename);
-      _cacheRegistry.RegisterPath(path, false);
+      _cacheRegistry.AddPathToRegistry(path, false);
       Assert.AreEqual(path, _cacheRegistry[filename]);
     }
 
@@ -52,26 +52,22 @@ namespace Fushare.Services.BitTorrent {
       // Load...
       cacheRegistry.LoadCacheDir(cacheDirPath);
 
-      var keyStr = Util.GetDhtKeyString("ns1", "file1");
+      var keyStr = ServiceUtil.GetDhtKeyString("ns1", "file1");
       var actualVal = cacheRegistry[keyStr];
       Assert.AreEqual(ns1file1Path, actualVal);
 
       // Register a path inside cache dir
       var fileInsideCache = Path.Combine(ns1DirInfo.FullName, "file2");
-      cacheRegistry.RegisterPath(fileInsideCache, false);
-      var actualVal1 = cacheRegistry[Util.GetDhtKeyString("ns1", "file2")];
+      cacheRegistry.AddPathToRegistry(fileInsideCache, false);
+      var actualVal1 = cacheRegistry[ServiceUtil.GetDhtKeyString("ns1", "file2")];
       Assert.AreEqual(fileInsideCache, actualVal1);
 
       // Register one outside the cache dir
-      var fileOusideCache = GetRandomTempFile();
-      cacheRegistry.RegisterPath(fileOusideCache, false);
-      var actualVal2 = cacheRegistry[Util.GetDhtKeyString("myns", 
-        Util.GetFileOrDirectoryName(fileOusideCache, false))];
+      var fileOusideCache = IOUtil.GetRandomTempPath();
+      cacheRegistry.AddPathToRegistry(fileOusideCache, false);
+      var actualVal2 = cacheRegistry[ServiceUtil.GetDhtKeyString("myns", 
+        IOUtil.GetFileOrDirectoryName(fileOusideCache, false))];
       Assert.AreEqual(fileOusideCache, actualVal2);
-    }
-
-    private static string GetRandomTempFile() {
-      return Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
     }
   }
 }

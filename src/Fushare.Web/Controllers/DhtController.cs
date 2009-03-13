@@ -1,18 +1,24 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.Mvc.Ajax;
-using Fushare.Services.Dht;
-using System.Text;
 using Fushare.Services;
+using Fushare.Services.Dht;
 
 namespace Fushare.Web.Controllers {
   public class DhtController : Controller {
+    #region Fields
     const string OctetStreamContentType = "application/octet-stream";
 
-    IDhtService _dhtService;
+    static readonly IDictionary _log_props =
+      Logger.PrepareLoggerProperties(typeof(DhtController));
+
+    IDhtService _dhtService; 
+    #endregion
 
     public DhtController(IDhtService dhtService) {
       _dhtService = dhtService;
@@ -42,8 +48,10 @@ namespace Fushare.Web.Controllers {
       try {
         retBytes = _dhtService.Get(nameSpace, name);
       } catch (ResourceNotFoundException ex) {
-        throw new HttpException(HttpCodes.NotFound404, 
+        var toThrow = new HttpException(HttpCodes.NotFound404, 
           "No value associated with this key.", ex);
+        Util.LogBeforeThrow(toThrow, _log_props);
+        throw toThrow;
       }
       return File(retBytes, OctetStreamContentType);
     }
@@ -60,8 +68,10 @@ namespace Fushare.Web.Controllers {
     public ActionResult Put(string nameSpace, string name) {
       var inputBytes = Request.BinaryRead(Request.ContentLength);
       if (inputBytes == null) {
-        throw new HttpException(HttpCodes.BadRequest400,
+        var toThrow = new HttpException(HttpCodes.BadRequest400,
           "The value should not be null.");
+        Util.LogBeforeThrow(toThrow, _log_props);
+        throw toThrow;
       }
       return PutInternal(nameSpace, name, inputBytes);
     }
@@ -72,7 +82,9 @@ namespace Fushare.Web.Controllers {
         try {
           _dhtService.Create(nameSpace, name, value);
         } catch (DuplicateResourceKeyException ex) {
-          throw new HttpException(HttpCodes.BadRequest400, ex.Message, ex);
+          var toThrow = new HttpException(HttpCodes.BadRequest400, ex.Message, ex);
+          Util.LogBeforeThrow(toThrow, _log_props);
+          throw toThrow;
         }
       } else {
         _dhtService.Put(nameSpace, name, value);

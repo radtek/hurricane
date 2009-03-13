@@ -10,7 +10,7 @@ namespace Fushare.Filesystem {
   public class FuseRequest {
     #region Fields
     private FuseMethod _fuse_method;
-    private FuseRawPath _raw_fuse_path; 
+    private VirtualRawPath _raw_fuse_path; 
     #endregion
 
     public NameValueCollection Params {
@@ -28,20 +28,20 @@ namespace Fushare.Filesystem {
     /// <summary>
     /// The raw URL includes the query string, if present.
     /// </summary>
-    public FuseRawPath FuseRawPath {
+    public VirtualRawPath FuseRawPath {
       get {
         return _raw_fuse_path;
       }
     }
 
-    public FusePath FusePath {
+    public VirtualPath FusePath {
       get {
-        return new FusePath(_raw_fuse_path.PathString.Substring(0, _raw_fuse_path.PathString.LastIndexOf(
+        return new VirtualPath(_raw_fuse_path.PathString.Substring(0, _raw_fuse_path.PathString.LastIndexOf(
           PathUtil.ParameterStarterChar)));
       }
     }
     
-    public FuseRequest(FuseRawPath path, FuseMethod method) {
+    public FuseRequest(VirtualRawPath path, FuseMethod method) {
       _raw_fuse_path = path;
       _fuse_method = method;
     }

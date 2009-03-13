@@ -336,10 +336,10 @@ namespace Fushare.Filesystem {
 
       //successful closed.
 
-      bool executed = FuseController.Instance.Execute(new FuseRawPath(path), FuseMethod.Write);
+      bool executed = FuseController.Instance.Execute(new VirtualRawPath(path), FuseMethod.Write);
       if(executed) {
         Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-          string.Format("Request from FuseRawPath : {0}. Returning.", path));
+          string.Format("Request from VirtualRawPath : {0}. Returning.", path));
         return 0;
       }
 
@@ -455,7 +455,7 @@ namespace Fushare.Filesystem {
       if (error == Errno.ENOENT) {
         // path doesn't exsit
         bool executed = FuseController.Instance.Execute(
-          new FuseRawPath(path), FuseMethod.Read);
+          new VirtualRawPath(path), FuseMethod.Read);
         if (executed) {
           // Since something new happened, check the path again
           error = this._rfs.OnGetPathStatus(path, out buf);

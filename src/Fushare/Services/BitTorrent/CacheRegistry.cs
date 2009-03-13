@@ -35,7 +35,13 @@ namespace Fushare.Services.BitTorrent {
     /// <value>The self name space.</value>
     /// <remarks>The value is used as the namespace for registered files/dirs 
     /// outside the cache dir</remarks>
-    public string SelfNameSpace { get; private set; } 
+    public string SelfNameSpace { get; private set; }
+    
+    public string this[string key] {
+      get {
+        return _registry[key];
+      }
+    }
     #endregion
 
     #region Constructor and Helper
@@ -52,7 +58,8 @@ namespace Fushare.Services.BitTorrent {
     public CacheRegistry(string registryFilePath, string selfNameSpace, 
       bool loadAtStartup) {
       if (!Path.IsPathRooted(registryFilePath)) {
-        throw new ArgumentException("Path should be rooted.", "cacheDirPath");
+        throw new ArgumentException(string.Format("Path should be rooted.", 
+          registryFilePath), "cacheDirPath");
       }
 
       RegistryFilePath = registryFilePath;
@@ -62,6 +69,10 @@ namespace Fushare.Services.BitTorrent {
       }
     }
 
+    /// <summary>
+    /// Loads the registry file and add the entries to the dictionary in memeory.
+    /// </summary>
+    /// <remarks>It checks whether the file/dir references exists.</remarks>
     private void LoadRegistryFile() {
       if (!File.Exists(RegistryFilePath)) {
         // Do nothing.
@@ -77,6 +88,7 @@ namespace Fushare.Services.BitTorrent {
     } 
     #endregion
 
+    #region Public Methods
     /// <summary>
     /// Loads the cache directory.
     /// </summary>
@@ -85,7 +97,8 @@ namespace Fushare.Services.BitTorrent {
     /// directory and file/directory</remarks>
     public void LoadCacheDir(string dirPath) {
       if (!Directory.Exists(dirPath)) {
-        throw new ArgumentException("Directory doesn't exist", "dirPath");
+        throw new ArgumentException(string.Format("Directory {0} doesn't exist",
+          dirPath), "dirPath");
       }
 
       _cacheDirs.Add(dirPath);
@@ -99,43 +112,88 @@ namespace Fushare.Services.BitTorrent {
         foreach (var filesysInfo in filesysInfos) {
           if (!filesysInfo.Name.StartsWith(".")) {
             if (!_registry.ContainsValue(filesysInfo.FullName)) {
-              AddToRegistry(nsDirInfo.Name, filesysInfo.Name, filesysInfo.FullName);
+              AddToRegistry(nsDirInfo.Name, filesysInfo.Name, filesysInfo.FullName, 
+                false);
             }
           }
         }
       }
     }
 
-
     /// <summary>
-    /// Determines whether the specified path is in cache dir.
+    /// Determines whether the specified path is in one of cache dirs.
     /// </summary>
     /// <param name="path">The path.</param>
     /// <returns>
     /// 	<c>true</c> if the specified path is in cache dir; otherwise, <c>false</c>.
     /// </returns>
     public bool IsInCacheDir(string path, bool checkPath) {
-      var dirInfo = Util.GetParent(path, checkPath).Parent;
+      var dirInfo = IOUtil.GetParent(path, checkPath).Parent;
       return _cacheDirs.Contains(dirInfo.FullName);
     }
-    
-    public void RegisterPath(string path, bool checkPath) {
-      var name = Util.GetFileOrDirectoryName(path, checkPath);
+
+    /// <summary>
+    /// Determines whether the specified data is in cache registry.
+    /// </summary>
+    /// <param name="nameSpace">The name space.</param>
+    /// <param name="name">The name.</param>
+    /// <returns>
+    /// 	<c>true</c> if it is in the cache registry; otherwise, <c>false</c>.
+    /// </returns>
+    public bool IsInCacheRegistry(string nameSpace, string name) {
+      var key = ServiceUtil.GetDhtKeyString(nameSpace, name);
+      return _registry.ContainsKey(key);
+    }
+
+    public void AddPathToRegistry(string path, bool checkPath) {
+      RegisterPath(path, checkPath, false);
+    }
+
+    public void UpdatePathInRegistry(string path, bool checkPath) {
+      RegisterPath(path, checkPath, true);
+    }
+
+    public void DeleteRegistryFile() {
+      if (File.Exists(RegistryFilePath)) {
+        File.Delete(RegistryFilePath);
+      }
+    } 
+    #endregion
+
+    #region Private Methods
+    /// <summary>
+    /// Registers a path to registry.
+    /// </summary>
+    /// <param name="path">The path.</param>
+    /// <param name="checkPath">if set to <c>true</c> check wether path exists.
+    /// </param>
+    /// <param name="update">if set to <c>true</c>, no exception thrown if the 
+    /// same key already exists.</param>
+    private void RegisterPath(string path, bool checkPath, bool update) {
+      var name = IOUtil.GetFileOrDirectoryName(path, checkPath);
       if (IsInCacheDir(path, checkPath)) {
-        var nsDirName = Util.GetParent(path, checkPath).Name;
-        AddToRegistry(nsDirName, name, path);
+        var nsDirName = IOUtil.GetParent(path, checkPath).Name;
+        AddToRegistry(nsDirName, name, path, update);
       } else {
-        AddToRegistry(SelfNameSpace, name, path);
+        AddToRegistry(SelfNameSpace, name, path, update);
       }
     }
 
-    private void AddToRegistry(string nameSpace, string name, string value) {
-      var key = Util.GetDhtKeyString(nameSpace, name);
-      AddToRegistry(key, value);
-    }
-
-    private void AddToRegistry(string key, string value) {
-      _registry.Add(key, value);
+    /// <summary>
+    /// Adds entry to registry.
+    /// </summary>
+    /// <param name="nameSpace">The name space.</param>
+    /// <param name="name">The name.</param>
+    /// <param name="value">The value.</param>
+    /// <param name="update">if set to <c>true</c>, no exception thrown if the 
+    /// same key already exists.</param>
+    private void AddToRegistry(string nameSpace, string name, string value, bool update) {
+      var key = ServiceUtil.GetDhtKeyString(nameSpace, name);
+      if (update) {
+        _registry[key] = value;
+      } else {
+        _registry.Add(key, value); 
+      }
       WriteToFile();
     }
 
@@ -144,24 +202,11 @@ namespace Fushare.Services.BitTorrent {
       WriteToFile();
     }
 
-    public void DeleteRegistryFile() {
-      if (File.Exists(RegistryFilePath)) {
-        File.Delete(RegistryFilePath);
-      }
-    }
-
-    public string this[string key] {
-      get {
-        return _registry[key];
-      }
-    }
-
     private void WriteToFile() {
       using (var writer = new StreamWriter(RegistryFilePath)) {
         _serializer.Serialize(writer, _registry);
       }
     }
-
 
     /// <summary>
     /// Tries to read from file.
@@ -178,6 +223,7 @@ namespace Fushare.Services.BitTorrent {
           return false;
         }
       }
-    }
+    } 
+    #endregion
   }
 }

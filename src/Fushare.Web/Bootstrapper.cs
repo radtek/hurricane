@@ -8,6 +8,7 @@ using Fushare.Services.BitTorrent;
 using Fushare.Services.Dht;
 using Microsoft.Practices.Unity;
 using System.Configuration;
+using System.Web.Configuration;
 
 namespace Fushare.Web {
   public static class Bootstrapper {
@@ -15,8 +16,9 @@ namespace Fushare.Web {
       // Registrations
       container.RegisterType<IDhtService, DhtService>(
         new HttpContextLifetimeManager<IDhtService>());
-      BigTableDht bigTableDht = new BigTableDht("Dennis84225@gmail.com", 
-        "fushare");
+      BigTableDht bigTableDht = new BigTableDht(
+        WebConfigurationManager.AppSettings["BigTableWSUser"], 
+        WebConfigurationManager.AppSettings["BigTableWSSecret"]);
       container.RegisterInstance<DhtBase>(bigTableDht);
 
       container.RegisterType<IBitTorrentService, BitTorrentService>(

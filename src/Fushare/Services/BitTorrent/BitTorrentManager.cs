@@ -94,14 +94,16 @@ namespace Fushare.Services.BitTorrent {
     public BitTorrentManager(string baseDirPath, string selfNameSpace, 
       DhtProxy dhtProxy, DhtTracker dhtTracker, ClientEngine clientEngine, 
       TorrentSettings torrentDefaults, TorrentHelper torrentHelper) {
-      Util.CheckPathRooted(baseDirPath, "baseDirPath");
+      IOUtil.CheckPathRooted(baseDirPath, "baseDirPath");
 
       BaseDirPath = baseDirPath;
       SelfNameSpace = selfNameSpace;
       _dhtProxy = dhtProxy;
       _dhtTracker = dhtTracker;
-      _clientEngine = clientEngine;
       _torrentDefaults = torrentDefaults;
+
+      RegisterClientEngineEventHandlers(clientEngine);
+      _clientEngine = clientEngine;
 
       // Prepare directories
       if (!Directory.Exists(DownloadsDirPath))
@@ -116,16 +118,17 @@ namespace Fushare.Services.BitTorrent {
         _fastResumeData = new BEncodedDictionary();
       }
 
+      _torrentHelper = torrentHelper;
+
       // CacheRegistry is created here because the default cache registry file path is 
       // defined here.
       CacheRegistry = new CacheRegistry(CacheRegistryFilePath, selfNameSpace);
       CacheRegistry.LoadCacheDir(DownloadsDirPath);
-      _torrentHelper = torrentHelper;
     }
 
     [Obsolete("Bad design.")]
     public BitTorrentManager(string btBaseDir, int clientPort, string trackerListeningPrefix) {
-      Util.CheckPathRooted(btBaseDir, "btBaseDir");
+      IOUtil.CheckPathRooted(btBaseDir, "btBaseDir");
 
       // init tracker
       BrunetDht dht = (BrunetDht)DictionaryServiceFactory.GetServiceInstance(
@@ -157,6 +160,8 @@ namespace Fushare.Services.BitTorrent {
         _fastResumeData = new BEncodedDictionary();
       }
     }
+    
+    #region Public Methods
 
     /// <summary>
     /// Starts the torrentManager and all BitTorrent services.
@@ -195,183 +200,38 @@ namespace Fushare.Services.BitTorrent {
       return dht_key;
     }
 
-    /// <summary>
-    /// Serves the file over BitTorrent.
-    /// </summary>
-    /// <param name="dhtKey">The DHT name to be used to put the torrent info
-    /// </param>
-    /// <param name="path">The file or directory path.</param>
     public void PublishData(byte[] dhtKey, string nameSpace, string path) {
-      // Create torrent
-      BEncodedDictionary bdict = _torrentHelper.CreateTorrent(path);
-      Torrent torrent = Torrent.Load(bdict);
-      // Dump torrent to the torrent folder so that tracker could load it.
-      byte[] torrentBytes = bdict.Encode();
-      _torrentHelper.WriteTorrent(torrentBytes, nameSpace, torrent.Name);
+      PublishDataInternal(dhtKey, nameSpace, path, true);
+    }
 
-
-      //_dhtProxy.CreateTorrent(dhtKey, torrentBytes, TorrentTtl);
-      _dhtProxy.PutTorrent(dhtKey, torrentBytes, TorrentTtl);
-
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-        string.Format("Torrent file succesfully put into DHT."));
-      
-      var saveDir = Util.GetParent(path, true).FullName;
-      // Download without blocking.
-      StartDownload(torrent, saveDir, null);
+    public void UpdateData(byte[] dhtKey, string nameSpace, string path) {
+      PublishDataInternal(dhtKey, nameSpace, path, false);
     }
 
     /// <summary>
     /// Gets file from the given dht name.
     /// </summary>
     /// <param name="torrentDhtKey">DHT name of the torrent</param>
-    /// <param name="saveToDir">The save to dir.</param>
+    /// <param name="nameSpace">The name space.</param>
+    /// <param name="saveToPath">The path to save. Not the containing dir.
+    /// </param>
     /// <param name="waitHandle">The EventWaitHandle to wait on.</param>
-    /// <remarks>Torrent object</remarks>
-    public Torrent GetData(byte[] torrentDhtKey, string nameSpace, 
-      string saveToDir, EventWaitHandle waitHandle) {
+    /// <returns>Torrent object</returns>
+    public Torrent GetData(byte[] torrentDhtKey, string nameSpace,
+      string saveToPath, EventWaitHandle waitHandle) {
       byte[] torrentBytes;
       torrentBytes = _dhtProxy.GetTorrent(torrentDhtKey);
 
       Torrent torrent = Torrent.Load(torrentBytes);
 
       _torrentHelper.WriteTorrent(torrentBytes, nameSpace, torrent.Name);
-      
-      StartDownload(torrent, saveToDir, waitHandle);
+
+      // The file/dir hasn't been downloaded yet. So, don't check path.
+      var saveDir = IOUtil.GetParent(saveToPath, false).FullName;
+      StartDownload(torrent, saveDir, waitHandle);
+      // Download completed.
+      CacheRegistry.AddPathToRegistry(saveToPath, true);
       return torrent;
-    }
-
-    /// <summary>
-    /// Downloads or seeds a file.
-    /// </summary>
-    /// <param name="torrent">The torrent.</param>
-    /// <param name="saveDir">The full path of the directory to save the 
-    /// downloaded file.</param>
-    /// <param name="waitHandle">Handle to wait on for the downloading to be
-    /// finished. Pass null if no need to set the handle.</param>
-    void StartDownload(Torrent torrent, string saveDir, EventWaitHandle waitHandle) {
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-        string.Format("Start downloading torrent {0} to directory {1}", 
-        torrent.Name, saveDir));
-
-      // When any preprocessing has been completed, you create a TorrentManager
-      // which you then register with the engine.
-      TorrentManager torrentManager;
-      if (_fastResumeData.ContainsKey(torrent.InfoHash)) {
-        torrentManager = new TorrentManager(torrent, saveDir, _torrentDefaults,
-          new FastResume((BEncodedDictionary)_fastResumeData[torrent.InfoHash]));
-      } else {
-        torrentManager = new TorrentManager(torrent, saveDir, _torrentDefaults);
-      }
-
-      _clientEngine.Register(torrentManager);
-
-      // Every time a piece is hashed, this is fired.
-      //torrentManager.PieceHashed += delegate(object o, PieceHashedEventArgs e) {
-      //  Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-      //    string.Format("{2}: Piece Hashed: {0} - {1}", e.PieceIndex, 
-      //    e.HashPassed ? "Pass" : "Fail", torrentManager.Torrent.Name));
-      //};
-
-      // Every time the state changes (Stopped -> Seeding -> Downloading -> Hashing) this is fired
-      torrentManager.TorrentStateChanged += delegate(object o, TorrentStateChangedEventArgs e) {
-        Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-          string.Format("{0}: State changed from {1} to {2}", torrentManager.Torrent.Name, 
-          e.OldState.ToString(), e.NewState.ToString()));
-
-        switch (e.NewState) {
-          case TorrentState.Downloading:
-            Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-              string.Format("OpenConnections: {0}"), torrentManager.OpenConnections);
-            break;
-          case TorrentState.Seeding:
-            if (e.OldState == TorrentState.Downloading) {
-              TimeSpan download_time = DateTime.Now - torrentManager.StartTime;
-              double total_secs = download_time.TotalSeconds;
-              double kb_data_downloaded = torrentManager.Monitor.DataBytesDownloaded / 1024;
-              double kb_data_uploaded = torrentManager.Monitor.DataBytesUploaded / 1024;
-              double kb_proto_downloaded = torrentManager.Monitor.ProtocolBytesDownloaded / 1024;
-              double kb_proto_uploaded = torrentManager.Monitor.ProtocolBytesUploaded / 1024;
-              Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-                string.Format("Data Download {0:0.00} MB and Uploaded {1:0.00},"
-                + " MB. Protocol Download {5:0.00} MB and Protocol Upload {6:0.00} in"
-                + " {2:0.00} seconds. Avg Data Download rate: {3:0.00} kb/s, Avg"
-                + " Data Upload rate: {4:0.00} kb/s, Avg Protocol Download rate:"
-                + " {7:0.00} kb/s, Avg Protocol Upload rate: {8:0.00} kb/s",
-                kb_data_downloaded / 1024, 
-                kb_data_uploaded / 1024, 
-                total_secs,
-                kb_data_downloaded / total_secs,
-                kb_data_uploaded / total_secs,
-                kb_proto_downloaded / 1024,
-                kb_proto_uploaded / 1024,
-                kb_proto_downloaded / total_secs,
-                kb_proto_uploaded / total_secs));
-              
-              if (waitHandle != null) {
-                // Now that we have downloaded the file, we release the waitHandle.
-                waitHandle.Set();
-              }
-            }
-            break;
-          default:
-            break;
-        }
-      };
-
-      // Log the first time when a peer connects.
-      torrentManager.PeerConnected += delegate(object sender, 
-        PeerConnectionEventArgs e) {
-        if (e.TorrentManager.OpenConnections == 1) {
-          Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-            string.Format("Peer ({0}) Connected. Currently 1 open connection.",
-            e.PeerID.Uri));
-        }
-      };
-
-      // Log when the no connection left after a disconnection. 
-      torrentManager.PeerDisconnected += delegate(object sender, 
-        PeerConnectionEventArgs e) {
-        if (e.TorrentManager.OpenConnections == 0) {
-          Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-            string.Format("{1}: Peer ({0}) disconnected. No open connection now.", 
-            e.PeerID.Uri, 
-            e.TorrentManager.Torrent.Name));
-        }
-      };
-
-      torrentManager.PeersFound += delegate(object o, PeersAddedEventArgs e) {
-        Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-          string.Format("{0} New Peers added. {1} Existing Peers.", e.NewPeers, e.ExistingPeers));
-      };
-
-      // Every time the tracker's state changes, this is fired
-      foreach (TrackerTier tier in torrentManager.TrackerManager.TrackerTiers) {
-        foreach (MonoTorrent.Client.Tracker.Tracker t in tier.Trackers) {
-          t.AnnounceComplete += delegate(object sender, AnnounceResponseEventArgs e) {
-            Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-              string.Format("{1}: {0} to Tracker", e.Successful ? 
-              "Succesfully announced" : "Failed to announce", 
-              torrentManager.Torrent.Name));
-            Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-              string.Format("{0} seeders and {1} leechers returned by Tracker",
-              e.Tracker.Complete, e.Tracker.Incomplete));
-          };
-
-          t.StateChanged += delegate(object sender, TrackerStateChangedEventArgs e) {
-            Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-              string.Format("Tracker state changed from {0} to {1}", e.OldState, e.NewState));
-          };
-        }
-      }
-
-      // Start downloading
-      torrentManager.Start();
-
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-        string.Format("TorrentManager {0} started", torrentManager.Torrent.Name));
-      // Store the torrent torrentManager in our list so we can access it later
-      _torrents_table.Add(torrentManager, saveDir);
     }
 
     /// <summary>
@@ -386,14 +246,26 @@ namespace Fushare.Services.BitTorrent {
       return Path.Combine(DownloadsDirPath, Path.Combine(nameSpace, name));
     }
 
-    public void GetNsAndNameOfItemInDownloads(string path, 
+    /// <summary>
+    /// Gets the path of torrent file.
+    /// </summary>
+    /// <param name="nameSpace">The name space.</param>
+    /// <param name="name">The name.</param>
+    /// <returns></returns>
+    public string GetPathOfTorrentFile(string nameSpace, string name) {
+      // Torrent files have this .torrrent suffix.
+      return Path.Combine(TorrentsDirPath, Path.Combine(nameSpace, name)) + 
+        ".torrent";
+    }
+
+    public void GetNsAndNameOfItemInDownloads(string path,
       out string nameSpace, out string name) {
-      Util.CheckPathRooted(path);
-      if(!CacheRegistry.IsInCacheDir(path, true)) {
+      IOUtil.CheckPathRooted(path);
+      if (!CacheRegistry.IsInCacheDir(path, true)) {
         throw new ArgumentException("Path not in Cache(Downloads) directory.");
       }
-      name = Util.GetFileOrDirectoryName(path, true);
-      nameSpace = Util.GetParent(path, true).Name;
+      name = IOUtil.GetFileOrDirectoryName(path, true);
+      nameSpace = IOUtil.GetParent(path, true).Name;
     }
 
     /// <summary>
@@ -411,5 +283,197 @@ namespace Fushare.Services.BitTorrent {
     public static string GetTorrentsDirPath(string baseDirPath) {
       return Path.Combine(baseDirPath, TorrentsDirName);
     }
+    #endregion
+
+    #region Private Methods
+    private static void RegisterClientEngineEventHandlers(ClientEngine cliengEngine) {
+      cliengEngine.CriticalException += delegate(object sender, CriticalExceptionEventArgs args) {
+        Logger.WriteLineIf(LogLevel.Error, _log_props,
+          string.Format("ClientEngine Critical Exception: {0}", args.Exception));
+      };
+
+      //cliengEngine.StatsUpdate += delegate(object sender, StatsUpdateEventArgs args) {
+      //  Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+      //    string.Format("ClientEngine Stats Update"));
+      //};
+
+      cliengEngine.TorrentRegistered += delegate(object sender, TorrentEventArgs args) {
+        Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+          string.Format("ClientEngine Torrent Registered: {0}.", args.TorrentManager.Torrent.Name));
+      };
+
+      //cliengEngine.ConnectionManager.PeerMessageTransferred += delegate(object sender, PeerMessageEventArgs args) {
+      //  Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
+      //    "ClientEngine Peer Message Transferred. Direction:{0}, Message: {1}.",
+      //    args.Direction, args.Message));
+      //};
+    }
+
+    /// <summary>
+    /// Serves the file over BitTorrent.
+    /// </summary>
+    /// <param name="dhtKey">The DHT name to be used to put the torrent info</param>
+    /// <param name="nameSpace">The name space.</param>
+    /// <param name="path">The file or directory path.</param>
+    /// <param name="unique">if set to <c>true</c>, the manager uses Create 
+    /// instead of Put to insert torrent to Dht.</param>
+    void PublishDataInternal(byte[] dhtKey, string nameSpace, string path, bool unique) {
+      // Create torrent
+      BEncodedDictionary bdict = _torrentHelper.CreateTorrent(path);
+      Torrent torrent = Torrent.Load(bdict);
+      // Dump torrent to the torrent folder so that tracker could load it.
+      byte[] torrentBytes = bdict.Encode();
+      _torrentHelper.WriteTorrent(torrentBytes, nameSpace, torrent.Name);
+
+      if (unique) {
+        _dhtProxy.CreateTorrent(dhtKey, torrentBytes, TorrentTtl);
+        CacheRegistry.AddPathToRegistry(path, true);
+      } else {
+        _dhtProxy.PutTorrent(dhtKey, torrentBytes, TorrentTtl);
+        CacheRegistry.UpdatePathInRegistry(path, true);
+      }
+
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+        string.Format("{0}: Torrent file succesfully put into DHT.", torrent.Name));
+
+      var saveDir = IOUtil.GetParent(path, true).FullName;
+      // Download without blocking.
+      StartDownload(torrent, saveDir, null);
+    }
+
+    /// <summary>
+    /// Downloads or seeds a file.
+    /// </summary>
+    /// <param name="torrent">The torrent.</param>
+    /// <param name="saveDir">The full path of the directory to save the 
+    /// downloaded file.</param>
+    /// <param name="waitHandle">Handle to wait on for the downloading to be
+    /// finished. Pass null if no need to set the handle.</param>
+    void StartDownload(Torrent torrent, string saveDir, EventWaitHandle waitHandle) {
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+        string.Format("Starting to download torrent {0} to directory {1}",
+        torrent.Name, saveDir));
+
+      // When any preprocessing has been completed, you create a TorrentManager
+      // which you then register with the engine.
+      TorrentManager torrentManager;
+      if (_fastResumeData.ContainsKey(torrent.InfoHash)) {
+        torrentManager = new TorrentManager(torrent, saveDir, _torrentDefaults,
+          new FastResume((BEncodedDictionary)_fastResumeData[torrent.InfoHash]));
+      } else {
+        torrentManager = new TorrentManager(torrent, saveDir, _torrentDefaults);
+      }
+      _clientEngine.Register(torrentManager);
+
+      // Every time a piece is hashed, this is fired.
+      //torrentManager.PieceHashed += delegate(object o, PieceHashedEventArgs e) {
+      //  Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+      //    string.Format("{2}: Piece Hashed: {0} - {1}", e.PieceIndex, 
+      //    e.HashPassed ? "Pass" : "Fail", torrentManager.Torrent.Name));
+      //};
+
+      // Every time the state changes (Stopped -> Seeding -> Downloading -> Hashing) this is fired
+      torrentManager.TorrentStateChanged += delegate(object o, TorrentStateChangedEventArgs e) {
+        Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+          string.Format("{0}: State changed from {1} to {2}", torrentManager.Torrent.Name,
+          e.OldState.ToString(), e.NewState.ToString()));
+
+        switch (e.NewState) {
+          case TorrentState.Downloading:
+            Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+              string.Format("OpenConnections: {0}"), torrentManager.OpenConnections);
+            break;
+          case TorrentState.Seeding:
+            if (e.OldState == TorrentState.Downloading) {
+              // Torrent statistics.
+              TimeSpan download_time = DateTime.Now - torrentManager.StartTime;
+              double total_secs = download_time.TotalSeconds;
+              double kb_data_downloaded = torrentManager.Monitor.DataBytesDownloaded / 1024.0;
+              double kb_data_uploaded = torrentManager.Monitor.DataBytesUploaded / 1024.0;
+              double kb_proto_downloaded = torrentManager.Monitor.ProtocolBytesDownloaded / 1024.0;
+              double kb_proto_uploaded = torrentManager.Monitor.ProtocolBytesUploaded / 1024.0;
+              Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+                string.Format("Data Download {0:0.00} MB and Uploaded {1:0.00},"
+                + " MB. Protocol Download {5:0.00} MB and Protocol Upload {6:0.00} in"
+                + " {2:0.00} seconds. Avg Data Download rate: {3:0.00} kb/s, Avg"
+                + " Data Upload rate: {4:0.00} kb/s, Avg Protocol Download rate:"
+                + " {7:0.00} kb/s, Avg Protocol Upload rate: {8:0.00} kb/s",
+                kb_data_downloaded / 1024,
+                kb_data_uploaded / 1024,
+                total_secs,
+                kb_data_downloaded / total_secs,
+                kb_data_uploaded / total_secs,
+                kb_proto_downloaded / 1024,
+                kb_proto_uploaded / 1024,
+                kb_proto_downloaded / total_secs,
+                kb_proto_uploaded / total_secs));
+
+              if (waitHandle != null) {
+                // Now that we have downloaded the file, we release the waitHandle.
+                waitHandle.Set();
+              }
+            }
+            break;
+          default:
+            break;
+        }
+      };
+
+      // Log the first time when a peer connects.
+      torrentManager.PeerConnected += delegate(object sender,
+        PeerConnectionEventArgs e) {
+        if (e.TorrentManager.OpenConnections == 1) {
+          Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+            string.Format("Peer ({0}) Connected. Currently 1 open connection.",
+            e.PeerID.Uri));
+        }
+      };
+
+      // Log when the no connection left after a disconnection. 
+      torrentManager.PeerDisconnected += delegate(object sender,
+        PeerConnectionEventArgs e) {
+        if (e.TorrentManager.OpenConnections == 0) {
+          Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
+            "{1}: Peer ({0}) disconnected. Message: {2}. No open connection now.",
+            e.PeerID.Uri,
+            e.TorrentManager.Torrent.Name,
+            e.Message));
+        }
+      };
+
+      torrentManager.PeersFound += delegate(object o, PeersAddedEventArgs e) {
+        Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
+          "{2}: PeersFound: {0} New Peers. {1} Existing Peers.",
+          e.NewPeers,
+          e.ExistingPeers,
+          e.TorrentManager.Torrent.Name));
+      };
+
+      foreach (TrackerTier tier in torrentManager.TrackerManager.TrackerTiers) {
+        foreach (MonoTorrent.Client.Tracker.Tracker t in tier) {
+          t.AnnounceComplete += delegate(object sender,
+            AnnounceResponseEventArgs e) {
+            Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+              string.Format("{0}: AnnounceComplete. Tracker={1}, Successful={2}",
+              torrentManager.Torrent.Name,
+              e.Tracker.Uri,
+              e.Successful));
+            Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
+              "Tracker: Peers={3}, Complete={0}, Incomplete={1}, State={2}",
+              e.Tracker.Complete,
+              e.Tracker.Incomplete,
+              e.State,
+              e.Peers));
+          };
+        }
+      }
+
+      // Start downloading
+      torrentManager.Start();
+
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+        string.Format("{0}: TorrentManager started", torrentManager.Torrent.Name));
+    } 
+    #endregion
   }
 }

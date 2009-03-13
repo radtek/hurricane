@@ -8,6 +8,7 @@ using System.Web.Mvc;
 using Fushare;
 using Fushare.Services;
 using Fushare.Services.BitTorrent;
+using System.Collections.Specialized;
 
 namespace Fushare.Web.Controllers {
   public class BitTorrentController : Controller {
@@ -21,10 +22,9 @@ namespace Fushare.Web.Controllers {
     }
 
     public ActionResult Index(string nameSpace, string name) {
-      var path = Request.Params["path"];
-      if (!string.IsNullOrEmpty(path)) {
-        path = path.Trim(new char[] { '"' });
-        return Publish(path);
+      if (!string.IsNullOrEmpty(Request.Params["path"])) {
+        // This is allowed for both GET and POST.
+        return PublishInternal(nameSpace, name);
       }
 
       string verb = Request.HttpMethod;
@@ -32,7 +32,7 @@ namespace Fushare.Web.Controllers {
         case "GET":
           return Get(nameSpace, name);
         case "POST":
-          return Publish(nameSpace, name);
+          return PublishInternal(nameSpace, name);
         default:
           return new EmptyResult();
       }
@@ -40,49 +40,91 @@ namespace Fushare.Web.Controllers {
 
     [AcceptVerbs("POST")]
     public ActionResult Publish(string nameSpace, string name) {
-      _service.Publish(nameSpace, name);
-      return new EmptyResult();
+      return PublishInternal(nameSpace, name);
     }
 
     [AcceptVerbs("GET")]
     public ActionResult Get(string nameSpace, string name) {
-      string downloadedPath;
+      DataMetaInfo meta;
       try {
-        downloadedPath = _service.Get(nameSpace, name);
+        meta = _service.Get(nameSpace, name);
       } catch (ResourceNotFoundException ex) {
         var toThrow = new HttpException(HttpCodes.NotFound404, 
           "No file/directory available at this key.", ex);
-        LogBeforeThrow(toThrow);
+        Util.LogBeforeThrow(toThrow, _log_props);
         throw toThrow;
       } catch (ResourceException ex) {
         var toThrow = new HttpException(HttpCodes.ServiceUnavailable503,
           "Unable to get.", ex);
-        LogBeforeThrow(toThrow);
+        Util.LogBeforeThrow(toThrow, _log_props);
         throw toThrow;
       }
-      return Content(downloadedPath);
+
+      // @TODO Check the location of the client and return the path correspondently.
+      var xmlString = XmlUtil.ToXml<DataMetaInfo>(meta);
+      return Content(xmlString);
     }
 
-    private ActionResult Publish(string path) {
+    private ActionResult PublishInternal(string nameSpace, string name) {
       try {
-        _service.Publish(path);
+        var path = Request.Params["path"];
+        var publisher = Publisher.CreatePublisher(Request.Params, this);
+        if (!string.IsNullOrEmpty(path)) {
+          // If the client quotes the path, we trim the quotation marks.
+          path = path.Trim(new char[] { '"' });
+          publisher.Execute(path);
+        } else {
+          publisher.Execute(nameSpace, name);
+        }
       } catch (DuplicateResourceKeyException ex) {
         var toThrow = new HttpException(HttpCodes.BadRequest400, 
           "The same key already exists. Change the name.", ex);
-        LogBeforeThrow(toThrow);
+        Util.LogBeforeThrow(toThrow, _log_props);
         throw toThrow;
       } catch (ResourceException ex) {
         var toThrow = new HttpException(HttpCodes.ServiceUnavailable503,
           "Unable to publish.", ex);
-        LogBeforeThrow(toThrow);
+        Util.LogBeforeThrow(toThrow, _log_props);
         throw toThrow;
       }
       return new EmptyResult();
     }
 
-    private static void LogBeforeThrow(Exception toThrow) {
-      Logger.WriteLineIf(LogLevel.Error, _log_props,
-        string.Format("Log this exception before throwing to client. \n{0}", toThrow));
+    class Publisher {
+      protected BitTorrentController _parent;
+
+      internal static Publisher CreatePublisher(NameValueCollection parameters, 
+        BitTorrentController parent) {
+        if("update".Equals(parameters["action"], StringComparison.OrdinalIgnoreCase)) {
+          return new Updater(parent);
+        } else {
+          return new Publisher(parent);
+        }
+      }
+
+      protected internal Publisher(BitTorrentController parent) {
+        _parent = parent;
+      }
+
+      internal protected virtual void Execute(string nameSpace, string name) {
+        _parent._service.Publish(nameSpace, name);
+      }
+
+      internal protected virtual void Execute(string path) {
+        _parent._service.Publish(path);
+      }
+    }
+
+    class Updater : Publisher {
+      protected internal Updater(BitTorrentController parent) : base(parent) { }
+
+      internal protected override void Execute(string nameSpace, string name) {
+        _parent._service.Update(nameSpace, name);
+      }
+
+      internal protected override void Execute(string path) {
+        _parent._service.Update(path);
+      }
     }
   }
 }

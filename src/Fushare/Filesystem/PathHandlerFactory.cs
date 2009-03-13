@@ -27,7 +27,7 @@ namespace Fushare.Filesystem {
 
     private PathHandlerFactory() { }
 
-    public IPathHandler GetHandler(FuseMethod requestType, FuseRawPath path) {
+    public IPathHandler GetHandler(FuseMethod requestType, VirtualRawPath path) {
       // FuseContext is not used currently in this factory
       return GetHandler(null, requestType, path);
     }
@@ -35,13 +35,13 @@ namespace Fushare.Filesystem {
     #region IPathHandlerFactory Members
 
     public IPathHandler GetHandler(FuseContext context, FuseMethod requestType, 
-      FuseRawPath path) {
+      VirtualRawPath path) {
       Type type;
       IPathHandler ret;
       //@todo Use regex.
-      FusePath fuse_path = PathUtil.GetFusePathFromFuseRawPath(path);
+      VirtualPath fuse_path = PathUtil.GetFusePathFromFuseRawPath(path);
       Logger.WriteLineIf(LogLevel.Verbose, FuseFS.FilesysLogProps,
-        string.Format("Received request from FusePath {0}", fuse_path.PathString));
+        string.Format("Received request from VirtualPath {0}", fuse_path.PathString));
       if (fuse_path.PathString.EndsWith(".bt")) {
 
         if (requestType == FuseMethod.Read) {

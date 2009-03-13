@@ -17,6 +17,9 @@ namespace Fushare.Services {
   /// WebExceptions are wrapped in DhtExceptions as the caller has no knowledge 
   /// about the infrasture being HTTP.</remarks>
   public class BigTableDht :  DhtBase {
+    static readonly IDictionary _log_props = 
+      Logger.PrepareLoggerProperties(typeof(BigTableDht));
+
     readonly string _domain;
     readonly int _port;
     readonly string _user;
@@ -52,6 +55,7 @@ namespace Fushare.Services {
       _secret = secret;
       _table = table;
       _webClient.BaseAddress = BaseUrl;
+      _webClient.Encoding = Encoding.UTF8;
     } 
     #endregion
 
@@ -85,7 +89,7 @@ namespace Fushare.Services {
       try {
         Put(keyStr, value);
       } catch (WebException ex) {
-        throw BuildDhtException(ex);
+        throw BuildDhtException(ex, keyStr);
       }
     }
 
@@ -101,7 +105,7 @@ namespace Fushare.Services {
       try {
         Create(keyStr, value);
       } catch (WebException ex) {
-        throw BuildDhtException(ex);
+        throw BuildDhtException(ex, keyStr);
       }
     }
 
@@ -120,11 +124,12 @@ namespace Fushare.Services {
         vals = GetMultiple(keyStr, DefaultGetCount);
       } catch (WebException ex) {
         // There won't be an exception thrown if the key doesn't exist.
-        throw BuildDhtException(ex);
+        throw BuildDhtException(ex, keyStr);
       }
 
       if (vals.Length == 0) {
-        var ex = new ResourceNotFoundException("No such key exists.");
+        var ex = new ResourceNotFoundException(string.Format(
+          "Key {0} doesn't exist.", keyStr));
         ex.ResourceKey = keyStr;
         throw ex;
       }
@@ -139,6 +144,8 @@ namespace Fushare.Services {
       string relativeUri = string.Format("/put/{0}/{1}/{2}/{3}", AuthString, _table,
         key, DefaultColumnName);
       _webClient.UploadData(relativeUri, "PUT", value);
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+        string.Format("Put or Create successfully by the URL: {0}", relativeUri));
     }
 
     /// <summary>
@@ -156,7 +163,7 @@ namespace Fushare.Services {
         Put(key, value);
       } else {
         throw new DuplicateResourceKeyException(
-          "The same key alreay exists in current table.");
+          string.Format("The same key {0} alreay exists in current table.", key));
       }
     }
 
@@ -192,7 +199,10 @@ namespace Fushare.Services {
     public BigTableRetVal[] GetMultiple(string key, int count) {
       string relativeUri = string.Format("/getVer/{0}/{1}/{2}/{3}", _table, key,
         DefaultColumnName, count);
-      string resultString = _webClient.DownloadString(relativeUri);
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+        string.Format("Getting by the URL: {0}", relativeUri));
+      var resultBytes = _webClient.DownloadData(relativeUri);
+      var resultString = Encoding.UTF8.GetString(resultBytes);
       return ConvertFromJsonString(resultString);
     }
 
@@ -217,9 +227,12 @@ namespace Fushare.Services {
       return ret;
     }
 
-    private static DhtException BuildDhtException(WebException ex) {
-      return new DhtException("Exception thrown when communicating with Dht.",
-        ex);
+    private static DhtException BuildDhtException(WebException ex, string keyStr) {
+      var newEx = new DhtException(string.Format(
+        "WebException thrown when communicating with Dht. \nReturned Data:{0}", 
+        ex.Data), ex);
+      newEx.ResourceKey = keyStr;
+      throw newEx;
     }
 
     private static DhtResults ConvertToDhtResults(BigTableRetVal[] vals) {

@@ -108,8 +108,8 @@ namespace Fushare.Filesystem {
     /// Initializes PathUtil
     /// </summary>
     public void Initialize(string fuseRootPath, string shadowRootPath) {
-      CheckPath(fuseRootPath);
-      CheckPath(shadowRootPath);
+      CheckAndTrimPath(ref fuseRootPath);
+      CheckAndTrimPath(ref shadowRootPath);
       _shadow_root = shadowRootPath;
       _fuse_root = fuseRootPath;
       _initialized = true;
@@ -123,18 +123,13 @@ namespace Fushare.Filesystem {
     /// doesn't target a specific type of paths.
     /// </remarks>
     /// <exception cref="ArgumentException">Path invalid</exception>
-    private static void CheckPath(string path) {
-      string error_msg = null;
-      if (!path.StartsWith(Path.DirectorySeparatorChar.ToString())) {
-        error_msg = "Path should start with " + Path.DirectorySeparatorChar;
-      } else if (path.EndsWith(Path.DirectorySeparatorChar.ToString())) {
-        // EndsWith("/") isn't that bad, we just remove it.
-        //error_msg = "Path shouldn't end with " + Path.DirectorySeparatorChar;
-        path = path.Remove(path.Length - 1);
+    private static void CheckAndTrimPath(ref string path) {
+      string errorMsg;
+      if (!Path.IsPathRooted(path)) {
+        errorMsg = "Path should start with " + Path.DirectorySeparatorChar;
+        throw new ArgumentException(errorMsg, "path");
       }
-      if (!string.IsNullOrEmpty(error_msg)) {
-        throw new ArgumentException(error_msg);
-      }
+      path = path.TrimEnd(new char[] { Path.DirectorySeparatorChar });
     }
 
     /// <summary>
@@ -151,17 +146,17 @@ namespace Fushare.Filesystem {
     /// </summary>
     public ShadowFullPath GetShadowFullPath(ShadowPath shadowPath) {
       CheckInitialized();
-      CheckPath(shadowPath.PathString);
       string shadow_path_string = shadowPath.PathString;
+      CheckAndTrimPath(ref shadow_path_string);
       shadow_path_string = shadow_path_string.Remove(0, 1);
       return new ShadowFullPath(Path.Combine(_shadow_root, shadow_path_string));
     }
 
-    public static FusePath GetFusePathFromFuseRawPath(FuseRawPath fuseRawPath) {
-      CheckPath(fuseRawPath.PathString);
+    public static VirtualPath GetFusePathFromFuseRawPath(VirtualRawPath fuseRawPath) {
       string fuse_raw_string = fuseRawPath.PathString;
+      CheckAndTrimPath(ref fuse_raw_string);
       int substr_length = fuse_raw_string.LastIndexOf(PathUtil.ParameterStarterChar);
-      return new FusePath(fuse_raw_string.Substring(
+      return new VirtualPath(fuse_raw_string.Substring(
         0, substr_length == -1 ? fuse_raw_string.Length : substr_length));
     }
 
@@ -171,11 +166,11 @@ namespace Fushare.Filesystem {
     /// <param name="rawFusePath"></param>
     /// <param name="shadowFullPathInfo">FileInfo or DirectoryInfo of the 
     /// specified path, or null if nothing exists on the path.</param>
-    public ShadowFullPath ParseFuseRawPath(FuseRawPath fuseRawPath, out FileSystemInfo 
+    public ShadowFullPath ParseFuseRawPath(VirtualRawPath fuseRawPath, out FileSystemInfo 
       shadowFullPathInfo, out NameValueCollection parameters) {
       if (FushareConfigHandler.ConfigObject.filesysConfig.shadowPathEqualsFusePath) {
         parameters = GetParamsFromRawFusePath(fuseRawPath);
-        FusePath fuse_path = GetFusePathFromFuseRawPath(fuseRawPath);
+        VirtualPath fuse_path = GetFusePathFromFuseRawPath(fuseRawPath);
         // shadow path = fuse path
         ShadowFullPath shadow_full_path = GetShadowFullPath(new ShadowPath(fuse_path.PathString));
         FileInfo file_info = new FileInfo(shadow_full_path.PathString);
@@ -198,15 +193,16 @@ namespace Fushare.Filesystem {
     /// <summary>
     /// Parses query string extracted from fusePath into a NameValueCollection.
     /// </summary>
-    public static NameValueCollection GetParamsFromRawFusePath(FuseRawPath fuseRawPath) {
-      CheckPath(fuseRawPath.PathString);
+    public static NameValueCollection GetParamsFromRawFusePath(VirtualRawPath fuseRawPath) {
+      var fuseRawPathStr = fuseRawPath.PathString;
+      CheckAndTrimPath(ref fuseRawPathStr);
       NameValueCollection ret;
-      int starter_char_index = fuseRawPath.PathString.LastIndexOf(ParameterStarterChar);
+      int starter_char_index = fuseRawPathStr.LastIndexOf(ParameterStarterChar);
       if (starter_char_index == -1) {
         // No parameter
         ret = new NameValueCollection();
       } else {
-        string query_string = fuseRawPath.PathString.Substring(starter_char_index + 1);
+        string query_string = fuseRawPathStr.Substring(starter_char_index + 1);
         ret = ParseQueryString(query_string);
       }
       return ret;

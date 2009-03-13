@@ -36,7 +36,7 @@ namespace Fushare.Services.BitTorrent {
     #region IPathHandler Members
 
     public void ProcessRequest(FuseContext context) {
-      FuseRawPath fuse_raw_path = context.Request.FuseRawPath;
+      VirtualRawPath fuse_raw_path = context.Request.FuseRawPath;
       FileSystemInfo shadow_full_info;
       NameValueCollection path_params;
       ShadowFullPath shadow_full_path =
