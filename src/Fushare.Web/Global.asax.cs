@@ -37,7 +37,6 @@ namespace Fushare.Web {
               }  // Parameter defaults
           ); 
       }
-
     }
 
     protected void Application_Start() {
@@ -52,8 +51,8 @@ namespace Fushare.Web {
       // Configure for Dependecny Injection using Unity
       Bootstrapper.ConfigureUnityContainer(container);
 
-      BitTorrentManager btManager = container.Resolve<BitTorrentManager>();
-      btManager.Start();
+      var btSerice = container.Resolve<BitTorrentService>();
+      btSerice.Start();
     }
 
     void CurrentDomain_UnhandledException(object sender, 

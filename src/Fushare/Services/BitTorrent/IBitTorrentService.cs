@@ -17,6 +17,16 @@ namespace Fushare.Services.BitTorrent {
     DataMetaInfo Get(string nameSpace, string name);
 
     /// <summary>
+    /// Gets part of a file downloaded via BitTorrent.
+    /// </summary>
+    /// <param name="nameSpace">The name space.</param>
+    /// <param name="name">The name.</param>
+    /// <param name="offset">The offset.</param>
+    /// <param name="bytesToRead">The number of bytes to read.</param>
+    /// <returns></returns>
+    byte[] Get(string nameSpace, string name, long offset, int bytesToRead);
+
+    /// <summary>
     /// Gets the file or directory and save it to the specified path.
     /// </summary>
     /// <param name="nameSpace">The name space.</param>
@@ -42,13 +52,20 @@ namespace Fushare.Services.BitTorrent {
     void Update(string nameSpace, string name);
 
     /// <summary>
-    /// Publishes a file or directory.
+    /// Updates a file or directory by the specified path.
     /// </summary>
     /// <param name="path">The path to the file/directory to be published.
     /// </param>
     /// <remarks>Used when you have a specific path for the 
     /// file/directory.</remarks>
     void Publish(string path);
+
+    /// <summary>
+    /// Same as Publish except that you don't get an exception when the key is 
+    /// duplicated. You overwrite the existing key.
+    /// </summary>
+    /// <param name="path">The path to the file/directory to be published.
+    /// </param>
     void Update(string path);
   }
 }

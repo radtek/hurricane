@@ -13,7 +13,7 @@ using System.Collections.Specialized;
 namespace Fushare.Web.Controllers {
   public class BitTorrentController : Controller {
 
-    static readonly IDictionary _log_props = 
+    static readonly IDictionary _log_props =
       Logger.PrepareLoggerProperties(typeof(BitTorrentController));
     IBitTorrentService _service;
 
@@ -45,11 +45,33 @@ namespace Fushare.Web.Controllers {
 
     [AcceptVerbs("GET")]
     public ActionResult Get(string nameSpace, string name) {
+      string offset = Request.Params["offset"];
+      string bytesToRead = Request.Params["bytesToRead"];
+
+      if (string.IsNullOrEmpty(offset) && string.IsNullOrEmpty(bytesToRead)) {
+        var xmlString = GetWholeData(nameSpace, name);
+        return Content(xmlString);
+      } else if (!string.IsNullOrEmpty(bytesToRead) &&
+        !string.IsNullOrEmpty(bytesToRead)) {
+        // Have both needed arguments
+        var dataBlock = 
+          _service.Get(nameSpace, name, Int64.Parse(offset), Int32.Parse(bytesToRead));
+        return File(dataBlock, HttpUtil.OctetStreamContentType, 
+          string.Format("{0}.{1}.{2}", name, offset, bytesToRead));
+      } else {
+        var toThrow = new HttpException(HttpCodes.BadRequest400,
+          "Unclear whether to download piece or whole data.");
+        Util.LogBeforeThrow(toThrow, _log_props);
+        throw toThrow;
+      }
+    }
+
+    private string GetWholeData(string nameSpace, string name) {
       DataMetaInfo meta;
       try {
         meta = _service.Get(nameSpace, name);
       } catch (ResourceNotFoundException ex) {
-        var toThrow = new HttpException(HttpCodes.NotFound404, 
+        var toThrow = new HttpException(HttpCodes.NotFound404,
           "No file/directory available at this key.", ex);
         Util.LogBeforeThrow(toThrow, _log_props);
         throw toThrow;
@@ -62,7 +84,7 @@ namespace Fushare.Web.Controllers {
 
       // @TODO Check the location of the client and return the path correspondently.
       var xmlString = XmlUtil.ToXml<DataMetaInfo>(meta);
-      return Content(xmlString);
+      return xmlString;
     }
 
     private ActionResult PublishInternal(string nameSpace, string name) {
@@ -77,7 +99,7 @@ namespace Fushare.Web.Controllers {
           publisher.Execute(nameSpace, name);
         }
       } catch (DuplicateResourceKeyException ex) {
-        var toThrow = new HttpException(HttpCodes.BadRequest400, 
+        var toThrow = new HttpException(HttpCodes.BadRequest400,
           "The same key already exists. Change the name.", ex);
         Util.LogBeforeThrow(toThrow, _log_props);
         throw toThrow;
@@ -93,9 +115,9 @@ namespace Fushare.Web.Controllers {
     class Publisher {
       protected BitTorrentController _parent;
 
-      internal static Publisher CreatePublisher(NameValueCollection parameters, 
+      internal static Publisher CreatePublisher(NameValueCollection parameters,
         BitTorrentController parent) {
-        if("update".Equals(parameters["action"], StringComparison.OrdinalIgnoreCase)) {
+        if ("update".Equals(parameters["action"], StringComparison.OrdinalIgnoreCase)) {
           return new Updater(parent);
         } else {
           return new Publisher(parent);

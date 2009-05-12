@@ -16,6 +16,8 @@ namespace Fushare {
       #region Common
       var dhtTrackerListenerPort =
         Int32.Parse(ConfigurationManager.AppSettings["DhtTrackerListeningPort"]); 
+      var infoServerListeningPort = Int32.Parse(ConfigurationManager.AppSettings[
+            "HttpPieceInfoServerListeningPort"]); // listeningPort
       #endregion
 
       #region TorrentSettings
@@ -37,38 +39,64 @@ namespace Fushare {
       container.RegisterInstance<ClientEngine>(clientEngine); 
       #endregion
 
-      #region DhtTracker
-      // Singleton.
-      container.RegisterType<DhtTracker>(new ContainerControlledLifetimeManager(),
-        new InjectionConstructor(typeof(DhtProxy), string.Format("http://*:{0}/",
-          dhtTrackerListenerPort))); 
-      #endregion
-
-      #region TorrentHelper
-      var btManagerBaseDirPath =
-        ConfigurationManager.AppSettings["BitTorrentManagerBaseDirPath"];
-      var ip = NetUtil.GetLocalIPByInterface(
-        ConfigurationManager.AppSettings["DhtTrackerIface"]);
-      var torrentHelper = new TorrentHelper(BitTorrentManager.GetTorrentsDirPath(
-        btManagerBaseDirPath), string.Format("http://{0}:{1}/", ip.ToString(),
-        dhtTrackerListenerPort));
-      container.RegisterInstance<TorrentHelper>(torrentHelper); 
-      #endregion
-
       #region DhtProxy
       var peerTtlSecs = 60 * 50;
       container.RegisterType<DhtProxy>(
         new InjectionConstructor(typeof(DhtBase),
-          peerTtlSecs)); 
+          peerTtlSecs));
+      #endregion
+
+      #region DhtTracker
+      // Singleton.
+      container.RegisterType<DhtTracker>(new ContainerControlledLifetimeManager(),
+        new InjectionConstructor(
+          typeof(DhtProxy), 
+          string.Format("http://*:{0}/", dhtTrackerListenerPort))); // listeningPrefix
+      #endregion
+
+      #region TorrentHelper
+      // Singleton.
+      var btManagerBaseDirPath =
+        ConfigurationManager.AppSettings["BitTorrentManagerBaseDirPath"];
+      var ip = NetUtil.GetLocalIPByInterface(
+        ConfigurationManager.AppSettings["DhtTrackerIface"]);
+      var torrentHelper = new TorrentHelper(
+        BitTorrentManager.GetTorrentsDirPath(btManagerBaseDirPath), 
+        string.Format("http://{0}:{1}/", ip.ToString(), dhtTrackerListenerPort));
+      container.RegisterInstance<TorrentHelper>(torrentHelper); 
       #endregion
 
       #region BitTorrentManager
+      // Singleton.
       container.RegisterType<BitTorrentManager>(
         new ContainerControlledLifetimeManager(),
-        new InjectionConstructor(btManagerBaseDirPath,
+        new InjectionConstructor(
+          btManagerBaseDirPath,
           ConfigurationManager.AppSettings["BitTorrentManagerSelfNamespace"],
-          typeof(DhtProxy), typeof(DhtTracker), typeof(ClientEngine),
-          typeof(TorrentSettings), typeof(TorrentHelper))); 
+          typeof(DhtProxy), 
+          typeof(DhtTracker), 
+          typeof(ClientEngine),
+          typeof(TorrentSettings), 
+          typeof(TorrentHelper))); 
+      #endregion
+
+      #region IPieceInfoServer
+      // Singleton.
+      //container.RegisterType<IPieceInfoServer, HttpPieceInfoServer>(
+      //    new ContainerControlledLifetimeManager(),
+      //    new InjectionConstructor(
+      //      infoServerListeningPort,
+      //      typeof(PieceLevelTorrentManager))); 
+      #endregion
+
+      #region PieceLevelTorrentManager
+      container.RegisterType<PieceLevelTorrentManager>(
+        new ContainerControlledLifetimeManager(),
+        new InjectionConstructor(
+          typeof(BitTorrentManager),
+          typeof(DhtProxy),
+          typeof(TorrentHelper),
+          infoServerListeningPort)); 
       #endregion
     }
   }

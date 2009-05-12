@@ -206,6 +206,9 @@
     <Compile Include="Services\BitTorrent\BitTorrentPathHandler.cs" />
     <Compile Include="Services\BitTorrent\CacheRegistry.cs" />
     <Compile Include="Services\BitTorrent\DataMetaInfo.cs" />
+    <Compile Include="Services\BitTorrent\HttpPieceInfoServer.cs" />
+    <Compile Include="Services\BitTorrent\IPieceInfoServer.cs" />
+    <Compile Include="Services\BitTorrent\PieceLevelTorrentManager.cs" />
     <Compile Include="Services\BitTorrent\TorrentHelper.cs" />
     <Compile Include="Services\DhtException.cs" />
     <Compile Include="Services\DhtResultEntry.cs" />
@@ -221,7 +224,6 @@
     <Compile Include="Services\Dht\IDhtService.cs" />
     <Compile Include="Util\Base32.cs" />
     <Compile Include="Util\IPAddresses.cs" />
-    <Compile Include="Util\Options.cs" />
     <Compile Include="Util\SerializableDictionary.cs" />
     <Compile Include="Services\BitTorrent\TorrentFolderWatcher.cs" />
     <Compile Include="Services\BitTorrent\BitTorrentManager.cs" />

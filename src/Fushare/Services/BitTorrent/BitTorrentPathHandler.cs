@@ -15,6 +15,7 @@ namespace Fushare.Services.BitTorrent {
   /// <summary>
   /// Handles path using BitTorrent service.
   /// </summary>
+  [Obsolete]
   public class BitTorrentPathHandler : IPathHandler {
     private BitTorrentManager _manager;
     private static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(BitTorrentPathHandler));
@@ -52,11 +53,11 @@ namespace Fushare.Services.BitTorrent {
             string.Format("Dhtkey in Base32: {0}", base32_dhtkey));
           byte[] torrent_dht_key = Brunet.Base32.Decode(base32_dhtkey);
           ManualResetEvent waitHandle = new ManualResetEvent(false);
-          _manager.GetData(
-            torrent_dht_key, "", _manager.DownloadsDirPath, waitHandle);
+          //_manager.GetData(
+          //  torrent_dht_key, "", _manager.DownloadsDirPath, waitHandle);
           // wait until downloading finishes
           waitHandle.WaitOne();
-          if (Fushare.Environment.OSVersion == OS.Unix) {
+          if (Fushare.SysEnvironment.OSVersion == OS.Unix) {
             UnixSymbolicLinkInfo unique_to_downloads = 
               new UnixSymbolicLinkInfo(shadow_full_path.PathString);
             //unique_to_downloads.CreateSymbolicLinkTo(
@@ -83,7 +84,7 @@ namespace Fushare.Services.BitTorrent {
           byte[] dht_key = _manager.ServeFile(dest_shadow_full);
           
           // Link from the source to the dest.
-          if (Fushare.Environment.OSVersion == OS.Unix) {
+          if (Fushare.SysEnvironment.OSVersion == OS.Unix) {
             string unique_name = Brunet.Base32.Encode(dht_key) + ".bt";
             string unique_full = Path.Combine(Directory.GetParent(
               shadow_full_info.FullName).FullName, unique_name);

@@ -14,6 +14,8 @@ namespace Fushare.Services.BitTorrent {
   /// Manages activities pertaining to BitTorrent protocol
   /// </summary>
   public class BitTorrentManager {
+    #region Fields
+
     DhtProxy _dhtProxy;
     DhtTracker _dhtTracker;
     /// <summary>
@@ -26,6 +28,8 @@ namespace Fushare.Services.BitTorrent {
     /// </remarks>
     Dictionary<TorrentManager, string> _torrents_table = new Dictionary<TorrentManager, string>();
     static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(BitTorrentManager));
+    TorrentHelper _torrentHelper;
+    #endregion
  
     #region MonoTorrent
     BEncodedDictionary _fastResumeData;
@@ -33,7 +37,6 @@ namespace Fushare.Services.BitTorrent {
     EngineSettings _btEngineSettings;
     TorrentSettings _torrentDefaults;
     ClientEngine _clientEngine;
-    TorrentHelper _torrentHelper;
     #endregion
 
     #region Constants
@@ -91,8 +94,10 @@ namespace Fushare.Services.BitTorrent {
     public string SelfNameSpace { get; private set; }
     #endregion
 
-    public BitTorrentManager(string baseDirPath, string selfNameSpace, 
-      DhtProxy dhtProxy, DhtTracker dhtTracker, ClientEngine clientEngine, 
+    #region Constructors
+
+    public BitTorrentManager(string baseDirPath, string selfNameSpace,
+      DhtProxy dhtProxy, DhtTracker dhtTracker, ClientEngine clientEngine,
       TorrentSettings torrentDefaults, TorrentHelper torrentHelper) {
       IOUtil.CheckPathRooted(baseDirPath, "baseDirPath");
 
@@ -159,7 +164,9 @@ namespace Fushare.Services.BitTorrent {
       } catch {
         _fastResumeData = new BEncodedDictionary();
       }
-    }
+    } 
+
+    #endregion
     
     #region Public Methods
 
@@ -185,7 +192,7 @@ namespace Fushare.Services.BitTorrent {
     /// <summary>
     /// Serves file sharing over BitTorrent.
     /// </summary>
-    /// <param name="dataPath">
+    /// <param name="path">
     /// The path of the data file to be shared over BitTorrent</param>
     /// <remarks>
     /// Should be used in general cases where DHT name is decided by infoHash of
@@ -194,43 +201,79 @@ namespace Fushare.Services.BitTorrent {
     [Obsolete]
     public byte[] ServeFile(string filePath) {
       byte[] dht_key = null;
-      PublishData(dht_key, "", filePath);
+      PublishData("", "");
       Logger.WriteLineIf(LogLevel.Verbose, _log_props,
         string.Format("dhtKey: {0}", dht_key == null ? "null" : Base32.Encode(dht_key)));
       return dht_key;
     }
 
-    public void PublishData(byte[] dhtKey, string nameSpace, string path) {
-      PublishDataInternal(dhtKey, nameSpace, path, true);
+    public void PublishData(string nameSpace, string name) {
+      PublishDataInternal(nameSpace, name, true);
     }
 
-    public void UpdateData(byte[] dhtKey, string nameSpace, string path) {
-      PublishDataInternal(dhtKey, nameSpace, path, false);
+    public void UpdateData(string nameSpace, string name) {
+      PublishDataInternal(nameSpace, name, false);
     }
 
     /// <summary>
     /// Gets file from the given dht name.
     /// </summary>
     /// <param name="torrentDhtKey">DHT name of the torrent</param>
-    /// <param name="nameSpace">The name space.</param>
-    /// <param name="saveToPath">The path to save. Not the containing dir.
-    /// </param>
+    /// <param name="torrent">The torrent.</param>
+    /// <param name="saveToPath">The path to save. Not the containing dir.</param>
     /// <param name="waitHandle">The EventWaitHandle to wait on.</param>
-    /// <returns>Torrent object</returns>
-    public Torrent GetData(byte[] torrentDhtKey, string nameSpace,
+    /// <remarks>The torrent of the data could be either already in place or not.
+    /// </remarks>
+    void GetDataInternal(byte[] torrentDhtKey, Torrent torrent,
       string saveToPath, EventWaitHandle waitHandle) {
-      byte[] torrentBytes;
-      torrentBytes = _dhtProxy.GetTorrent(torrentDhtKey);
-
-      Torrent torrent = Torrent.Load(torrentBytes);
-
-      _torrentHelper.WriteTorrent(torrentBytes, nameSpace, torrent.Name);
 
       // The file/dir hasn't been downloaded yet. So, don't check path.
       var saveDir = IOUtil.GetParent(saveToPath, false).FullName;
       StartDownload(torrent, saveDir, waitHandle);
-      // Download completed.
-      CacheRegistry.AddPathToRegistry(saveToPath, true);
+    }
+
+    /// <summary>
+    /// Gets the data from the given dht name.
+    /// </summary>
+    /// <param name="nameSpace">The name space.</param>
+    /// <param name="name">The name.</param>
+    /// <param name="waitHandle">The wait handle.</param>
+    /// <param name="downloadPath">The download path.</param>
+    /// <returns>Torrent object</returns>
+    /// <exception cref="ResourceNotFoundException">Torrent at the given key is 
+    /// invalid.</exception>
+    public Torrent GetData(string nameSpace, string name, out string downloadPath) {
+      ManualResetEvent waitHandle = new ManualResetEvent(false);
+      byte[] torrentDhtKey = ServiceUtil.GetDhtKeyBytes(nameSpace, name);
+      downloadPath =
+        GetPathOfItemInDownloads(nameSpace, name);
+      // @TODO Check integrity of the data -- How do we know the download is complete?
+      // A possbile solution. Use the name <name.part> and change it to <name> after
+      // download completes.
+      Torrent torrent;
+      if (!CacheRegistry.IsInCacheRegistry(nameSpace, name)) {
+        try {
+          var torrentSavePath = _torrentHelper.GetTorrentFilePath(nameSpace, name);
+          var torrentBytes = _torrentHelper.ReadOrDownloadTorrent(nameSpace, 
+            name, _dhtProxy);
+          torrent = Torrent.Load(torrentBytes);
+          GetDataInternal(torrentDhtKey, torrent, downloadPath,
+              waitHandle);
+
+          // Wait until downloading finishes
+          waitHandle.WaitOne();
+          // Download completed.
+          CacheRegistry.AddPathToRegistry(downloadPath, true);
+        } catch (TorrentException ex) {
+          throw new ResourceNotFoundException(string.Format(
+            "Torrent at key {0} (UrlBase64) is invalid.",
+            UrlBase64.Encode(torrentDhtKey)), ex);
+        }
+      } else {
+        // If the data is already there, we don't need to download it again.
+        torrent = Torrent.Load(_torrentHelper.ReadOrDownloadTorrent(nameSpace, 
+          name, _dhtProxy));
+      }
       return torrent;
     }
 
@@ -242,45 +285,11 @@ namespace Fushare.Services.BitTorrent {
     /// <returns>Path of the item already downloaded or to be downloaded.
     /// </returns>
     /// <remarks>It doesn't have to exist.</remarks>
-    public string GetPathOfItemInDownloads(string nameSpace, string name) {
+    internal string GetPathOfItemInDownloads(string nameSpace, string name) {
       return Path.Combine(DownloadsDirPath, Path.Combine(nameSpace, name));
     }
 
-    /// <summary>
-    /// Gets the path of torrent file.
-    /// </summary>
-    /// <param name="nameSpace">The name space.</param>
-    /// <param name="name">The name.</param>
-    /// <returns></returns>
-    public string GetPathOfTorrentFile(string nameSpace, string name) {
-      // Torrent files have this .torrrent suffix.
-      return Path.Combine(TorrentsDirPath, Path.Combine(nameSpace, name)) + 
-        ".torrent";
-    }
-
-    public void GetNsAndNameOfItemInDownloads(string path,
-      out string nameSpace, out string name) {
-      IOUtil.CheckPathRooted(path);
-      if (!CacheRegistry.IsInCacheDir(path, true)) {
-        throw new ArgumentException("Path not in Cache(Downloads) directory.");
-      }
-      name = IOUtil.GetFileOrDirectoryName(path, true);
-      nameSpace = IOUtil.GetParent(path, true).Name;
-    }
-
-    /// <summary>
-    /// Determines whether the specified path is in cache dir.
-    /// </summary>
-    /// <param name="path">The path.</param>
-    /// <returns>
-    /// 	<c>true</c> if the specified path is in cache dir; otherwise, <c>false</c>.
-    /// </returns>
-    public bool IsInCacheDir(string path) {
-      // There is no reason here that we don't check the path.
-      return CacheRegistry.IsInCacheDir(path, true);
-    }
-
-    public static string GetTorrentsDirPath(string baseDirPath) {
+    internal static string GetTorrentsDirPath(string baseDirPath) {
       return Path.Combine(baseDirPath, TorrentsDirName);
     }
     #endregion
@@ -308,7 +317,7 @@ namespace Fushare.Services.BitTorrent {
       //    args.Direction, args.Message));
       //};
     }
-
+    
     /// <summary>
     /// Serves the file over BitTorrent.
     /// </summary>
@@ -317,26 +326,30 @@ namespace Fushare.Services.BitTorrent {
     /// <param name="path">The file or directory path.</param>
     /// <param name="unique">if set to <c>true</c>, the manager uses Create 
     /// instead of Put to insert torrent to Dht.</param>
-    void PublishDataInternal(byte[] dhtKey, string nameSpace, string path, bool unique) {
+    void PublishDataInternal(string nameSpace, string name, bool unique) {
+      byte[] dhtKey = ServiceUtil.GetDhtKeyBytes(nameSpace, name);
+      var dataPath = GetPathOfItemInDownloads(nameSpace, name);
+      var torrentSavePath = _torrentHelper.GetTorrentFilePath(nameSpace, name);
+
       // Create torrent
-      BEncodedDictionary bdict = _torrentHelper.CreateTorrent(path);
+      BEncodedDictionary bdict = _torrentHelper.CreateTorrent(dataPath);
       Torrent torrent = Torrent.Load(bdict);
       // Dump torrent to the torrent folder so that tracker could load it.
       byte[] torrentBytes = bdict.Encode();
-      _torrentHelper.WriteTorrent(torrentBytes, nameSpace, torrent.Name);
+      TorrentHelper.WriteTorrent(torrentBytes, torrentSavePath);
 
       if (unique) {
         _dhtProxy.CreateTorrent(dhtKey, torrentBytes, TorrentTtl);
-        CacheRegistry.AddPathToRegistry(path, true);
+        CacheRegistry.AddPathToRegistry(dataPath, true);
       } else {
         _dhtProxy.PutTorrent(dhtKey, torrentBytes, TorrentTtl);
-        CacheRegistry.UpdatePathInRegistry(path, true);
+        CacheRegistry.UpdatePathInRegistry(dataPath, true);
       }
 
       Logger.WriteLineIf(LogLevel.Verbose, _log_props,
         string.Format("{0}: Torrent file succesfully put into DHT.", torrent.Name));
 
-      var saveDir = IOUtil.GetParent(path, true).FullName;
+      var saveDir = IOUtil.GetParent(dataPath, true).FullName;
       // Download without blocking.
       StartDownload(torrent, saveDir, null);
     }
@@ -381,7 +394,7 @@ namespace Fushare.Services.BitTorrent {
         switch (e.NewState) {
           case TorrentState.Downloading:
             Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-              string.Format("OpenConnections: {0}"), torrentManager.OpenConnections);
+              string.Format("OpenConnections: {0}", torrentManager.OpenConnections));
             break;
           case TorrentState.Seeding:
             if (e.OldState == TorrentState.Downloading) {
@@ -411,6 +424,13 @@ namespace Fushare.Services.BitTorrent {
               if (waitHandle != null) {
                 // Now that we have downloaded the file, we release the waitHandle.
                 waitHandle.Set();
+              }
+
+              if (!e.TorrentManager.IsInitialSeeding) {
+                // Downloader
+                Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+                  string.Format("Stopping the TorrentManager: {0}", e.TorrentManager.ToString()));
+                e.TorrentManager.Stop();
               }
             }
             break;
@@ -459,11 +479,10 @@ namespace Fushare.Services.BitTorrent {
               e.Tracker.Uri,
               e.Successful));
             Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
-              "Tracker: Peers={3}, Complete={0}, Incomplete={1}, State={2}",
+              "Tracker: Peers={2}, Complete={0}, Incomplete={1}",
               e.Tracker.Complete,
               e.Tracker.Incomplete,
-              e.State,
-              e.Peers));
+              e.Peers.Count));
           };
         }
       }

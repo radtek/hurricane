@@ -40,7 +40,7 @@ namespace Fushare.Services.BitTorrent {
     /// AnnounceParameters from the requesting client. It's modified in method.
     /// </param>
     internal void HandleAnnounceRequest(AnnounceParameters parameters) {
-      ICollection<PeerEntry> entries = _proxy.GetPeers(parameters.InfoHash);
+      IEnumerable<PeerEntry> entries = _proxy.GetPeers(parameters.InfoHash);
       foreach (PeerEntry entry in entries) {
         AnnounceParameters par = GenerateAnnounceParameters(
           parameters.InfoHash, entry);

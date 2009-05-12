@@ -12,7 +12,6 @@ using Fushare.Services.Dht;
 namespace Fushare.Web.Controllers {
   public class DhtController : Controller {
     #region Fields
-    const string OctetStreamContentType = "application/octet-stream";
 
     static readonly IDictionary _log_props =
       Logger.PrepareLoggerProperties(typeof(DhtController));
@@ -53,7 +52,7 @@ namespace Fushare.Web.Controllers {
         Util.LogBeforeThrow(toThrow, _log_props);
         throw toThrow;
       }
-      return File(retBytes, OctetStreamContentType);
+      return File(retBytes, HttpUtil.OctetStreamContentType);
     }
 
     /// <summary>

@@ -39,7 +39,7 @@ namespace Fushare.Services.BitTorrent {
     /// states. Empty List if no peers for this infoHash or the network communication
     /// is temporarily down.
     /// </returns>
-    public ICollection<PeerEntry> GetPeers(byte[] infoHash) {
+    public IEnumerable<PeerEntry> GetPeers(byte[] infoHash) {
       Logger.WriteLineIf(LogLevel.Verbose, _log_props,
           string.Format("Getting peers for infoHash: {0} (UrlBase64)", 
           UrlBase64.Encode(infoHash)));
@@ -129,6 +129,25 @@ namespace Fushare.Services.BitTorrent {
       DhtResults results = _dht.Get(dhtKey);
       return results.Value;
     }
+
+    /// <summary>
+    /// Tries to get torrent. No exception thrown if the key doesn't exist.
+    /// </summary>
+    /// <param name="dhtKey">The DHT key.</param>
+    /// <param name="result">The result.</param>
+    /// <returns>True if succeeded.</returns>
+    /// <remarks>Other exceptions are still thrown.</remarks>
+    public bool TryGetTorrent(byte[] dhtKey, out byte[] result) {
+      try {
+        result =
+          GetTorrent(dhtKey);
+        return true;
+      } catch (ResourceNotFoundException) {
+        result = null;
+        return false;
+      }
+    }
+
     #endregion
   }
 }

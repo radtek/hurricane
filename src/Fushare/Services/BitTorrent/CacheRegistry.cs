@@ -145,10 +145,26 @@ namespace Fushare.Services.BitTorrent {
       return _registry.ContainsKey(key);
     }
 
+    public string GetRegisteredPath(string nameSpace, string name) {
+      var key = ServiceUtil.GetDhtKeyString(nameSpace, name);
+      return this[key];
+    }
+
+    /// <summary>
+    /// Adds the path to registry.
+    /// </summary>
+    /// <param name="path">The path.</param>
+    /// <param name="checkPath">if set to <c>true</c> [check path].</param>
     public void AddPathToRegistry(string path, bool checkPath) {
       RegisterPath(path, checkPath, false);
     }
 
+    /// <summary>
+    /// Updates the path in registry. This means no exception thrown when the key 
+    /// already exists.
+    /// </summary>
+    /// <param name="path">The path.</param>
+    /// <param name="checkPath">if set to <c>true</c> [check path].</param>
     public void UpdatePathInRegistry(string path, bool checkPath) {
       RegisterPath(path, checkPath, true);
     }

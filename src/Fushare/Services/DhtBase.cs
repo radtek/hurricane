@@ -71,6 +71,9 @@ namespace Fushare.Services {
     /// </summary>
     /// <param name="key">The key.</param>
     /// <returns>The wrapper of returned value.</returns>
+    /// <exception cref="DhtException">WebException caught.</exception>
+    /// <exception cref="ResourceNotFoundException">Such key doesn't exist.
+    /// </exception>
     public abstract DhtResults Get(byte[] key); 
     #endregion
   }

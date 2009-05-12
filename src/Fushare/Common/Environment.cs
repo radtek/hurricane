@@ -15,13 +15,13 @@ namespace Fushare {
     OSX
   }
 
-  public class Environment {
+  public class SysEnvironment {
     /// <summary>
     /// Contains the current operating system.
     /// </summary>
     public static readonly OS OSVersion;
 
-    static Environment() {
+    static SysEnvironment() {
       // Determine system version.
       int p = (int)System.Environment.OSVersion.Platform;
       int v = (int)System.Environment.OSVersion.Version.Major;

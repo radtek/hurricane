@@ -83,7 +83,7 @@ namespace Fushare.Filesystem {
     static PathUtil() {
       // Initialize the path special chars.
       // @todo Do we need to read them from config files?
-      if (Fushare.Environment.OSVersion == OS.Unix) {
+      if (Fushare.SysEnvironment.OSVersion == OS.Unix) {
         ParameterSeparatorChar = '&';
         ParameterStarterChar = '?';
         ParameterAssignmentOpChar = '=';

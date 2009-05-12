@@ -44,7 +44,8 @@ namespace Fushare.Services.BitTorrent {
       } else {
         string key_base32 = args[2];
         byte[] dht_key = Base32.Decode(key_base32);
-        manager.GetData(dht_key, "", filepath, null);
+        string downloadPath;
+        manager.GetData("", "", out downloadPath);
       }
 
       // Why the program doesn't work correctly when this line was added?

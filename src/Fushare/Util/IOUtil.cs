@@ -117,5 +117,56 @@ namespace Fushare {
     public static string GetRandomTempPath() {
       return Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
     }
+
+    /// <summary>
+    /// Writes all bytes to the file. The difference with File.WriteAllBytes is that it tries
+    /// first to create all preceding directories.
+    /// </summary>
+    /// <param name="path">The path.</param>
+    /// <param name="bytes">The bytes.</param>
+    public static void WriteAllBytes(string path, byte[] bytes) {
+      Directory.CreateDirectory(GetParent(path, false).FullName);
+      File.WriteAllBytes(path, bytes);
+    }
+
+    /// <summary>
+    /// Reads up to <c>bytesToRead</c> from the specified file.
+    /// </summary>
+    /// <param name="path">The path.</param>
+    /// <param name="offset">The offset.</param>
+    /// <param name="bytesToRead">The number of bytes to read.</param>
+    /// <param name="fileLength">Length of the file if it is already known. (To save 
+    /// some IO.)</param>
+    /// <returns>The bytes read.</returns>
+    public static byte[] Read(string path, long offset, int bytesToRead, long? fileLength) {
+      var fi = new FileInfo(path);
+      long fileLengthToUse = fileLength.HasValue ? fileLength.GetValueOrDefault() : fi.Length;
+      int bytesCanBeRead = fileLengthToUse < offset + bytesToRead ? 
+        (int)(fileLengthToUse - offset) : bytesToRead;
+      byte[] ret = new byte[bytesCanBeRead];
+      Stream stream;
+      try {
+        stream = File.OpenRead(path);
+      } catch (IOException) {
+        System.Threading.Thread.Sleep(2000);
+        stream = File.OpenRead(path);
+      }
+      using (stream) {
+        stream.Seek(offset, SeekOrigin.Begin);
+        stream.Read(ret, 0, bytesCanBeRead);
+      }
+      return ret;
+    }
+
+    /// <summary>
+    /// Reads up to <c>bytesToRead</c> from the specified file.
+    /// </summary>
+    /// <param name="path">The path.</param>
+    /// <param name="offset">The offset.</param>
+    /// <param name="bytesToRead">The number of bytes to read.</param>
+    /// <returns>The bytes read.</returns>
+    public static byte[] Read(string path, long offset, int bytesToRead) {
+      return Read(path, offset, bytesToRead, null);
+    }
   }
 }
