@@ -421,16 +421,12 @@ namespace Fushare.Services.BitTorrent {
                 kb_proto_downloaded / total_secs,
                 kb_proto_uploaded / total_secs));
 
+              // Flush so that the file readers can get a hold of the file.
+              _clientEngine.DiskManager.Flush(e.TorrentManager);
+              
               if (waitHandle != null) {
                 // Now that we have downloaded the file, we release the waitHandle.
                 waitHandle.Set();
-              }
-
-              if (!e.TorrentManager.IsInitialSeeding) {
-                // Downloader
-                Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-                  string.Format("Stopping the TorrentManager: {0}", e.TorrentManager.ToString()));
-                e.TorrentManager.Stop();
               }
             }
             break;
