@@ -144,14 +144,7 @@ namespace Fushare {
       int bytesCanBeRead = fileLengthToUse < offset + bytesToRead ? 
         (int)(fileLengthToUse - offset) : bytesToRead;
       byte[] ret = new byte[bytesCanBeRead];
-      Stream stream;
-      try {
-        stream = File.OpenRead(path);
-      } catch (IOException) {
-        System.Threading.Thread.Sleep(2000);
-        stream = File.OpenRead(path);
-      }
-      using (stream) {
+      using (var stream = File.OpenRead(path)) {
         stream.Seek(offset, SeekOrigin.Begin);
         stream.Read(ret, 0, bytesCanBeRead);
       }
