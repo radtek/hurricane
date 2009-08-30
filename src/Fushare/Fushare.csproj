@@ -47,7 +47,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'l4n|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\l4n\</OutputPath>
-    <DefineConstants>TRACE;LOG4NET</DefineConstants>
+    <DefineConstants>LOG4NET</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DebugType>full</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -181,7 +181,6 @@
     <Compile Include="Common\DictionaryDataDecorator.cs" />
     <Compile Include="Common\DictionaryDataUtil.cs" />
     <Compile Include="Common\Enums.cs" />
-    <Compile Include="Common\Environment.cs" />
     <Compile Include="Common\FingerprintedData.cs" />
     <Compile Include="Common\FragmentableData.cs" />
     <Compile Include="Common\FragmentationInfo.cs" />
@@ -189,18 +188,18 @@
     <Compile Include="Common\IDictionaryData.cs" />
     <Compile Include="Common\IDto.cs" />
     <Compile Include="Common\ISerializer.cs" />
-    <Compile Include="Common\Logger.cs" />
-    <Compile Include="Common\Namespaces.cs" />
     <Compile Include="Common\RegularData.cs" />
     <Compile Include="Common\XmlRpcTracer.cs" />
     <Compile Include="Filesystem\BitTorrentFilesysEventHandler.cs" />
     <Compile Include="Filesystem\FileFetcher.cs" />
     <Compile Include="Filesystem\FilesysEventDispatcher.cs" />
     <Compile Include="Filesystem\FilesysEventHandlerBase.cs" />
+    <Compile Include="Filesystem\FushareFileManager.cs" />
+    <Compile Include="Filesystem\FushareFilesysEventArgs.cs" />
+    <Compile Include="Filesystem\FusharePathFactory.cs" />
     <Compile Include="Filesystem\IFilesysEventHandler.cs" />
     <Compile Include="Filesystem\IFushareFilesys.cs" />
     <Compile Include="Filesystem\NopFilesysEventHandler.cs" />
-    <Compile Include="Filesystem\ServerProxy.cs" />
     <Compile Include="Filesystem\UnityFilesysEventDispatcher.cs" />
     <Compile Include="Filesystem\VirtualFile.cs" />
     <Compile Include="Services\BitTorrent\BitTorrentPathHandler.cs" />
@@ -217,14 +216,8 @@
     <Compile Include="Services\ResourceException.cs" />
     <Compile Include="Services\ResourceNotFoundException.cs" />
     <Compile Include="Services\ServiceUtil.cs" />
-    <Compile Include="Util\NetUtil.cs" />
-    <Compile Include="Util\UriUtil.cs" />
-    <Compile Include="Util\IOUtil.cs" />
     <Compile Include="Services\Dht\DhtService.cs" />
     <Compile Include="Services\Dht\IDhtService.cs" />
-    <Compile Include="Util\Base32.cs" />
-    <Compile Include="Util\IPAddresses.cs" />
-    <Compile Include="Util\SerializableDictionary.cs" />
     <Compile Include="Services\BitTorrent\TorrentFolderWatcher.cs" />
     <Compile Include="Services\BitTorrent\BitTorrentManager.cs" />
     <Compile Include="Services\BitTorrent\BitTorrentService.cs" />
@@ -283,8 +276,6 @@
     <Compile Include="Configuration\FushareConfigHandler.cs" />
     <Compile Include="Configuration\ServiceConfigSection.cs" />
     <Compile Include="Services\DhtBase.cs" />
-    <Compile Include="Util\UrlBase64.cs" />
-    <Compile Include="Util\XmlUtil.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Common\default.build" />
@@ -292,7 +283,14 @@
     <None Include="Filesystem\default.build" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Fushare.Util\Fushare.Util.csproj">
+      <Project>{2253759E-5110-4DBA-9969-32A76F3DB5B1}</Project>
+      <Name>Fushare.Util</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
     <Folder Include="Properties\" />
+    <Folder Include="Util\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSHARP.Targets" />
   <ProjectExtensions>

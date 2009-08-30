@@ -19,8 +19,8 @@ namespace Fushare.Filesystem {
           new Uri("ccc/ddd", UriKind.Relative)
         }
       };
-      BitTorrentFilesysEventHandler.CreateVirtualFiles(basePath, 
-        XmlUtil.ToXml<DataMetaInfo>(meta));
+      //BitTorrentFilesysEventHandler.CreateVirtualFiles(new ShadowMetaFullPath(,basePath), 
+      //  XmlUtil.ToXml<DataMetaInfo>(meta));
     }
   }
 }

@@ -104,10 +104,17 @@
     <Compile Include="TrackerApp.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Fushare.Util\Fushare.Util.csproj">
+      <Project>{2253759E-5110-4DBA-9969-32A76F3DB5B1}</Project>
+      <Name>Fushare.Util</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Fushare\Fushare.csproj">
       <Project>{BF49E836-A893-4487-BDC6-3CF146CCBC01}</Project>
       <Name>Fushare</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="default.build" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSHARP.Targets" />
   <ProjectExtensions>

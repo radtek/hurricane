@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,6 +10,8 @@ namespace Fushare.Filesystem {
   /// corresponding handlers.
   /// </summary>
   public abstract class FilesysEventDispatcher {
+    static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(FilesysEventDispatcher));
+
     public IFushareFilesys FushareFilesys { get; private set; }
 
     public FilesysEventDispatcher(IFushareFilesys fushareFilesys) {
@@ -35,10 +38,19 @@ namespace Fushare.Filesystem {
     void FushareFilesys_GettingPathStatus(object sender, GetPathStatusEventArgs e) {
       GetEventHandler(sender as IFushareFilesys, e).HandleGettingPathStatus(
         sender as IFushareFilesys, e);
-    } 
+    }
     #endregion
 
     #region Abstract Methods
+    /// <summary>
+    /// Gets the event handler.
+    /// </summary>
+    /// <param name="sender">The sender.</param>
+    /// <param name="args">
+    /// The <see cref="Fushare.Filesystem.FushareFilesysEventArgs"/> instance 
+    /// containing the event data.</param>
+    /// <returns>The event handler. Returns <see cref="NopFilesysEventHandler"/> 
+    /// if no other handler matches.</returns>
     protected abstract IFilesysEventHandler GetEventHandler(IFushareFilesys sender,
       FushareFilesysEventArgs args); 
     #endregion

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Text;
 using System.Diagnostics;
+using System.Collections.Specialized;
 #if LOG4NET
 using log4net;
 using log4net.Config;
@@ -65,13 +66,17 @@ namespace Fushare {
       LoadConfig("l4n.config");
     }
 
+    public static void LoadConfig(string configFile) {
+      LoadConfig(configFile, new NameValueCollection());
+    }
+
     /// <summary>
     /// Loads config file for the logger.
     /// </summary>
     /// <remarks>
     /// Currently only for log4net. 
     /// </remarks>
-    public static void LoadConfig(string configFile) {
+    public static void LoadConfig(string configFile, NameValueCollection properties) {
 #if LOG4NET
       XmlConfigurator.Configure(new System.IO.FileInfo(configFile));
 #endif

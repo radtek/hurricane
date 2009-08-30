@@ -55,19 +55,6 @@
         <include name="*.dll" />
       </fileset>
     </copy>
-    <csc 
-         target="exe"
-         debug="${debug}"
-         output="${build.dir}/FuseDht.exe"
-         define="${define}">
-      <sources failonempty="true">
-        <include name="FushareApp.cs" />
-      </sources>
-      <references>
-        <include name="${build.dir}/Mono.Fuse.dll" />
-        <include name="${build.dir}/Fushare.dll" />
-      </references>
-    </csc>
     <csc
          target="exe"
          debug="${debug}"

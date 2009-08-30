@@ -17,7 +17,7 @@ namespace Fushare.Filesystem {
     }
 
     public void HandleReleasedFile(IFushareFilesys sender, ReleaseFileEventArgs args) {
-      throw new NotImplementedException();
+      // Do nothing.
     }
 
     public void HandleReadingFile(IFushareFilesys sender, ReadFileEventArgs args) {

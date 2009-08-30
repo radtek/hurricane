@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+/*
+ * @namespace Fushare::BitTorrent
+ * Contains classes that provide Fushare's BitTorrent functionality. 
+ */
 namespace Fushare.Services.BitTorrent {
   /// <summary>
   /// Defines contract of a BitTorrent Service.

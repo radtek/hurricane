@@ -47,8 +47,8 @@ using System.Text;
 using Mono.Fuse;
 using Mono.Unix.Native;
 
-namespace Fushare.Fuse {
-	class RedirectFHFSHelper {
+namespace Fushare.Filesystem {
+	public class RedirectFHFSHelper {
 
 		private string basedir;
 
@@ -57,7 +57,7 @@ namespace Fushare.Fuse {
       this.basedir = basedir;
 		}
 
-		public Errno OnGetPathStatus (string path, out Stat buf)
+		public virtual Errno GetPathStatus (string path, out Stat buf)
 		{
 			int r = Syscall.lstat (basedir+path, out buf);
 			if (r == -1)
@@ -65,7 +65,7 @@ namespace Fushare.Fuse {
 			return 0;
 		}
 
-		public Errno OnGetHandleStatus (string path, OpenedPathInfo info, out Stat buf)
+		public virtual Errno GetHandleStatus (string path, OpenedPathInfo info, out Stat buf)
 		{
 			int r = Syscall.fstat ((int) info.Handle, out buf);
 			if (r == -1)
@@ -73,7 +73,7 @@ namespace Fushare.Fuse {
 			return 0;
 		}
 
-		public Errno OnAccessPath (string path, AccessModes mask)
+		public virtual Errno AccessPath (string path, AccessModes mask)
 		{
 			int r = Syscall.access (basedir+path, mask);
 			if (r == -1)
@@ -81,7 +81,7 @@ namespace Fushare.Fuse {
 			return 0;
 		}
 
-		public Errno OnReadSymbolicLink (string path, out string target)
+		public virtual Errno ReadSymbolicLink (string path, out string target)
 		{
 			target = null;
 			StringBuilder buf = new StringBuilder (256);
@@ -100,7 +100,7 @@ namespace Fushare.Fuse {
 			} while (true);
 		}
 
-		public Errno OnOpenDirectory (string path, OpenedPathInfo info)
+		public virtual Errno OpenDirectory (string path, OpenedPathInfo info)
 		{
 			IntPtr dp = Syscall.opendir (basedir+path);
 			if (dp == IntPtr.Zero)
@@ -110,7 +110,7 @@ namespace Fushare.Fuse {
 			return 0;
 		}
 
-		public Errno OnReadDirectory (string path, OpenedPathInfo fi,
+		public virtual Errno ReadDirectory (string path, OpenedPathInfo fi,
 				out IEnumerable<DirectoryEntry> paths)
 		{
 			IntPtr dp = (IntPtr) fi.Handle;
@@ -131,14 +131,14 @@ namespace Fushare.Fuse {
 			}
 		}
 
-		public Errno OnReleaseDirectory (string path, OpenedPathInfo info)
+		public virtual Errno ReleaseDirectory (string path, OpenedPathInfo info)
 		{
 			IntPtr dp = (IntPtr) info.Handle;
 			Syscall.closedir (dp);
 			return 0;
 		}
 
-		public Errno OnCreateSpecialFile (string path, FilePermissions mode, ulong rdev)
+		public virtual Errno CreateSpecialFile (string path, FilePermissions mode, ulong rdev)
 		{
 			int r;
 
@@ -163,7 +163,7 @@ namespace Fushare.Fuse {
 			return 0;
 		}
 
-		public Errno OnCreateDirectory (string path, FilePermissions mode)
+		public virtual Errno CreateDirectory (string path, FilePermissions mode)
 		{
 			int r = Syscall.mkdir (basedir+path, mode);
 			if (r == -1)
@@ -171,7 +171,7 @@ namespace Fushare.Fuse {
 			return 0;
 		}
 
-		public Errno OnRemoveFile (string path)
+		public virtual Errno RemoveFile (string path)
 		{
 			int r = Syscall.unlink (basedir+path);
 			if (r == -1)
@@ -179,7 +179,7 @@ namespace Fushare.Fuse {
 			return 0;
 		}
 
-		public Errno OnRemoveDirectory (string path)
+		public virtual Errno RemoveDirectory (string path)
 		{
 			int r = Syscall.rmdir (basedir+path);
 			if (r == -1)
@@ -187,7 +187,7 @@ namespace Fushare.Fuse {
 			return 0;
 		}
 
-		public Errno OnCreateSymbolicLink (string from, string to)
+		public virtual Errno CreateSymbolicLink (string from, string to)
 		{
 			int r = Syscall.symlink (from, basedir+to);
 			if (r == -1)
@@ -195,7 +195,7 @@ namespace Fushare.Fuse {
 			return 0;
 		}
 
-		public Errno OnRenamePath (string from, string to)
+		public virtual Errno RenamePath (string from, string to)
 		{
 			int r = Syscall.rename (basedir+from, basedir+to);
 			if (r == -1)
@@ -203,7 +203,7 @@ namespace Fushare.Fuse {
 			return 0;
 		}
 
-		public Errno OnCreateHardLink (string from, string to)
+		public virtual Errno CreateHardLink (string from, string to)
 		{
 			int r = Syscall.link (basedir+from, basedir+to);
 			if (r == -1)
@@ -211,7 +211,7 @@ namespace Fushare.Fuse {
 			return 0;
 		}
 
-		public Errno OnChangePathPermissions (string path, FilePermissions mode)
+		public virtual Errno ChangePathPermissions (string path, FilePermissions mode)
 		{
 			int r = Syscall.chmod (basedir+path, mode);
 			if (r == -1)
@@ -219,7 +219,7 @@ namespace Fushare.Fuse {
 			return 0;
 		}
 
-		public Errno OnChangePathOwner (string path, long uid, long gid)
+		public virtual Errno ChangePathOwner (string path, long uid, long gid)
 		{
 			int r = Syscall.lchown (basedir+path, (uint) uid, (uint) gid);
 			if (r == -1)
@@ -227,7 +227,7 @@ namespace Fushare.Fuse {
 			return 0;
 		}
 
-		public Errno OnTruncateFile (string path, long size)
+		public virtual Errno TruncateFile (string path, long size)
 		{
 			int r = Syscall.truncate (basedir+path, size);
 			if (r == -1)
@@ -235,7 +235,7 @@ namespace Fushare.Fuse {
 			return 0;
 		}
 
-		public Errno OnTruncateHandle (string path, OpenedPathInfo info, long size)
+		public virtual Errno TruncateHandle (string path, OpenedPathInfo info, long size)
 		{
 			int r = Syscall.ftruncate ((int) info.Handle, size);
 			if (r == -1)
@@ -243,7 +243,7 @@ namespace Fushare.Fuse {
 			return 0;
 		}
 
-		public Errno OnChangePathTimes (string path, ref Utimbuf buf)
+		public virtual Errno ChangePathTimes (string path, ref Utimbuf buf)
 		{
 			int r = Syscall.utime (basedir+path, ref buf);
 			if (r == -1)
@@ -251,7 +251,7 @@ namespace Fushare.Fuse {
 			return 0;
 		}
 
-		public Errno OnCreateHandle (string path, OpenedPathInfo info, FilePermissions mode)
+		public virtual Errno CreateHandle (string path, OpenedPathInfo info, FilePermissions mode)
 		{
 			int fd = Syscall.open (basedir+path, info.OpenFlags, mode);
 			if (fd == -1)
@@ -260,7 +260,7 @@ namespace Fushare.Fuse {
 			return 0;
 		}
 
-		public Errno OnOpenHandle (string path, OpenedPathInfo info)
+		public virtual Errno OpenHandle (string path, OpenedPathInfo info)
 		{
 			int fd = Syscall.open (basedir+path, info.OpenFlags);
 			if (fd == -1)
@@ -269,7 +269,7 @@ namespace Fushare.Fuse {
 			return 0;
 		}
 
-		public unsafe Errno OnReadHandle (string path, OpenedPathInfo info, byte[] buf, 
+		public virtual unsafe Errno ReadHandle (string path, OpenedPathInfo info, byte[] buf, 
 				long offset, out int bytesRead)
 		{
 			int r;
@@ -282,7 +282,7 @@ namespace Fushare.Fuse {
 			return 0;
 		}
 
-		public unsafe Errno OnWriteHandle (string path, OpenedPathInfo info,
+		public virtual unsafe Errno WriteHandle (string path, OpenedPathInfo info,
 				byte[] buf, long offset, out int bytesWritten)
 		{
 			int r;
@@ -295,7 +295,7 @@ namespace Fushare.Fuse {
 			return 0;
 		}
 
-		public Errno OnGetFileSystemStatus (string path, out Statvfs stbuf)
+		public virtual Errno GetFileSystemStatus (string path, out Statvfs stbuf)
 		{
 			int r = Syscall.statvfs (basedir+path, out stbuf);
 			if (r == -1)
@@ -303,7 +303,7 @@ namespace Fushare.Fuse {
 			return 0;
 		}
 
-		public Errno OnFlushHandle (string path, OpenedPathInfo info)
+		public virtual Errno FlushHandle (string path, OpenedPathInfo info)
 		{
 			/* This is called from every close on an open file, so call the
 			   close on the underlying filesystem.  But since flush may be
@@ -316,7 +316,7 @@ namespace Fushare.Fuse {
 			return 0;
 		}
 
-		public Errno OnReleaseHandle (string path, OpenedPathInfo info)
+		public virtual Errno ReleaseHandle (string path, OpenedPathInfo info)
 		{
 			int r = Syscall.close ((int) info.Handle);
 			if (r == -1)
@@ -324,7 +324,7 @@ namespace Fushare.Fuse {
 			return 0;
 		}
 
-		public Errno OnSynchronizeHandle (string path, OpenedPathInfo info, bool onlyUserData)
+		public virtual Errno SynchronizeHandle (string path, OpenedPathInfo info, bool onlyUserData)
 		{
 			int r;
 			if (onlyUserData)
@@ -336,7 +336,7 @@ namespace Fushare.Fuse {
 			return 0;
 		}
 
-		public Errno OnSetPathExtendedAttribute (string path, string name, byte[] value, XattrFlags flags)
+		public virtual Errno SetPathExtendedAttribute (string path, string name, byte[] value, XattrFlags flags)
 		{
 			int r = Syscall.lsetxattr (basedir+path, name, value, (ulong) value.Length, flags);
 			if (r == -1)
@@ -344,7 +344,7 @@ namespace Fushare.Fuse {
 			return 0;
 		}
 
-		public Errno OnGetPathExtendedAttribute (string path, string name, byte[] value, out int bytesWritten)
+		public virtual Errno GetPathExtendedAttribute (string path, string name, byte[] value, out int bytesWritten)
 		{
 			int r = bytesWritten = (int) Syscall.lgetxattr (basedir+path, name, value, (ulong) value.Length);
 			if (r == -1)
@@ -352,7 +352,7 @@ namespace Fushare.Fuse {
 			return 0;
 		}
 
-		public Errno OnListPathExtendedAttributes (string path, out string[] names)
+		public virtual Errno ListPathExtendedAttributes (string path, out string[] names)
 		{
 			int r = (int) Syscall.llistxattr (basedir+path, out names);
 			if (r == -1)
@@ -360,7 +360,7 @@ namespace Fushare.Fuse {
 			return 0;
 		}
 
-		public Errno OnRemovePathExtendedAttribute (string path, string name)
+		public virtual Errno RemovePathExtendedAttribute (string path, string name)
 		{
 			int r = Syscall.lremovexattr (basedir+path, name);
 			if (r == -1)

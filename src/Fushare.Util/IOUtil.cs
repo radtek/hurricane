@@ -157,9 +157,27 @@ namespace Fushare {
     /// <param name="path">The path.</param>
     /// <param name="offset">The offset.</param>
     /// <param name="bytesToRead">The number of bytes to read.</param>
-    /// <returns>The bytes read.</returns>
+    /// <returns>The bytes read from the file.</returns>
+    /// <remarks>
+    /// The length of the returned byte array equals the number of bytes read.
+    /// </remarks>
     public static byte[] Read(string path, long offset, int bytesToRead) {
       return Read(path, offset, bytesToRead, null);
+    }
+
+    /// <summary>
+    /// Reads the the file at the specified path and fills the buffer from the beginning.
+    /// </summary>
+    /// <param name="path">The path.</param>
+    /// <param name="buffer">The buffer.</param>
+    /// <param name="offset">The offset.</param>
+    /// <param name="bytesToRead">The maximun bytes to read.</param>
+    /// <returns>The number of bytes actually read.</returns>
+    public static int Read(string path, byte[] buffer, long offset, int bytesToRead) {
+      using (var stream = File.OpenRead(path)) {
+        stream.Seek(offset, SeekOrigin.Begin);
+        return stream.Read(buffer, 0, bytesToRead);
+      }
     }
   }
 }
