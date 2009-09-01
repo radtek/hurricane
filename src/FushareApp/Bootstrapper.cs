@@ -15,8 +15,6 @@ namespace FushareApp {
         "FushareServerBaseAddress"]);
       container.RegisterInstance<ServerProxy>(proxy);
 
-      container.RegisterType<FushareFileManager>(new ContainerControlledLifetimeManager());
-
       container.RegisterType<FilesysEventDispatcher, UnityFilesysEventDispatcher>(
         new ContainerControlledLifetimeManager());
 

@@ -47,9 +47,9 @@ namespace Fushare.Filesystem {
     #endregion
 
     #region Convenience Methods
-    public string CreateVirtualPathForRead(VirtualRawPath vrp) {
+    public string CreateVirtualPath4Read(VirtualRawPath vrp) {
       return CreateVirtualPath(vrp, FilesysOp.Read).PathString;
-    } 
+    }
     #endregion
   }
 }

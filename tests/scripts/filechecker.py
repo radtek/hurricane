@@ -5,7 +5,6 @@ def readfile(path, offset, bytesToRead):
   with open(path) as f:
     f.seek(int(offset))
     ret = f.read(int(bytesToRead))
-    print f.tell()
     return ret
 
 def checksum(arg):

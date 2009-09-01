@@ -7,20 +7,24 @@ using Mono.Unix.Native;
 using System.IO;
 
 namespace Fushare.Filesystem {
+  /// <summary>
+  /// Helper class for the FUSE redirect file system.
+  /// </summary>
+  /// <remarks>Minimize the logic in the class as it's system dependent.</remarks>
   public class FushareRedirectFSHelper : RedirectFHFSHelper {
     readonly FusharePathFactory _pathFactory;
     static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(FushareRedirectFSHelper));
-
+    readonly FushareFileManager _fileManager;
     #region Constructors
     /// <summary>
     /// Initializes a new instance of the <see cref="FushareRedirectFSHelper"/> class.
     /// </summary>
     /// <param name="baseDir">The base dir.</param>
     /// <param name="pathFactory">The path factory.</param>
-    public FushareRedirectFSHelper(ShadowDirPath baseDir, FusharePathFactory pathFactory) :
-      base(baseDir.PathString) {
+    public FushareRedirectFSHelper(ShadowDirPath baseDir, FusharePathFactory 
+      pathFactory, FushareFileManager fileManager) : base(baseDir.PathString) {
       _pathFactory = pathFactory;
-
+      _fileManager = fileManager;
       // Create the meta direcotry.
       Directory.CreateDirectory(_pathFactory.CreateShadowFullPath(
         new VirtualPath(Path.DirectorySeparatorChar.ToString()),
@@ -30,10 +34,16 @@ namespace Fushare.Filesystem {
 
     public override Errno GetPathStatus(string path, out Stat buf) {
       var vrp = new VirtualRawPath(path);
-      return base.GetPathStatus(_pathFactory.CreateVirtualPath(
-        vrp, FusharePathFactory.FilesysOp.Read).PathString, out buf);
+      var ret = base.GetPathStatus(
+        _pathFactory.CreateVirtualPath4Read(vrp), out buf);
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format("Path Mode: {0}", buf.st_mode));
+      if ((buf.st_mode & FilePermissions.S_IFREG) != 0) {
+        // Make a change to file size if is a file (S_IFREG)
+        buf.st_size = _fileManager.GetFileLength(new VirtualPath(vrp));
+      }
+      return ret;
     }
-
+    
     /// <summary>
     /// Creates the directory. Both normal and meta directories are created.
     /// </summary>
@@ -74,9 +84,17 @@ namespace Fushare.Filesystem {
         out bytesWritten);
     }
 
+    /// <summary>
+    /// Opens the handle.
+    /// </summary>
+    /// <param name="path">The path.</param>
+    /// <param name="info">The info.</param>
+    /// <returns>
+    /// Does nothing but return as we don't use native API to read/write the file.
+    /// </returns>
     public override Errno OpenHandle(string path, Mono.Fuse.OpenedPathInfo info) {
-      return base.OpenHandle(_pathFactory.CreateVirtualPathForRead(
-        new VirtualRawPath(path)), info);
+      // Do nothing. 
+      return 0;
     }
 
   }

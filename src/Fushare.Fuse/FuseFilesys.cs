@@ -65,7 +65,8 @@ namespace Fushare.Filesystem {
       Errno ret = this._rfs.GetPathStatus(path, out buf);
 
       Logger.WriteLineIf(LogLevel.Verbose, _fslog_props,
-          string.Format("::FilePermission of the path={0}. Errno={1}", buf.st_mode, ret));
+          string.Format("::FilePermission of the path={0}, File Size={1} bytes. Errno={2}", 
+          buf.st_mode, buf.st_size, ret));
       return ret;
     }
 

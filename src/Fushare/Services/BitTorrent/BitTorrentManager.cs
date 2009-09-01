@@ -239,10 +239,12 @@ namespace Fushare.Services.BitTorrent {
     /// <param name="name">The name.</param>
     /// <param name="waitHandle">The wait handle.</param>
     /// <param name="downloadPath">The download path.</param>
-    /// <returns>Torrent object</returns>
+    /// <returns>Torrent bytes</returns>
     /// <exception cref="ResourceNotFoundException">Torrent at the given key is 
     /// invalid.</exception>
-    public Torrent GetData(string nameSpace, string name, out string downloadPath) {
+    /// <remarks>MonoTorrent library provides easy conversion from bytes to 
+    /// Torrent object but not vise versa so we return bytes.</remarks>
+    public byte[] GetData(string nameSpace, string name, out string downloadPath) {
       ManualResetEvent waitHandle = new ManualResetEvent(false);
       byte[] torrentDhtKey = ServiceUtil.GetDhtKeyBytes(nameSpace, name);
       downloadPath =
@@ -250,13 +252,13 @@ namespace Fushare.Services.BitTorrent {
       // @TODO Check integrity of the data -- How do we know the download is complete?
       // A possbile solution. Use the name <name.part> and change it to <name> after
       // download completes.
-      Torrent torrent;
+      byte[] torrentBytes;
       if (!CacheRegistry.IsInCacheRegistry(nameSpace, name)) {
         try {
           var torrentSavePath = _torrentHelper.GetTorrentFilePath(nameSpace, name);
-          var torrentBytes = _torrentHelper.ReadOrDownloadTorrent(nameSpace, 
+          torrentBytes = _torrentHelper.ReadOrDownloadTorrent(nameSpace, 
             name, _dhtProxy);
-          torrent = Torrent.Load(torrentBytes);
+          var torrent = Torrent.Load(torrentBytes);
           GetDataInternal(torrentDhtKey, torrent, downloadPath,
               waitHandle);
 
@@ -271,10 +273,10 @@ namespace Fushare.Services.BitTorrent {
         }
       } else {
         // If the data is already there, we don't need to download it again.
-        torrent = Torrent.Load(_torrentHelper.ReadOrDownloadTorrent(nameSpace, 
-          name, _dhtProxy));
+        torrentBytes = _torrentHelper.ReadOrDownloadTorrent(nameSpace, 
+          name, _dhtProxy);
       }
-      return torrent;
+      return torrentBytes;
     }
 
     /// <summary>

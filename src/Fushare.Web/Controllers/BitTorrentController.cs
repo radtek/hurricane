@@ -66,6 +66,12 @@ namespace Fushare.Web.Controllers {
       }
     }
 
+    /// <summary>
+    /// Gets the whole data as opposed to piece-level downloading.
+    /// </summary>
+    /// <param name="nameSpace">The name space.</param>
+    /// <param name="name">The name.</param>
+    /// <returns>XML string of <see cref="DataMetaInfo"/>.</returns>
     private string GetWholeData(string nameSpace, string name) {
       DataMetaInfo meta;
       try {

@@ -81,6 +81,7 @@ namespace FushareApp {
       // register the arguments that FushareRedirectFSHelper depends on.
       container.RegisterInstance<ShadowDirPath>(new ShadowDirPath(shadowDirPath));
       container.RegisterType<FusharePathFactory>(new ContainerControlledLifetimeManager());
+      container.RegisterType<FushareFileManager>(new ContainerControlledLifetimeManager());
 
       // Register file system frontend.
       IFushareFilesys filesys;

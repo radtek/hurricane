@@ -6,6 +6,7 @@ using System.Text;
 using Fushare.Services.BitTorrent;
 using System.IO;
 using System.Collections;
+using MonoTorrent.Common;
 
 namespace Fushare.Filesystem {
   public class BitTorrentFilesysEventHandler : FilesysEventHandlerBase {
@@ -101,10 +102,11 @@ namespace Fushare.Filesystem {
     /// <param name="xmlString">The XML string.</param>
     public static void CreateVirtualFiles(ShadowMetaFullPath basePath, string xmlString) {
       var metaInfo = XmlUtil.FromXml<DataMetaInfo>(xmlString);
-
+      var torrent = Torrent.Load(metaInfo.TorrentBytes);
       if (metaInfo.IsSingleFile) {
         var virtualFile = new VirtualFile() {
-          PhysicalUri = metaInfo.DataUri
+          PhysicalUri = metaInfo.DataUri,
+          FileSize = torrent.Files[0].Length
         };
         var virtualFilePath = basePath.PathString;
         Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
@@ -112,12 +114,14 @@ namespace Fushare.Filesystem {
         IOUtil.PrepareParentDiryForPath(virtualFilePath);
         XmlUtil.WriteXml<VirtualFile>(virtualFile, virtualFilePath);
       } else {
-        // Create meta files
-        foreach (var fileRelativeUri in metaInfo.Files) {
+        // Create a virtual file for each TorrentFile. 
+        foreach (TorrentFile file in torrent.Files) {
+          var pathUri = new Uri(file.Path, UriKind.Relative);
           var virtualFile = new VirtualFile() {
-            PhysicalUri = UriUtil.CombineUris(metaInfo.DataUri, fileRelativeUri)
+            PhysicalUri = UriUtil.CombineUris(metaInfo.DataUri, pathUri),
+            FileSize = file.Length
           };
-          var virtualFilePath = UriUtil.CombinePaths(basePath.PathString, fileRelativeUri);
+          var virtualFilePath = UriUtil.CombinePaths(basePath.PathString, pathUri);
           Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
             "Creating virtual file at {0}", virtualFilePath));
           IOUtil.PrepareParentDiryForPath(virtualFilePath);

@@ -48,6 +48,12 @@ namespace Fushare.Services.BitTorrent {
     } 
     #endregion
 
+    /// <summary>
+    /// Gets or sets the torrent file in bytes.
+    /// </summary>
+    /// <value>The torrent.</value>
+    public byte[] TorrentBytes { get; set; }
+
     #region Properties for XmlSerializer
     [XmlElement("DataUri")]
     public string DataUriString {
@@ -93,9 +99,10 @@ namespace Fushare.Services.BitTorrent {
     /// </summary>
     /// <param name="baseUri">The base URI.</param>
     /// <param name="files">The files.</param>
-    public DataMetaInfo(Uri baseUri, IList<Uri> files) : this() {
+    public DataMetaInfo(Uri baseUri, IList<Uri> files, byte[] torrent) : this() {
       DataUri = baseUri;
       Files = files;
+      TorrentBytes = torrent;
     }
     #endregion
 

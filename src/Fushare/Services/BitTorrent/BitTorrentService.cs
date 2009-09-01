@@ -41,8 +41,8 @@ namespace Fushare.Services.BitTorrent {
     /// </returns>
     public DataMetaInfo Get(string nameSpace, string name) {
       string downloadPath;
-      var torrent = _manager.GetData(nameSpace, name, out downloadPath);
-      return MakeDataMetaInfo(downloadPath, torrent);
+      var torrentBytes = _manager.GetData(nameSpace, name, out downloadPath);
+      return MakeDataMetaInfo(downloadPath, torrentBytes);
     }
 
     /// <summary>
@@ -160,9 +160,13 @@ namespace Fushare.Services.BitTorrent {
     }
 
     private static DataMetaInfo MakeDataMetaInfo(string downloadPath,
-      Torrent torrent) {
+      byte[] torrentBytes) {
       DataMetaInfo ret = new DataMetaInfo();
       ret.DataUri = new Uri(downloadPath);
+      ret.TorrentBytes = torrentBytes;
+      // @TODO: For now we keep the "Files" field but with torrent bytes included,
+      // it's redundant.
+      Torrent torrent = Torrent.Load(torrentBytes);
       if (torrent.Files.Length > 1) {
         // In a single file case, MonoTorrent adds this single file to the list but in 
         // BitTorrent protocol, the files key shouldn't present, so the list should be 

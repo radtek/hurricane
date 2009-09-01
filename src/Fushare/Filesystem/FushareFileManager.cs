@@ -10,8 +10,10 @@ namespace Fushare.Filesystem {
   /// Defines methods related to IO in Fushare file system.
   /// </summary>
   public class FushareFileManager {
+    #region Fields
     readonly FusharePathFactory _pathFactory;
-    static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(FushareFileManager));
+    static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(FushareFileManager)); 
+    #endregion
 
     public FushareFileManager(FusharePathFactory pathFactory) {
       _pathFactory = pathFactory;
@@ -25,8 +27,7 @@ namespace Fushare.Filesystem {
     /// <param name="offset">The offset.</param>
     /// <returns>The number of bytes read.</returns>
     public int Read(VirtualPath path, byte[] buffer, long offset) {
-      var shadowPath = _pathFactory.CreateShadowFullPath(path, 
-        FusharePathFactory.FilesysOp.Read);
+      var shadowPath = _pathFactory.CreateShadowFullPath4Read(path);
       if (File.Exists(shadowPath.PathString)) {
         var vf = XmlUtil.ReadXml<VirtualFile>(shadowPath.PathString);
         return Read(vf, buffer, offset);
@@ -55,6 +56,21 @@ namespace Fushare.Filesystem {
       } else {
         // Other types of services.
         throw new NotImplementedException();
+      }
+    }
+
+    /// <summary>
+    /// Gets the length of the physical file which is read from the virtual file.
+    /// </summary>
+    /// <param name="virtualPath">The virtual path to the virtual file.</param>
+    /// <returns>The file size.</returns>
+    public long GetFileLength(VirtualPath virtualPath) {
+      var shadowPath = _pathFactory.CreateShadowFullPath4Read(virtualPath);
+      if (File.Exists(shadowPath.PathString)) {
+        var vf = XmlUtil.ReadXml<VirtualFile>(shadowPath.PathString);
+        return vf.FileSize;
+      } else {
+        throw new ArgumentException("Virtual file not exists.");
       }
     }
   }
