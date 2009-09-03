@@ -15,6 +15,17 @@ namespace Fushare.Services {
       return keyStr;
     }
 
+    public static void ParseDhtKeyString(string keyString, out string nameSpace, 
+      out string name) {
+      string[] segements = keyString.Split(new char[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
+      if (segements.Length != 2) {
+        throw new ArgumentException(
+          @"Key string should have and only have one ':' as the delimitor.");
+      }
+      nameSpace = segements[0];
+      name = segements[1];
+    }
+
     public static string GetDhtKeyString(byte[] keyBytes) {
       return Encoding.UTF8.GetString(keyBytes);
     }

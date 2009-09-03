@@ -77,7 +77,10 @@ namespace Fushare {
           typeof(DhtTracker), 
           typeof(ClientEngine),
           typeof(TorrentSettings), 
-          typeof(TorrentHelper))); 
+          typeof(TorrentHelper),
+          Boolean.Parse(ConfigurationManager.AppSettings[
+            "BitTorrentManagerStartSeedingAtStartup"])
+          )); 
       #endregion
 
       #region IPieceInfoServer

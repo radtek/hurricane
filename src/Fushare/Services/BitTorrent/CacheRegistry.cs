@@ -21,6 +21,7 @@ namespace Fushare.Services.BitTorrent {
 
     XmlSerializer _serializer = new
       XmlSerializer(typeof(SerializableDictionary<string, string>)); 
+
     #endregion
 
     #region Properties
@@ -41,6 +42,15 @@ namespace Fushare.Services.BitTorrent {
       get {
         return _registry[key];
       }
+    }
+
+    /// <summary>
+    /// Gets the registry.
+    /// </summary>
+    /// <value>The registry.</value>
+    /// <remarks>@TODO: Unsafe internal API. Remove it later.</remarks>
+    internal SerializableDictionary<string, string> Registry {
+      get { return _registry; }
     }
     #endregion
 

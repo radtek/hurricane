@@ -29,6 +29,7 @@ namespace Fushare.Services.BitTorrent {
     Dictionary<TorrentManager, string> _torrents_table = new Dictionary<TorrentManager, string>();
     static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(BitTorrentManager));
     TorrentHelper _torrentHelper;
+    bool _startSeedingAtStartup;
     #endregion
  
     #region MonoTorrent
@@ -98,7 +99,8 @@ namespace Fushare.Services.BitTorrent {
 
     public BitTorrentManager(string baseDirPath, string selfNameSpace,
       DhtProxy dhtProxy, DhtTracker dhtTracker, ClientEngine clientEngine,
-      TorrentSettings torrentDefaults, TorrentHelper torrentHelper) {
+      TorrentSettings torrentDefaults, TorrentHelper torrentHelper, 
+      bool startSeedingAtStartup) {
       IOUtil.CheckPathRooted(baseDirPath, "baseDirPath");
 
       BaseDirPath = baseDirPath;
@@ -106,6 +108,7 @@ namespace Fushare.Services.BitTorrent {
       _dhtProxy = dhtProxy;
       _dhtTracker = dhtTracker;
       _torrentDefaults = torrentDefaults;
+      _startSeedingAtStartup = startSeedingAtStartup;
 
       RegisterClientEngineEventHandlers(clientEngine);
       _clientEngine = clientEngine;
@@ -177,6 +180,20 @@ namespace Fushare.Services.BitTorrent {
       _dhtTracker.Start();
       TorrentFolderWatcherHelper.SetupTorrentWatcher(this, TorrentsDirPath);
       // Client is started when StartDownload is called.
+      if (_startSeedingAtStartup) {
+        StartSeedingLocalFiles();
+      }
+    }
+
+    private void StartSeedingLocalFiles() {
+      foreach (var entry in CacheRegistry.Registry) {
+        string nameSpace, name;
+        ServiceUtil.ParseDhtKeyString(entry.Key, out nameSpace, out name);
+        string downloadPath;
+        // @TODO: The case in which the file is outside the cache dir should be handled 
+        // when BitTorrentService.Get(nameSpace, name, saveDirPath) is implemented.
+        GetData(nameSpace, name, out downloadPath);
+      }
     }
 
     /// <summary>
@@ -272,9 +289,17 @@ namespace Fushare.Services.BitTorrent {
             UrlBase64.Encode(torrentDhtKey)), ex);
         }
       } else {
-        // If the data is already there, we don't need to download it again.
         torrentBytes = _torrentHelper.ReadOrDownloadTorrent(nameSpace, 
           name, _dhtProxy);
+        var torrent = Torrent.Load(torrentBytes);
+        if (!_clientEngine.Contains(torrent)) {
+          // This is the case where the manager start seeding data when it boots up.
+          GetDataInternal(torrentDhtKey, torrent, downloadPath, null);
+        } else {
+          // If the data is already there and the client engine is busily downloading or
+          // seeding, we don't need to do it again.
+          return torrentBytes;
+        }
       }
       return torrentBytes;
     }
@@ -378,6 +403,7 @@ namespace Fushare.Services.BitTorrent {
       } else {
         torrentManager = new TorrentManager(torrent, saveDir, _torrentDefaults);
       }
+
       _clientEngine.Register(torrentManager);
 
       // Every time a piece is hashed, this is fired.

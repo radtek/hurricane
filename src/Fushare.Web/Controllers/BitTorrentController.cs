@@ -22,6 +22,9 @@ namespace Fushare.Web.Controllers {
     }
 
     public ActionResult Index(string nameSpace, string name) {
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
+        "Received request {0} from {1}", Request.RawUrl, Request.UserHostAddress));
+
       if (!string.IsNullOrEmpty(Request.Params["path"])) {
         // This is allowed for both GET and POST.
         return PublishInternal(nameSpace, name);
