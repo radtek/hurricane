@@ -83,6 +83,10 @@ namespace FushareApp {
       container.RegisterType<FusharePathFactory>(new ContainerControlledLifetimeManager());
       container.RegisterType<FushareFileManager>(new ContainerControlledLifetimeManager());
 
+      var proxy = new ServerProxy(ConfigurationManager.AppSettings[
+        "FushareServerBaseAddress"]);
+      container.RegisterInstance<ServerProxy>(proxy);
+
       // Register file system frontend.
       IFushareFilesys filesys;
       if (SysEnvironment.OSVersion == OS.Unix) {

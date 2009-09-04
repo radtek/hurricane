@@ -13,12 +13,24 @@ using System.Collections.Specialized;
 namespace Fushare.Web.Controllers {
   public class BitTorrentController : Controller {
 
+    #region Fields
     static readonly IDictionary _log_props =
       Logger.PrepareLoggerProperties(typeof(BitTorrentController));
-    IBitTorrentService _service;
+    IBitTorrentService _service; 
+    #endregion
 
     public BitTorrentController(IBitTorrentService service) {
       _service = service;
+    }
+
+    /// <summary>
+    /// Returns the BitTorrent service information.
+    /// </summary>
+    /// <param name="parameter">The parameter.</param>
+    /// <returns></returns>
+    public ActionResult Info() {
+      return Content(XmlUtil.ToXml<BitTorrentServiceInfo>(_service.GetServiceInfo(
+        null)));
     }
 
     public ActionResult Index(string nameSpace, string name) {

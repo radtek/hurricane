@@ -71,5 +71,12 @@ namespace Fushare.Services.BitTorrent {
     /// <param name="path">The path to the file/directory to be published.
     /// </param>
     void Update(string path);
+
+    /// <summary>
+    /// Gets the service info.
+    /// </summary>
+    /// <param name="filter">The filter.</param>
+    /// <returns></returns>
+    BitTorrentServiceInfo GetServiceInfo(string filter);
   }
 }

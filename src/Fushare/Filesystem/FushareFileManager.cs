@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using System.Collections;
+using Fushare.Services.BitTorrent;
+using Mono.Unix;
 
 namespace Fushare.Filesystem {
   /// <summary>
@@ -13,10 +15,13 @@ namespace Fushare.Filesystem {
     #region Fields
     readonly FusharePathFactory _pathFactory;
     static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(FushareFileManager)); 
+    readonly ServerProxy _serverProxy;
     #endregion
 
-    public FushareFileManager(FusharePathFactory pathFactory) {
+    public FushareFileManager(FusharePathFactory pathFactory, 
+      ServerProxy serverProxy) {
       _pathFactory = pathFactory;
+      _serverProxy = serverProxy;
     }
 
     /// <summary>
@@ -60,6 +65,35 @@ namespace Fushare.Filesystem {
     }
 
     /// <summary>
+    /// Copies the file at the given path to the server, which could be anywhere from
+    /// the local machine to a remote one.
+    /// </summary>
+    /// <param name="virtualPath">The virtual path.</param>
+    public void CopyToServer(VirtualPath virtualPath) {
+      var fromFullPath = _pathFactory.CreateShadwoFullPath4Write(virtualPath);
+      byte[] infoBytes = _serverProxy.Get(new Uri("/BitTorrent/Info"));
+      var infoObj = XmlUtil.FromXml<BitTorrentServiceInfo>(
+        Encoding.UTF8.GetString(infoBytes));
+      if (infoObj.ServerCacheUri.IsLoopback) {
+        // Server on the same machine, we copy from file system.
+        var relativePath = virtualPath.PathString.Substring(
+          virtualPath.PathString.IndexOf(Path.DirectorySeparatorChar, 1));
+        var toFullPath = UriUtil.CombinePaths(infoObj.ServerCacheUri.LocalPath,
+          new Uri(relativePath, UriKind.Relative));
+        if (SysEnvironment.OSVersion == OS.Unix) {
+          var symlink = new UnixSymbolicLinkInfo(toFullPath);
+          Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
+            "Creating Symlink from {0} to {1}", toFullPath, fromFullPath.PathString));
+          symlink.CreateSymbolicLinkTo(fromFullPath.PathString);
+        } else {
+          throw new NotImplementedException("Only Unix hosts are currently supported.");
+        }
+      } else {
+        throw new NotImplementedException("Only local machine is currently supported.");
+      }
+    }
+
+    /// <summary>
     /// Gets the length of the physical file which is read from the virtual file.
     /// </summary>
     /// <param name="virtualPath">The virtual path to the virtual file.</param>
@@ -73,5 +107,6 @@ namespace Fushare.Filesystem {
         throw new ArgumentException("Virtual file not exists.");
       }
     }
+
   }
 }

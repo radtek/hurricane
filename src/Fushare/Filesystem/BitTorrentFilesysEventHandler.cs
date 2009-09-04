@@ -52,7 +52,7 @@ namespace Fushare.Filesystem {
           // Handle different types of error accodingly.
           var innerEx = ex.InnerException;
           if (innerEx != null && innerEx is WebException) {
-            if ((ex.Response as HttpWebResponse).StatusCode ==
+            if (((HttpWebResponse)((innerEx as WebException).Response)).StatusCode ==
               HttpStatusCode.NotFound) {
               // Normal. Server says requested file/directory doesn't exist.
               return;
@@ -74,14 +74,22 @@ namespace Fushare.Filesystem {
     public override void HandleReleasedFile(IFushareFilesys sender, 
       ReleaseFileEventArgs args) {
       UriTemplateMatch match;
-      var succ = TryMatchPath("{handler}/{name}", 
+      var succ = TryMatchPath(BasicTemplateString, 
         args.VritualRawPath.PathString, out match);
       // Only files under /bt directory are supported.
       if (succ) {
-        ShadowFullPath fullPath = new ShadowFullPath(sender.ShadowDirPath, 
-          new VirtualPath(args.VritualRawPath));
-        _serverProxy.Post(new Uri(string.Format("/{0}?path={1}", 
-          ServerControllerName, fullPath.PathString), UriKind.Relative), null);
+        var fullPath = _pathFactory.CreateShadwoFullPath4Write(new VirtualPath(args.VritualRawPath));
+        if (!File.Exists(fullPath.PathString)) {
+          // It's a read, not a write
+          return;
+        } else {
+          // Stage in the file for publishing.
+          _fileManager.CopyToServer(new VirtualPath(args.VritualRawPath));
+        }
+        var uri = BasicPathMatch2ReqUri(match);
+        Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
+          "Posting to server: {0}", uri));
+        _serverProxy.Post(uri, new byte[] { });
       }
     }
 

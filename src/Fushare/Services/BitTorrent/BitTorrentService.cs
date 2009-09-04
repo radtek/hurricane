@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using MonoTorrent.Common;
+using System.Web.Configuration;
 
 namespace Fushare.Services.BitTorrent {
   public class BitTorrentService : IBitTorrentService {
@@ -30,6 +31,8 @@ namespace Fushare.Services.BitTorrent {
     }
 
     #region IBitTorrentService Members
+
+    
 
     /// <summary>
     /// Gets a file or directory.
@@ -189,6 +192,23 @@ namespace Fushare.Services.BitTorrent {
       // There is no reason here that we don't check the path.
       return _cacheRegistry.IsInCacheDir(path, true);
     }
+
+    /// <summary>
+    /// Gets the service info.
+    /// </summary>
+    /// <param name="filter">The filter.</param>
+    /// <returns></returns>
+    public BitTorrentServiceInfo GetServiceInfo(string filter) {
+      // Ignore filter for now.
+      var ub = new UriBuilder();
+      ub.Scheme = "file";
+      ub.Path = Path.Combine(WebConfigurationManager.AppSettings[
+        "BitTorrentManagerBaseDirPath"], BitTorrentManager.DownloadsDirName);
+      return new BitTorrentServiceInfo () {
+        ServerCacheUri = ub.Uri
+      };
+    }
+
     #endregion
   }
 }

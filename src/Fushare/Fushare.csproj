@@ -203,6 +203,7 @@
     <Compile Include="Filesystem\UnityFilesysEventDispatcher.cs" />
     <Compile Include="Filesystem\VirtualFile.cs" />
     <Compile Include="Services\BitTorrent\BitTorrentPathHandler.cs" />
+    <Compile Include="Services\BitTorrent\BitTorrentServiceInfo.cs" />
     <Compile Include="Services\BitTorrent\CacheRegistry.cs" />
     <Compile Include="Services\BitTorrent\DataMetaInfo.cs" />
     <Compile Include="Services\BitTorrent\HttpPieceInfoServer.cs" />

@@ -27,15 +27,25 @@ namespace Fushare.Web {
       // collection. Route names must be unique. Parameter name: name"
       if (routes["Default"] == null) {
         routes.MapRoute(
-              "Default", // Route name
-              "{controller}/{nameSpace}/{name}/{action}", // URL with parameters
-              new {
-                controller = "Home",
-                action = "Index",
-                nameSpace = "",
-                name = ""
-              }  // Parameter defaults
-          ); 
+          "Info",
+          "{controller}/{action}",
+          new {
+            controller = "Home",
+            action = "Index",
+            //parameter = ""
+          }
+        );
+
+        routes.MapRoute(
+          "Default", // Route name
+          "{controller}/{nameSpace}/{name}/{action}", // URL with parameters
+          new {
+            controller = "Home",
+            action = "Index",
+            nameSpace = "",
+            name = ""
+          }  // Parameter defaults
+        );
       }
     }
 

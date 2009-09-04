@@ -11,10 +11,6 @@ namespace FushareApp {
     public static void ConfigureUnityContainer(IUnityContainer container, 
       string shadowDirPath) {
 
-      var proxy = new ServerProxy(ConfigurationManager.AppSettings[
-        "FushareServerBaseAddress"]);
-      container.RegisterInstance<ServerProxy>(proxy);
-
       container.RegisterType<FilesysEventDispatcher, UnityFilesysEventDispatcher>(
         new ContainerControlledLifetimeManager());
 

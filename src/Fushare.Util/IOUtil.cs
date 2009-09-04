@@ -179,5 +179,12 @@ namespace Fushare {
         return stream.Read(buffer, 0, bytesToRead);
       }
     }
+
+    public static void Write(string path, byte[] buffer, long offset) {
+      using (var stream = File.OpenWrite(path)) {
+        stream.Seek(offset, SeekOrigin.Begin);
+        stream.Write(buffer, 0, buffer.Length);
+      }
+    }
   }
 }

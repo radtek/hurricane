@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using Mono.Unix.Native;
 using System.IO;
+using Mono.Fuse;
 
 namespace Fushare.Filesystem {
   /// <summary>
@@ -89,13 +90,44 @@ namespace Fushare.Filesystem {
     /// </summary>
     /// <param name="path">The path.</param>
     /// <param name="info">The info.</param>
-    /// <returns>
+    /// <remarks>
     /// Does nothing but return as we don't use native API to read/write the file.
-    /// </returns>
+    /// </remarks>
     public override Errno OpenHandle(string path, Mono.Fuse.OpenedPathInfo info) {
       // Do nothing. 
       return 0;
     }
 
+    public override unsafe Errno WriteHandle(string path, OpenedPathInfo info, 
+      byte[] buf, long offset, out int bytesWritten) {
+      var fullPath = 
+        _pathFactory.CreateShadwoFullPath4Write(new VirtualPath(new VirtualRawPath(path)));
+      IOUtil.Write(fullPath.PathString, buf, offset);
+      bytesWritten = buf.Length;
+      return 0;
+    }
+
+    /// <summary>
+    /// Flushes the handle.
+    /// </summary>
+    /// <param name="path">The path.</param>
+    /// <param name="info">The info.</param>
+    /// <remarks>
+    /// Does nothing but return as we don't use native API to read/write the file.
+    /// </remarks>
+    public override Errno FlushHandle(string path, OpenedPathInfo info) {
+      // Do nothing.
+      return 0;
+    }
+
+    /// <summary>
+    /// Releases the handle.
+    /// </summary>
+    /// <param name="path">The path.</param>
+    /// <param name="info">The info.</param>
+    /// <remarks>We already closed the handle somewhere else.</remarks>
+    public override Errno ReleaseHandle(string path, OpenedPathInfo info) {
+      return 0;
+    }
   }
 }

@@ -44,11 +44,16 @@ namespace Fushare.Filesystem {
     public ShadowFullPath CreateShadwoFullPath4Write(VirtualPath vp) {
       return CreateShadowFullPath(vp, FilesysOp.Write);
     }
+
     #endregion
 
     #region Convenience Methods
     public string CreateVirtualPath4Read(VirtualRawPath vrp) {
       return CreateVirtualPath(vrp, FilesysOp.Read).PathString;
+    }
+
+    public string CreateVirtualPath4Write(VirtualRawPath vrp) {
+      return CreateVirtualPath(vrp, FilesysOp.Write).PathString;
     }
     #endregion
   }
