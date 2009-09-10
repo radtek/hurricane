@@ -4,12 +4,17 @@ using System.Linq;
 using System.Text;
 
 namespace Fushare.Services {
+  /// <summary>
+  /// The data class for the results returned by DHT.
+  /// </summary>
   public class DhtResults {
-    readonly IDictionary<string, object> _metaInfo =
+    #region Fields
+    readonly IDictionary<string, object> _metaInfo = 
       new Dictionary<string, object>();
+    readonly IList<DhtResultEntry> _entryList = new List<DhtResultEntry>(); 
+    #endregion
 
-    readonly IList<DhtResultEntry> _entryList = new List<DhtResultEntry>();
-
+    #region Properties
     public IDictionary<string, object> MetaInfo {
       get {
         return _metaInfo;
@@ -25,7 +30,7 @@ namespace Fushare.Services {
     public IList<byte[]> Values {
       get {
         var retList = new List<byte[]>();
-        foreach(DhtResultEntry entry in _entryList) {
+        foreach (DhtResultEntry entry in _entryList) {
           retList.Add(entry.Value);
         }
         return retList;
@@ -39,7 +44,7 @@ namespace Fushare.Services {
     }
 
     /// <summary>
-    /// Gets the value. Null returned if ResultEntry is empty.
+    /// Gets the (first) value. Null returned if ResultEntry is empty.
     /// </summary>
     /// <value>The value.</value>
     public byte[] Value {
@@ -48,10 +53,15 @@ namespace Fushare.Services {
       }
     }
 
+    /// <summary>
+    /// Gets the first result entry.
+    /// </summary>
+    /// <value>The result entry.</value>
     public DhtResultEntry ResultEntry {
       get {
         return _entryList.Count > 0 ? _entryList[0] : null;
       }
-    }
+    } 
+    #endregion
   }
 }

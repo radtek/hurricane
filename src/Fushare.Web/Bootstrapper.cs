@@ -16,10 +16,8 @@ namespace Fushare.Web {
       // Registrations
       container.RegisterType<IDhtService, DhtService>(
         new HttpContextLifetimeManager<IDhtService>());
-      BigTableDht bigTableDht = new BigTableDht(
-        WebConfigurationManager.AppSettings["BigTableWSUser"], 
-        WebConfigurationManager.AppSettings["BigTableWSSecret"]);
-      container.RegisterInstance<DhtBase>(bigTableDht);
+      container.RegisterType<DhtBase, SimpleStorageDht>(
+        new ContainerControlledLifetimeManager());
 
       container.RegisterType<IBitTorrentService, BitTorrentService>(
         new HttpContextLifetimeManager<IBitTorrentService>());

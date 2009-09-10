@@ -17,5 +17,15 @@ namespace Fushare {
       }
       return sb.ToString();
     }
+
+    public static byte[] ToUTF8Base64(byte[] input) {
+      string str = Convert.ToBase64String(input);
+      return Encoding.UTF8.GetBytes(str);
+    }
+
+    public static byte[] FromUTF8Base64(byte[] input) {
+      var str = Encoding.UTF8.GetString(input);
+      return Convert.FromBase64String(str);
+    }
   }
 }

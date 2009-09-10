@@ -52,7 +52,19 @@ namespace Fushare {
       }
     }
 
+    public byte[] Get(string uri) {
+      using (var webClient = MakeWebClient()) {
+        // Mono has problem with BaseAddress usage so we make absolute address 
+        // by ourselves.
+        return webClient.DownloadData(new Uri(new Uri(_baseAddress), uri));
+      }
+    }
+
     public string GetUTF8String(Uri uri) {
+      return Encoding.UTF8.GetString(Get(uri));
+    }
+
+    public string GetUTF8String(string uri) {
       return Encoding.UTF8.GetString(Get(uri));
     }
 
@@ -64,6 +76,26 @@ namespace Fushare {
     public byte[] Post(Uri uri, byte[] data) {
       using (var webClient = MakeWebClient()) {
         return webClient.UploadData(new Uri(new Uri(_baseAddress), uri), data);
+      }
+    }
+
+    public byte[] Post(string uri, byte[] data) {
+      using (var webClient = MakeWebClient()) {
+        return webClient.UploadData(new Uri(new Uri(_baseAddress), uri), data);
+      }
+    }
+
+    public byte[] Put(Uri uri, byte[] data) {
+      using (var webClient = MakeWebClient()) {
+        return webClient.UploadData(new Uri(new Uri(_baseAddress), uri), "PUT", 
+          data);
+      }
+    }
+
+    public byte[] Put(string uri, byte[] data) {
+      using (var webClient = MakeWebClient()) {
+        return webClient.UploadData(new Uri(new Uri(_baseAddress), uri), "PUT",
+          data);
       }
     }
 

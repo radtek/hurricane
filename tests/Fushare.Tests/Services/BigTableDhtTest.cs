@@ -28,9 +28,9 @@ namespace Fushare.Services {
     [Test]
     public void TestPutThenGetBytes() {
       Random rnd = new Random();
-      byte[] bytesToTest = new byte[1000000];
+      byte[] bytesToTest = new byte[100000];
       rnd.NextBytes(bytesToTest);
-      string keyString = "key2";
+      string keyString = "key333";
       _bigTableDht.Put(keyString, bytesToTest);
       byte[] valActual = _bigTableDht.GetMostRecentValAsOctetStream(keyString);
       Assert.IsTrue(Brunet.MemBlock.Reference(bytesToTest).Equals(
