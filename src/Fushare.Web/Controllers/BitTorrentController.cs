@@ -11,6 +11,7 @@ using Fushare.Services.BitTorrent;
 using System.Collections.Specialized;
 
 namespace Fushare.Web.Controllers {
+  [ExceptionHandler]
   public class BitTorrentController : Controller {
 
     #region Fields
@@ -74,7 +75,7 @@ namespace Fushare.Web.Controllers {
         return File(dataBlock, HttpUtil.OctetStreamContentType, 
           string.Format("{0}.{1}.{2}", name, offset, bytesToRead));
       } else {
-        var toThrow = new HttpException(HttpCodes.BadRequest400,
+        var toThrow = new HttpException((int)HttpStatusCode.BadRequest,
           "Unclear whether to download piece or whole data.");
         Util.LogBeforeThrow(toThrow, _log_props);
         throw toThrow;
@@ -92,12 +93,12 @@ namespace Fushare.Web.Controllers {
       try {
         meta = _service.Get(nameSpace, name);
       } catch (ResourceNotFoundException ex) {
-        var toThrow = new HttpException(HttpCodes.NotFound404,
+        var toThrow = new HttpException((int)HttpStatusCode.NotFound,
           "No file/directory available at this key.", ex);
         Util.LogBeforeThrow(toThrow, _log_props);
         throw toThrow;
       } catch (ResourceException ex) {
-        var toThrow = new HttpException(HttpCodes.ServiceUnavailable503,
+        var toThrow = new HttpException((int)HttpStatusCode.ServiceUnavailable,
           "Unable to get.", ex);
         Util.LogBeforeThrow(toThrow, _log_props);
         throw toThrow;
@@ -120,12 +121,12 @@ namespace Fushare.Web.Controllers {
           publisher.Execute(nameSpace, name);
         }
       } catch (DuplicateResourceKeyException ex) {
-        var toThrow = new HttpException(HttpCodes.BadRequest400,
+        var toThrow = new HttpException((int)HttpStatusCode.BadRequest,
           "The same key already exists. Change the name.", ex);
         Util.LogBeforeThrow(toThrow, _log_props);
         throw toThrow;
       } catch (ResourceException ex) {
-        var toThrow = new HttpException(HttpCodes.ServiceUnavailable503,
+        var toThrow = new HttpException((int)HttpStatusCode.ServiceUnavailable,
           "Unable to publish.", ex);
         Util.LogBeforeThrow(toThrow, _log_props);
         throw toThrow;

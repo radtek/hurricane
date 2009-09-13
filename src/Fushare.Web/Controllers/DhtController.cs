@@ -8,6 +8,7 @@ using System.Web.Mvc;
 using System.Web.Mvc.Ajax;
 using Fushare.Services;
 using Fushare.Services.Dht;
+using System.Net;
 
 namespace Fushare.Web.Controllers {
   public class DhtController : Controller {
@@ -47,7 +48,7 @@ namespace Fushare.Web.Controllers {
       try {
         retBytes = _dhtService.Get(nameSpace, name);
       } catch (ResourceNotFoundException ex) {
-        var toThrow = new HttpException(HttpCodes.NotFound404, 
+        var toThrow = new HttpException((int)HttpStatusCode.NotFound, 
           "No value associated with this key.", ex);
         Util.LogBeforeThrow(toThrow, _log_props);
         throw toThrow;
@@ -67,7 +68,7 @@ namespace Fushare.Web.Controllers {
     public ActionResult Put(string nameSpace, string name) {
       var inputBytes = Request.BinaryRead(Request.ContentLength);
       if (inputBytes == null) {
-        var toThrow = new HttpException(HttpCodes.BadRequest400,
+        var toThrow = new HttpException((int)HttpStatusCode.BadRequest,
           "The value should not be null.");
         Util.LogBeforeThrow(toThrow, _log_props);
         throw toThrow;
@@ -81,7 +82,8 @@ namespace Fushare.Web.Controllers {
         try {
           _dhtService.Create(nameSpace, name, value);
         } catch (DuplicateResourceKeyException ex) {
-          var toThrow = new HttpException(HttpCodes.BadRequest400, ex.Message, ex);
+          var toThrow = new HttpException((int)HttpStatusCode.BadRequest, 
+            ex.Message, ex);
           Util.LogBeforeThrow(toThrow, _log_props);
           throw toThrow;
         }
