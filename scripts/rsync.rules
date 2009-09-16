@@ -1,0 +1,11 @@
++ *.dll
+- *.vshost.exe
++ *.exe
++ *.htm
++ *.css
++ *.aspx
++ *.asax
++ *.js
++ */
++ Web.config
+- *
