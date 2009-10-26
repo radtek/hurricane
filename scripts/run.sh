@@ -1,6 +1,11 @@
 #!/bin/bash
 # This script runs the gatorrent application.
 
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run as root" 1>&2
+   exit 1
+fi
+
 while getopts "scfv" optNames; do
 case "$optNames" in
   s) run_server=1;;
@@ -25,23 +30,28 @@ mount_point="/mnt/gatorrent"
 if [ "$run_server" ]; then
   echo "Running server..."
   if [ "$foreground" ]; then
-    sudo xsp2 --root "$server_bin"
+    xsp2 --root "$server_bin"
   else
-    sudo xsp2 --root "$server_bin" &
+    xsp2 --root "$server_bin" --nonstop &
   fi
 fi
 
 if [ "$run_client" ]; then
   if [[ `mount | grep "/dev/fuse"` ]]; then
-    sudo umount -vl "/dev/fuse"
+    umount -vl "/dev/fuse"
   fi
+  mkdir -p "$proj_dir/client/var/shadow"
   echo "Running client..."
+  libdir="../client/bin"
   if [ "$foreground" ]; then
-    sudo mono --debug "$client_bin/FushareApp.exe" -o allow_other -m "$mount_point" -s "$proj_dir/client/var/shadow"
+    LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$libdir" \
+    mono --debug "$client_bin/FushareApp.exe" -o allow_other -m "$mount_point" -s "$proj_dir/client/var/shadow"
   else
-    sudo mono --debug "$client_bin/FushareApp.exe" -o allow_other -m "$mount_point" -s "$proj_dir/client/var/shadow" &
+    LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$libdir" \
+    mono --debug "$client_bin/FushareApp.exe" -o allow_other -m "$mount_point" -s "$proj_dir/client/var/shadow" &
   fi
   if [ ! "$foreground" ]; then
+    # Make sure the file system is fully started.
     sleep 2s
     namespace=$(hostname)
     mkdir -p "$mount_point/bittorrent/$namespace"
