@@ -331,9 +331,7 @@ namespace Fushare.Filesystem {
     /// </summary>
     void IFushareFilesys.Start() {
       Initialize();
-      using (this) {
-        base.Start();
-      }
+      Start();
     }
 
     #endregion

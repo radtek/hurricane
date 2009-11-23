@@ -103,7 +103,11 @@ namespace FushareApp {
       // Start.
       Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
         "Starting file system..."));
-      filesys.Start();
+
+      // Need to be disposed.
+      using (filesys as Mono.Fuse.FileSystem) {
+        filesys.Start();
+      }
     }
 
     static void CurrentDomain_UnhandledException(object sender,
