@@ -11,6 +11,10 @@ EOF
   exit 2
 }
 
+if [[ -z $1 ]]; then
+  print_help_and_exit
+fi
+
 while getopts "bvc" optNames; do
 case "$optNames" in
   b) build=1;;
