@@ -80,10 +80,13 @@ namespace Fushare.Filesystem {
           virtualPath.PathString.IndexOf(Path.DirectorySeparatorChar, 1));
         var toFullPath = UriUtil.CombinePaths(infoObj.ServerCacheUri.LocalPath,
           new Uri(relativePath, UriKind.Relative));
+        IOUtil.PrepareParentDirForPath(toFullPath);
         if (SysEnvironment.OSVersion == OS.Unix) {
+          // In case of Unix, we actually use symbolic link instead of copying.
           var symlink = new UnixSymbolicLinkInfo(toFullPath);
           Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
-            "Creating Symlink from {0} to {1}", toFullPath, fromFullPath.PathString));
+            "Creating Symlink: {0} -> {1}", toFullPath, fromFullPath.PathString));
+          // Linking toPath to fromPath == Copy fromPath to toPath.
           symlink.CreateSymbolicLinkTo(fromFullPath.PathString);
         } else {
           throw new NotImplementedException("Only Unix hosts are currently supported.");

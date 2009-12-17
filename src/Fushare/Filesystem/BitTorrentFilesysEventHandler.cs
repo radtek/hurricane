@@ -45,14 +45,15 @@ namespace Fushare.Filesystem {
           "Requesting meta info from Uri {0}", reqUri.ToString()));
         string xmlString;
         try {
-          xmlString = _serverProxy.GetUTF8String(reqUri);
+          // This can be a while.
+          xmlString = _serverProxy.GetUTF8String(reqUri, 
+            System.Threading.Timeout.Infinite);
         } catch (WebException ex) {
           Logger.WriteLineIf(LogLevel.Error, _log_props, string.Format(
             "Exception thrown from server: {0}", ex));
           // Handle different types of error accodingly.
-          var innerEx = ex.InnerException;
-          if (innerEx != null && innerEx is WebException) {
-            if (((HttpWebResponse)((innerEx as WebException).Response)).StatusCode ==
+          if (ex is WebException) {
+            if (((HttpWebResponse)((ex as WebException).Response)).StatusCode ==
               HttpStatusCode.NotFound) {
               // Normal. Server says requested file/directory doesn't exist.
               return;
@@ -119,7 +120,7 @@ namespace Fushare.Filesystem {
         var virtualFilePath = basePath.PathString;
         Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
             "Creating virtual file at {0}", virtualFilePath));
-        IOUtil.PrepareParentDiryForPath(virtualFilePath);
+        IOUtil.PrepareParentDirForPath(virtualFilePath);
         XmlUtil.WriteXml<VirtualFile>(virtualFile, virtualFilePath);
       } else {
         // Create a virtual file for each TorrentFile. 
@@ -132,7 +133,7 @@ namespace Fushare.Filesystem {
           var virtualFilePath = UriUtil.CombinePaths(basePath.PathString, pathUri);
           Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
             "Creating virtual file at {0}", virtualFilePath));
-          IOUtil.PrepareParentDiryForPath(virtualFilePath);
+          IOUtil.PrepareParentDirForPath(virtualFilePath);
           XmlUtil.WriteXml<VirtualFile>(virtualFile, virtualFilePath);
         }
       }

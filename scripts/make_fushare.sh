@@ -1,4 +1,16 @@
 #!/bin/bash
+# This script builds and runs the project.
+
+print_help_and_exit() {
+  printf "Usage: %s: [-bscv] \n" $(basename $0) >&2; 
+  cat <<EOF
+  -s  Run server.
+  -c  Run client.
+  -v  Verbose.
+  -b  Build application
+EOF
+  exit 2
+}
 
 while getopts "bscv" optNames; do
 case "$optNames" in
@@ -6,47 +18,55 @@ case "$optNames" in
   s) run_server=1;;
   c) run_client=1;;
   v) verbose=1;;
+  ?) print_help_and_exit;;
   esac
 done
 
 client_proj_name="FushareApp"
 web_proj_name="Fushare.Web"
-sln_dir="$PWD/../src"
-client_dir="$sln_dir/$client_proj_name/bin/l4n"
-web_dir="$sln_dir/$web_proj_name"
-sln_bin="$sln_dir/../bin"
+
+my_path=$(readlink -f "$0")
+sln_dir="$(dirname $my_path)/.."
+sln_src="$sln_dir/src"
+sln_bin="$sln_dir/bin"
+sln_lib=$sln_dir/lib
+sln_etc=$sln_dir/.etc
+
+client_dir="$sln_src/$client_proj_name/bin/l4n"
+web_dir="$sln_src/$web_proj_name"
 
 if [ "$build" ]; then
   echo "Building solution..."
-  cd $sln_dir
+  cd $sln_src
   mdtool build -c:l4n
   if [ $? -ne 0 ]; then
     echo "Build failed. Exiting..."
     exit 1
   else
-    echo "Build succeeded. Copying binaries to $sln_bin..."
-    rm -rf "$sln_bin/*"
-    cp -r $client_dir "$sln_bin/$client_proj_name"
-    cp -r $web_dir "$sln_bin/$web_proj_name"
+    echo "Build succeeded."
   fi
 fi
 
 if [ "$run_server" ]; then
   echo "Running server..."
-  cd $web_dir
-  MONO_OPTIONS=--debug xsp2
+  sudo MONO_OPTIONS=--debug xsp2 --root $web_dir
 fi
 
 if [ "$run_client" ]; then
   echo "Running client..."
-  cp $sln_dir/"FushareApp/App.config" $client_dir"/FushareApp.exe.config" -v
+  cp $sln_etc/FushareApp/FushareApp.exe.config $client_dir -v
+
   if [[ `mount | grep "/dev/fuse"` ]]; then
     sudo umount -vl "/dev/fuse"
   fi
-  cd $client_dir
+
+  sudo mkdir -p /mnt/gatorrent
+  libdir=$sln_lib
   if [ "$verbose" ]; then
-    sudo MONO_TRACE_LISTENER=Console.Out### mono --debug FushareApp.exe -odebug -o allow_other -m "$HOME/ffs/vfs" -s "$HOME/fushare/client/var/shadow"
+    sudo LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$libdir" \
+      MONO_TRACE_LISTENER=Console.Out### mono --debug "$client_dir/FushareApp.exe" -odebug -o allow_other -m /mnt/gatorrent -s /opt/gatorrent/client/var/shadow
   else
-    sudo mono --debug FushareApp.exe -o allow_other -m "$HOME/ffs/vfs" -s "$HOME/fushare/client/var/shadow"
+    sudo LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$libdir" \
+      mono --debug "$client_dir/FushareApp.exe" -o allow_other -m /mnt/gatorrent -s /opt/gatorrent/client/var/shadow
   fi
 fi

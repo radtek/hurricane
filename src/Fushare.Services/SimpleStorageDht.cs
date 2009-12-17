@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Net;
 
 namespace Fushare.Services {
   /// <summary>
@@ -29,7 +30,8 @@ namespace Fushare.Services {
       string relativeUri = string.Format("/{0}/{1}", _controller, key);
       Logger.WriteLineIf(LogLevel.Verbose, _log_props,
         string.Format("Getting by the URL: {0}", relativeUri));
-      byte[] resultBytes = _serverProxy.Get(relativeUri);
+      // Give the server another chance if it's busy.
+      byte[] resultBytes = _serverProxy.GetWithRetries(relativeUri, 1);
       string resultString = Encoding.UTF8.GetString(resultBytes);
       var val = ConvertFromJsonString<SimpleStorageDhtRetVal>(resultString);
       return ConvertToDhtResults(val);

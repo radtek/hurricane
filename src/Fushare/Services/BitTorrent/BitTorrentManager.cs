@@ -426,29 +426,10 @@ namespace Fushare.Services.BitTorrent {
             break;
           case TorrentState.Seeding:
             if (e.OldState == TorrentState.Downloading) {
+              Logger.WriteLineIf(LogLevel.Info, _log_props, string.Format(
+                "{0}: Download completed.", torrentManager.Torrent.Name));
               // Torrent statistics.
-              TimeSpan download_time = DateTime.Now - torrentManager.StartTime;
-              double total_secs = download_time.TotalSeconds;
-              double kb_data_downloaded = torrentManager.Monitor.DataBytesDownloaded / 1024.0;
-              double kb_data_uploaded = torrentManager.Monitor.DataBytesUploaded / 1024.0;
-              double kb_proto_downloaded = torrentManager.Monitor.ProtocolBytesDownloaded / 1024.0;
-              double kb_proto_uploaded = torrentManager.Monitor.ProtocolBytesUploaded / 1024.0;
-              Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-                string.Format("Data Download {0:0.00} MB and Uploaded {1:0.00},"
-                + " MB. Protocol Download {5:0.00} MB and Protocol Upload {6:0.00} in"
-                + " {2:0.00} seconds. Avg Data Download rate: {3:0.00} kb/s, Avg"
-                + " Data Upload rate: {4:0.00} kb/s, Avg Protocol Download rate:"
-                + " {7:0.00} kb/s, Avg Protocol Upload rate: {8:0.00} kb/s",
-                kb_data_downloaded / 1024,
-                kb_data_uploaded / 1024,
-                total_secs,
-                kb_data_downloaded / total_secs,
-                kb_data_uploaded / total_secs,
-                kb_proto_downloaded / 1024,
-                kb_proto_uploaded / 1024,
-                kb_proto_downloaded / total_secs,
-                kb_proto_uploaded / total_secs));
-
+              LogTorrentStatistics(torrentManager);
               // Flush so that the file readers can get a hold of the file.
               _clientEngine.DiskManager.Flush(e.TorrentManager);
               
@@ -477,12 +458,13 @@ namespace Fushare.Services.BitTorrent {
       torrentManager.PeerDisconnected += delegate(object sender,
         PeerConnectionEventArgs e) {
         if (e.TorrentManager.OpenConnections == 0) {
-          Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
+          Logger.WriteLineIf(LogLevel.Info, _log_props, string.Format(
             "{1}: Peer ({0}) disconnected. Message: {2}. No open connection now.",
             e.PeerID.Uri,
             e.TorrentManager.Torrent.Name,
             e.Message));
         }
+        LogTorrentStatistics(e.TorrentManager);
       };
 
       torrentManager.PeersFound += delegate(object o, PeersAddedEventArgs e) {
@@ -516,6 +498,38 @@ namespace Fushare.Services.BitTorrent {
 
       Logger.WriteLineIf(LogLevel.Verbose, _log_props,
         string.Format("{0}: TorrentManager started", torrentManager.Torrent.Name));
+    }
+
+    private static void LogTorrentStatistics(TorrentManager torrentManager) {
+      // The StartTime was is first set using DateTime.Now;
+      TimeSpan download_time = DateTime.Now - torrentManager.StartTime;
+      double total_secs = download_time.TotalSeconds;
+      double kb_data_downloaded = torrentManager.Monitor.DataBytesDownloaded / 1024.0;
+      double kb_data_uploaded = torrentManager.Monitor.DataBytesUploaded / 1024.0;
+      double kb_proto_downloaded = torrentManager.Monitor.ProtocolBytesDownloaded / 1024.0;
+      double kb_proto_uploaded = torrentManager.Monitor.ProtocolBytesUploaded / 1024.0;
+      Logger.WriteLineIf(LogLevel.Info, _log_props,
+        string.Format(
+        "Torrent: {9} \n"
+        + "Torrent Lifetime: {2:0.00} seconds. \n" 
+        + "Data Downloaded: {0:0.00} MB. \n"
+        + "Data Uploaded: {1:0.00} MB. \n"
+        + "Protocol Downloaded {5:0.00} MB \n"
+        + "Protocol Uploaded {6:0.00} \n"
+        + "Average Data Download Rate: {3:0.00} kB/s \n"
+        + "Average Data Upload Rate: {4:0.00} kB/s \n"
+        + "Average Protocol Download Rate: {7:0.00} kB/s \n"
+        + "Average Protocol Upload Rate: {8:0.00} kB/s ",
+        kb_data_downloaded / 1024,
+        kb_data_uploaded / 1024,
+        total_secs,
+        kb_data_downloaded / total_secs,
+        kb_data_uploaded / total_secs,
+        kb_proto_downloaded / 1024,
+        kb_proto_uploaded / 1024,
+        kb_proto_downloaded / total_secs,
+        kb_proto_uploaded / total_secs,
+        torrentManager.Torrent.Name));
     } 
     #endregion
   }

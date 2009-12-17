@@ -92,6 +92,10 @@ namespace Fushare.Services.BitTorrent {
       } else {
         var torrentKey = ServiceUtil.GetDhtKeyBytes(nameSpace, name);
         byte[] torrentBytes = proxy.GetTorrent(torrentKey);
+        if (torrentBytes == null) {
+          throw new ResourceException();
+        }
+        IOUtil.PrepareParentDirForPath(torrentPath);
         File.WriteAllBytes(torrentPath, torrentBytes);
         return torrentBytes;
       }

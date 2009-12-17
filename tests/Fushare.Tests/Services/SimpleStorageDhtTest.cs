@@ -19,7 +19,9 @@ namespace Fushare.Services {
       Random rnd = new Random();
       byte[] bytesToTest = new byte[100000];
       rnd.NextBytes(bytesToTest);
-      string keyString = "key555";
+      byte[] keyBytes = new byte[20];
+      rnd.NextBytes(keyBytes);
+      string keyString = UrlBase64.Encode(keyBytes);
       _dht.Put(keyString, bytesToTest);
       byte[] valActual = _dht.GetMultiple(keyString, 1).Value;
       Assert.AreEqual(TextUtil.MD5Sum(bytesToTest), TextUtil.MD5Sum(valActual));

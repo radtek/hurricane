@@ -74,7 +74,13 @@ namespace Fushare.Services.BitTorrent {
     private void OnAnnounceReceived(object sender, AnnounceParameters e) {
       Logger.WriteLineIf(LogLevel.Verbose, _log_props,
         string.Format("Annoucement received from {0}", e.RemoteAddress));
-      _dht_listener.HandleAnnounceRequest(e);
+      try {
+        _dht_listener.HandleAnnounceRequest(e);
+      } catch (Exception ex) {
+        Logger.WriteLineIf(LogLevel.Error, _log_props, 
+          string.Format("Exception caught while processing announce request. {0}", ex));
+        throw;
+      }
     }
 
     private void OnScrapeReceived(object sender, ScrapeParameters e) {

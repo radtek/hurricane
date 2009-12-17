@@ -105,7 +105,7 @@ namespace Fushare {
     /// existing.
     /// </summary>
     /// <param name="path">The path. It doesn't have to exist.</param>
-    public static void PrepareParentDiryForPath(string path) {
+    public static void PrepareParentDirForPath(string path) {
       var directory = GetParent(path, false);
       directory.Create();
     }
@@ -174,7 +174,12 @@ namespace Fushare {
     /// <param name="bytesToRead">The maximun bytes to read.</param>
     /// <returns>The number of bytes actually read.</returns>
     public static int Read(string path, byte[] buffer, long offset, int bytesToRead) {
-      using (var stream = File.OpenRead(path)) {
+      // This is a "modest" read. File.OpenRead is the same as new 
+      // FileStream(path, Open, Read, Read) but it fails with files downloaded by 
+      // MonoTorrent because MonoTorrent doesn't give up FileShare.Read right upon 
+      // completion.
+      using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, 
+        FileShare.ReadWrite)) {
         stream.Seek(offset, SeekOrigin.Begin);
         return stream.Read(buffer, 0, bytesToRead);
       }
