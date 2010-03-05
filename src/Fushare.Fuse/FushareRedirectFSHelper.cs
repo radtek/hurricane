@@ -98,13 +98,44 @@ namespace Fushare.Filesystem {
       return 0;
     }
 
+    /// <summary>
+    /// Creates the handle.
+    /// </summary>
+    /// <param name="path">The path.</param>
+    /// <param name="info">The info.</param>
+    /// <param name="mode">The mode.</param>
+    /// <returns></returns>
+    /// <remarks>This method is for FilesysOp.Write.</remarks>
+    public override Errno CreateHandle(string path, OpenedPathInfo info, FilePermissions mode) {
+      var writePath = 
+        _pathFactory.CreateVirtualPath4Write(new VirtualRawPath(path));
+      return base.CreateHandle(writePath, info, mode);
+    }
+
+    /// <summary>
+    /// Gets the handle status.
+    /// </summary>
+    /// <param name="path">The path.</param>
+    /// <param name="info">The info.</param>
+    /// <param name="buf">The buf.</param>
+    /// <returns>This method is for FilesysOp.Write.</returns>
+    public override Errno GetHandleStatus(string path, OpenedPathInfo info, out Stat buf) {
+      var writePath =
+        _pathFactory.CreateVirtualPath4Write(new VirtualRawPath(path));
+      return base.GetHandleStatus(writePath, info, out buf);
+    }
+
     public override unsafe Errno WriteHandle(string path, OpenedPathInfo info, 
       byte[] buf, long offset, out int bytesWritten) {
-      var fullPath = 
-        _pathFactory.CreateShadwoFullPath4Write(new VirtualPath(new VirtualRawPath(path)));
-      IOUtil.Write(fullPath.PathString, buf, offset);
-      bytesWritten = buf.Length;
-      return 0;
+      var writePath =
+        _pathFactory.CreateVirtualPath4Write(new VirtualRawPath(path));
+      try {
+        return base.WriteHandle(writePath, info, buf, offset, out bytesWritten);
+      } catch (Exception ex) {
+        Logger.WriteLineIf(LogLevel.Error, _log_props, string.Format(
+          "Exception caught when writing to file. {0}", ex));
+        throw;
+      }
     }
 
     /// <summary>

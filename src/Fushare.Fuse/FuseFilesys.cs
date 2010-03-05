@@ -183,7 +183,6 @@ namespace Fushare.Filesystem {
     protected override Errno OnCreateHandle(string path, OpenedPathInfo info, FilePermissions mode) {
 
       Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnCreateHandle, path={0}, openflags={1}, filepermission={2}", path, info.OpenAccess, mode));
-
       return this._rfs.CreateHandle(path, info, mode);
     }
 
