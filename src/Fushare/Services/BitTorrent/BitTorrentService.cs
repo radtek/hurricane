@@ -45,7 +45,7 @@ namespace Fushare.Services.BitTorrent {
     public DataMetaInfo Get(string nameSpace, string name) {
       string downloadPath;
       var torrentBytes = _manager.GetData(nameSpace, name, out downloadPath);
-      return MakeDataMetaInfo(downloadPath, torrentBytes);
+      return MakeDataMetaInfo(downloadPath, torrentBytes, false);
     }
 
     /// <summary>
@@ -107,6 +107,18 @@ namespace Fushare.Services.BitTorrent {
       Publish(path, false);
     }
 
+    /// <summary>
+    /// Checks if the specified file exists without downloading it.
+    /// </summary>
+    /// <param name="nameSpace">The name space.</param>
+    /// <param name="name">The name.</param>
+    /// <returns>The meta information about the file.</returns>
+    public DataMetaInfo Peek(string nameSpace, string name) {
+      string downloadPath;
+      byte[] torrentBytes = _manager.PeekData(nameSpace, name, out downloadPath);
+      return MakeDataMetaInfo(downloadPath, torrentBytes, true);
+    }
+
     #endregion
 
     #region Internal/Private Methods
@@ -163,10 +175,11 @@ namespace Fushare.Services.BitTorrent {
     }
 
     private static DataMetaInfo MakeDataMetaInfo(string downloadPath,
-      byte[] torrentBytes) {
+      byte[] torrentBytes, bool onDemand) {
       DataMetaInfo ret = new DataMetaInfo();
       ret.DataUri = new Uri(downloadPath);
       ret.TorrentBytes = torrentBytes;
+      ret.OnDemand = onDemand;
       // @TODO: For now we keep the "Files" field but with torrent bytes included,
       // it's redundant.
       Torrent torrent = Torrent.Load(torrentBytes);

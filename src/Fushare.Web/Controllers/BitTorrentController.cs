@@ -63,8 +63,14 @@ namespace Fushare.Web.Controllers {
     public ActionResult Get(string nameSpace, string name) {
       string offset = Request.Params["offset"];
       string bytesToRead = Request.Params["bytesToRead"];
+      string peek = Request.Params["peek"];
 
-      if (string.IsNullOrEmpty(offset) && string.IsNullOrEmpty(bytesToRead)) {
+      if(!string.IsNullOrEmpty(peek) && Boolean.Parse(peek)) {
+        // If peek == false, go to the next if condition.
+        DataMetaInfo meta = _service.Peek(nameSpace, name);
+        var xmlString = XmlUtil.ToXml<DataMetaInfo>(meta);
+        return Content(xmlString);
+      } else if (string.IsNullOrEmpty(offset) && string.IsNullOrEmpty(bytesToRead)) {
         var xmlString = GetWholeData(nameSpace, name);
         return Content(xmlString);
       } else if (!string.IsNullOrEmpty(bytesToRead) &&

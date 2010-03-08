@@ -25,20 +25,19 @@ namespace Fushare.Filesystem {
     }
 
     /// <summary>
-    /// Reads from the specified path.
+    /// Reads the virtual file  from the specified path.
     /// </summary>
     /// <param name="path">The path.</param>
-    /// <param name="buffer">The buffer.</param>
-    /// <param name="offset">The offset.</param>
-    /// <returns>The number of bytes read.</returns>
-    public int Read(VirtualPath path, byte[] buffer, long offset) {
+    /// <returns></returns>
+    public VirtualFile ReadVirtualFile(VirtualPath path) {
       var shadowPath = _pathFactory.CreateShadowFullPath4Read(path);
       if (File.Exists(shadowPath.PathString)) {
         var vf = XmlUtil.ReadXml<VirtualFile>(shadowPath.PathString);
-        return Read(vf, buffer, offset);
+        return vf;
       } else {
-        // Get it from server.
-        throw new NotImplementedException();
+        // This is an erroneous situation where you think the file exists but no virtual file 
+        // presents.
+        throw new Exception();
       }
     }
 

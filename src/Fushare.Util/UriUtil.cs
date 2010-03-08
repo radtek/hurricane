@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.IO;
+using System.Web;
 
 namespace Fushare {
   public static class UriUtil {
@@ -18,6 +20,17 @@ namespace Fushare {
       UriBuilder ub = new UriBuilder(baseUri);
       ub.Path = CombinePaths(ub.Path, relativeUri);
       return ub.Uri;
+    }
+
+    /// <summary>
+    /// Joins a NameValueCollection to a query string.
+    /// </summary>
+    /// <param name="qs">The NameValueCollection for the query string.</param>
+    /// <returns>The query string.</returns>
+    public static string JoinNvcToQs(NameValueCollection qs) {
+      return string.Join("&", Array.ConvertAll<string, string>(qs.AllKeys, delegate(string key) {
+        return string.Format("{0}={1}", HttpUtility.UrlEncode(key), HttpUtility.UrlEncode(qs[key]));
+      }));
     }
 
     public static string CombinePaths(string baseFullPath, Uri relativeUri) {

@@ -77,6 +77,9 @@ namespace Fushare.Services.BitTorrent {
           context.Response.StatusCode = (int)HttpStatusCode.OK;
           context.Response.ContentLength64 = torrentBytes.Length;
           context.Response.OutputStream.Write(torrentBytes, 0, torrentBytes.Length);
+          Logger.WriteLineIf(LogLevel.Info, _log_props,
+            string.Format("Successfully handled request for {0} from {1}", url,
+            context.Request.RemoteEndPoint));
         } catch (FileNotFoundException ex) {
           Logger.WriteLineIf(LogLevel.Error, _log_props,
             string.Format("Exception thrown when getting piece torrent: {0}", ex));

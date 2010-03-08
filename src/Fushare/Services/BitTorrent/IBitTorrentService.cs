@@ -21,6 +21,14 @@ namespace Fushare.Services.BitTorrent {
     DataMetaInfo Get(string nameSpace, string name);
 
     /// <summary>
+    /// Checks if the specified file exists without downloading it.
+    /// </summary>
+    /// <param name="nameSpace">The name space.</param>
+    /// <param name="name">The name.</param>
+    /// <returns>The meta information about the file.</returns>
+    DataMetaInfo Peek(string nameSpace, string name);
+
+    /// <summary>
     /// Gets part of a file downloaded via BitTorrent.
     /// </summary>
     /// <param name="nameSpace">The name space.</param>

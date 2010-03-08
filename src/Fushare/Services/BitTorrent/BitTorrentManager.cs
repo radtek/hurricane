@@ -249,6 +249,14 @@ namespace Fushare.Services.BitTorrent {
       StartDownload(torrent, saveDir, waitHandle);
     }
 
+    public byte[] GetData(string nameSpace, string name, out string downloadPath) {
+      return GetData(nameSpace, name, out downloadPath, false);
+    }
+
+    public byte[] PeekData(string nameSpace, string name, out string downloadPath) {
+      return GetData(nameSpace, name, out downloadPath, true);
+    }
+
     /// <summary>
     /// Gets the data from the given dht name.
     /// </summary>
@@ -261,7 +269,7 @@ namespace Fushare.Services.BitTorrent {
     /// invalid.</exception>
     /// <remarks>MonoTorrent library provides easy conversion from bytes to 
     /// Torrent object but not vise versa so we return bytes.</remarks>
-    public byte[] GetData(string nameSpace, string name, out string downloadPath) {
+    byte[] GetData(string nameSpace, string name, out string downloadPath, bool peek) {
       ManualResetEvent waitHandle = new ManualResetEvent(false);
       byte[] torrentDhtKey = ServiceUtil.GetDhtKeyBytes(nameSpace, name);
       downloadPath =
@@ -276,13 +284,17 @@ namespace Fushare.Services.BitTorrent {
           torrentBytes = _torrentHelper.ReadOrDownloadTorrent(nameSpace, 
             name, _dhtProxy);
           var torrent = Torrent.Load(torrentBytes);
-          GetDataInternal(torrentDhtKey, torrent, downloadPath,
-              waitHandle);
+          if (!peek) {
+            GetDataInternal(torrentDhtKey, torrent, downloadPath,
+            waitHandle);
 
-          // Wait until downloading finishes
-          waitHandle.WaitOne();
-          // Download completed.
-          CacheRegistry.AddPathToRegistry(downloadPath, true);
+            // Wait until downloading finishes
+            waitHandle.WaitOne();
+            // Download completed.
+            CacheRegistry.AddPathToRegistry(downloadPath, true);
+          } else {
+            // If we are only peeking, we don't add it to the registry.
+          }
         } catch (TorrentException ex) {
           throw new ResourceNotFoundException(string.Format(
             "Torrent at key {0} (UrlBase64) is invalid.",

@@ -45,7 +45,7 @@ namespace Fushare.Services.BitTorrent {
       get {
         return (Files.Count == 0);
       }
-    } 
+    }
     #endregion
 
     /// <summary>
@@ -53,6 +53,12 @@ namespace Fushare.Services.BitTorrent {
     /// </summary>
     /// <value>The torrent.</value>
     public byte[] TorrentBytes { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether it is a on demand.
+    /// </summary>
+    /// <value><c>true</c> if is on demand; otherwise, <c>false</c>.</value>
+    public bool OnDemand { get; set; }
 
     #region Properties for XmlSerializer
     [XmlElement("DataUri")]

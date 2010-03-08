@@ -22,6 +22,12 @@ namespace Fushare.Filesystem {
     /// </summary>
     /// <value>The size of the file.</value>
     public long FileSize { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the file is downloaded on demand.
+    /// </summary>
+    /// <value><c>true</c> if it is on demand; otherwise, <c>false</c>.</value>
+    public bool OnDemand { get; set; }
     #endregion
 
     #region Properties for XmlSerializer
