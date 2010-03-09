@@ -40,6 +40,13 @@ namespace Fushare.Services.BitTorrent {
     /// <exception cref="ArgumentException">The torrent is not a single file torrent.
     /// </exception>
     public void ServePiece(string nameSpace, string name, int pieceIndex) {
+      string pieceName = MakePieceDataName(name, pieceIndex);
+      if (IOUtil.FileOrDirectoryExists(_torrentHelper.GetTorrentFilePath(
+        nameSpace, pieceName))) {
+        // It is already being served.
+        return;
+      }
+
       var torrent = Torrent.Load(_torrentHelper.GetTorrentFilePath(nameSpace, 
         name));
       if (torrent.Files.Length != 1) {
@@ -53,7 +60,6 @@ namespace Fushare.Services.BitTorrent {
       byte[] pieceData = IOUtil.Read(_manager.GetPathOfItemInDownloads(
         nameSpace, name), offset, torrent.PieceLength, torrent.Size);
 
-      var pieceName = MakePieceDataName(name, pieceIndex);
       var piecePath = _manager.GetPathOfItemInDownloads(nameSpace, 
         pieceName);
       File.WriteAllBytes(piecePath, pieceData);
@@ -95,6 +101,15 @@ namespace Fushare.Services.BitTorrent {
       int pieceIndex = (int)Math.Floor(offset / (double)wholeTorrent.PieceLength);
       var pieceName = MakePieceDataName(name, pieceIndex);
 
+      int offsetInPiece = (int)(offset % wholeTorrent.PieceLength);
+
+      // If the piece is already downloaded, we just return it.
+      string piecePath = _manager.GetPathOfItemInDownloads(
+        nameSpace, pieceName);
+      if (IOUtil.FileOrDirectoryExists(piecePath)) {
+        return IOUtil.Read(piecePath, offsetInPiece, bytesToRead);
+      }
+
       var pieceTorrentBytes = DownloadPieceTorrent(nameSpace, name, 
         wholeTorrent, pieceIndex);
 
@@ -107,8 +122,7 @@ namespace Fushare.Services.BitTorrent {
       // Download as a regular torrent.
       string pieceDownloadPath;
       _manager.GetData(nameSpace, pieceName, out pieceDownloadPath);
-      return IOUtil.Read(pieceDownloadPath, offset, bytesToRead, 
-        wholeTorrent.PieceLength);
+      return IOUtil.Read(pieceDownloadPath, offsetInPiece, bytesToRead);
     }
 
     /// <summary>

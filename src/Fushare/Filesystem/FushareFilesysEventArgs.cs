@@ -29,7 +29,7 @@ namespace Fushare.Filesystem {
   public class ReadFileEventArgs : FushareFilesysEventArgs {
     #region Fields
     readonly long _offset;
-    byte[] _buffer;
+    readonly byte[] _buffer;
     #endregion
 
     #region Properties
@@ -39,7 +39,6 @@ namespace Fushare.Filesystem {
     /// <value>The buffer.</value>
     public byte[] Buffer { 
       get { return _buffer; }
-      set { _buffer = value; }
     }
 
     /// <summary>

@@ -125,7 +125,10 @@ namespace Fushare.Filesystem {
           extraParams.Add(OffsetParamName, Convert.ToString(args.Offset));
           var uri = BasicPathMatch2ReqUri(match, extraParams);
           byte[] data = _serverProxy.Get(uri);
-          args.Buffer = data;
+          // Size of data should be less than or equal to size of args.Buffer
+          using (var ms = new MemoryStream(args.Buffer)) {
+            ms.Write(data, 0, data.Length);
+          }
           args.BytesRead = data.Length;
           Logger.WriteLineIf(LogLevel.Verbose, _log_props,
             string.Format("Successfully read {0} bytes.", args.BytesRead));

@@ -93,6 +93,8 @@ namespace Fushare.Services.BitTorrent {
     }
 
     public string SelfNameSpace { get; private set; }
+
+    internal ClientEngine ClientEngine { get { return _clientEngine; }}
     #endregion
 
     #region Constructors
