@@ -58,10 +58,10 @@ if [ "$run_client" ]; then
   libdir=$client_bin
     
   # Make sure module loaded.
-  modprobe fuse
-  while [[ ! -e /dev/fuse ]]; do
-    sleep 1s
-  done
+#   modprobe fuse
+#   while [[ ! -e /dev/fuse ]]; do
+#     sleep 1s
+#   done
 
   eval LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$libdir" \
     mono --debug "$client_bin/FushareApp.exe" -o allow_other -m "$mount_point" -s "$proj_dir/client/var/shadow" $bg_suffix
