@@ -1,10 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Net;
-using JsonExSerializer;
-using JsonExSerializer.Collections;
 
 namespace Fushare.Services {
   /// <summary>
@@ -119,15 +114,7 @@ namespace Fushare.Services {
     }
 
     protected static T ConvertFromJsonString<T>(string jsonString) {
-      Serializer serializer = new Serializer(typeof(T));
-      T results;
-      try {
-        results = (T)serializer.Deserialize(jsonString);
-      } catch (Exception ex) {
-        Console.WriteLine("testline. {0}", ex);
-        throw;
-      }
-      return results;
+      return JsonUtil.ConvertFromJsonString<T>(jsonString);
     }
     #endregion
 

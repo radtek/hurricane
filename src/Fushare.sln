@@ -1,5 +1,17 @@
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sample-configs", "sample-configs", "{7323AAE7-0061-47F5-9D2D-E07EBD56022E}"
+	ProjectSection(SolutionItems) = preProject
+		..\sample-config\configure-mono-fuse-0.4.2 = ..\sample-config\configure-mono-fuse-0.4.2
+		..\sample-config\DhtTracker.exe.config = ..\sample-config\DhtTracker.exe.config
+		..\sample-config\FuseDht.exe.config = ..\sample-config\FuseDht.exe.config
+		..\sample-config\fushare.config = ..\sample-config\fushare.config
+		..\sample-config\l4n.config = ..\sample-config\l4n.config
+		..\sample-config\Mono.Fuse.dll.config = ..\sample-config\Mono.Fuse.dll.config
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{269AC665-ADA1-48D0-8DB9-7864EDBF82BF}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fushare", "Fushare\Fushare.csproj", "{BF49E836-A893-4487-BDC6-3CF146CCBC01}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitTorrentTester", "..\tests\BitTorrentTester\BitTorrentTester.csproj", "{40B77C53-AA4D-4DB9-979D-A1685DD8601C}"
@@ -26,18 +38,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FushareApp", "FushareApp\FushareApp.csproj", "{89CD31DB-4FC0-46A7-960A-747EE95EAEA3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TrackerApp", "misc\TrackerApp.csproj", "{18D990D8-0B40-452C-AA85-53DBF7B36A75}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sample-configs", "sample-configs", "{7323AAE7-0061-47F5-9D2D-E07EBD56022E}"
-	ProjectSection(SolutionItems) = preProject
-		..\sample-config\configure-mono-fuse-0.4.2 = ..\sample-config\configure-mono-fuse-0.4.2
-		..\sample-config\DhtTracker.exe.config = ..\sample-config\DhtTracker.exe.config
-		..\sample-config\FuseDht.exe.config = ..\sample-config\FuseDht.exe.config
-		..\sample-config\fushare.config = ..\sample-config\fushare.config
-		..\sample-config\l4n.config = ..\sample-config\l4n.config
-		..\sample-config\Mono.Fuse.dll.config = ..\sample-config\Mono.Fuse.dll.config
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{269AC665-ADA1-48D0-8DB9-7864EDBF82BF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fushare.Util", "Fushare.Util\Fushare.Util.csproj", "{2253759E-5110-4DBA-9969-32A76F3DB5B1}"
 EndProject
