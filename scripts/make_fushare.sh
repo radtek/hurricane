@@ -38,7 +38,7 @@ web_dir="$sln_src/$web_proj_name"
 if [ "$build" ]; then
   echo "Building solution..."
   cd $sln_src
-  mdtool build -c:l4n
+  xbuild
   if [ $? -ne 0 ]; then
     echo "Build failed. Exiting..."
     exit 1
