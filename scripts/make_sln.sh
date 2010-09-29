@@ -1,5 +1,5 @@
 #!/bin/bash
-# This script builds and runs the project.
+# This script builds and runs the solution in place.
 
 print_help_and_exit() {
   printf "Usage: %s: [-bscv] \n" $(basename $0) >&2; 
@@ -38,7 +38,7 @@ web_dir="$sln_src/$web_proj_name"
 if [ "$build" ]; then
   echo "Building solution..."
   cd $sln_src
-  xbuild
+  xbuild /p:Configuration=l4n
   if [ $? -ne 0 ]; then
     echo "Build failed. Exiting..."
     exit 1
@@ -56,17 +56,22 @@ if [ "$run_client" ]; then
   echo "Running client..."
   cp $sln_etc/FushareApp/FushareApp.exe.config $client_dir -v
 
+  # Umount the mounting-point first if already mounted.
   if [[ `mount | grep "/dev/fuse"` ]]; then
     sudo umount -vl "/dev/fuse"
   fi
 
-  sudo mkdir -p /mnt/gatorrent
+  # Prepare folders
+  sudo mkdir -p /mnt/gatorshare
+  sudo mkdir -p /opt/gatorshare/client/var/shadow
+  sudo mkdir -p /opt/gatorrent/server/var/cache/bittorrent
+
   libdir=$sln_lib
   if [ "$verbose" ]; then
     sudo LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$libdir" \
-      MONO_TRACE_LISTENER=Console.Out### mono --debug "$client_dir/FushareApp.exe" -odebug -o allow_other -m /mnt/gatorrent -s /opt/gatorrent/client/var/shadow
+      MONO_TRACE_LISTENER=Console.Out### mono --debug "$client_dir/FushareApp.exe" -odebug -o allow_other -m /mnt/gatorshare -s /opt/gatorshare/client/var/shadow
   else
     sudo LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$libdir" \
-      mono --debug "$client_dir/FushareApp.exe" -o allow_other -m /mnt/gatorrent -s /opt/gatorrent/client/var/shadow
+      mono --debug "$client_dir/FushareApp.exe" -o allow_other -m /mnt/gatorshare -s /opt/gatorshare/client/var/shadow
   fi
 fi

@@ -1,5 +1,5 @@
 #!/bin/bash
-# This script runs the gatorrent application.
+# This script runs the gatorshare application.
 
 print_help_and_exit() {
   printf "Usage: %s: [-scfv] \n" $(basename $0) >&2; 
@@ -37,13 +37,14 @@ scripts_dir="$(dirname $my_path)"
 proj_dir="$scripts_dir/.."
 client_bin="$proj_dir/client/bin"
 server_bin="$proj_dir/server/bin"
-mount_point="/mnt/gatorrent"
+mount_point="/mnt/gatorshare"
 
 test ! $foreground && bg_suffix="&"
 
 if [ "$run_server" ]; then
   echo "Running server..."
-  eval xsp2 --root "$server_bin" --nonstop $bg_suffix
+  MONO_OPTIONS=--debug 
+  eval xsp2 --root "$server_bin" --verbose --nonstop $bg_suffix
 fi
 
 if [ "$run_client" ]; then

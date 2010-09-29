@@ -6,6 +6,7 @@
 + *.aspx
 + *.asax
 + *.js
+- /obj/
 + */
 + Web.config
 - *
