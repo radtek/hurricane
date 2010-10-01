@@ -8,7 +8,7 @@ namespace Fushare.Web.Controllers {
   [HandleError]
   public class HomeController : Controller {
     public ActionResult Index1() {
-      return Content("Seeing this page means Fushare.Web is running.");
+      return Content("Welcome to GatorShare.");
     }
 
     public ActionResult Index() {

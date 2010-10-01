@@ -7,8 +7,7 @@
 </head>
 <body>
     <div>
-        <h2>
-        Seeing this page means Fushare.Web is RUNNING.</h2>
+        <h2>Welcome to GatorShare.</h2>
     </div>
 </body>
 </html>

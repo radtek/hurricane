@@ -52,6 +52,6 @@ fi
 
 if [ "$compress" ]; then
   # Make a tarball gatorshare.tar.gz with gatorshare as the root directory inside.
-  tar -C $installer_dir -czvf "$installer_dir/../../gatorshare.tar.gz" * --exclude="*~"
+  tar -C $installer_dir -czvf "$installer_dir/../../gatorshare.tar.gz" . --exclude="*~"
 fi
 
