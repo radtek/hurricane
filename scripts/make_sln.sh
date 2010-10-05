@@ -24,6 +24,7 @@ done
 
 client_proj_name="FushareApp"
 web_proj_name="Fushare.Web"
+app_name=gatorshare
 
 my_path=$(readlink -f "$0")
 sln_dir="$(dirname $my_path)/.."
@@ -62,16 +63,16 @@ if [ "$run_client" ]; then
   fi
 
   # Prepare folders
-  sudo mkdir -p /mnt/gatorshare
-  sudo mkdir -p /opt/gatorshare/client/var/shadow
-  sudo mkdir -p /opt/gatorrent/server/var/cache/bittorrent
+  sudo mkdir -p /mnt/$app_name
+  sudo mkdir -p /opt/$app_name/client/var/shadow
+  sudo mkdir -p /opt/$app_name/server/var/cache/bittorrent
 
   libdir=$sln_lib
   if [ "$verbose" ]; then
     sudo LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$libdir" \
-      MONO_TRACE_LISTENER=Console.Out### mono --debug "$client_dir/FushareApp.exe" -odebug -o allow_other -m /mnt/gatorshare -s /opt/gatorshare/client/var/shadow
+      MONO_TRACE_LISTENER=Console.Out### mono --debug "$client_dir/FushareApp.exe" -odebug -o allow_other -m /mnt/$app_name -s /opt/$app_name/client/var/shadow
   else
     sudo LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$libdir" \
-      mono --debug "$client_dir/FushareApp.exe" -o allow_other -m /mnt/gatorshare -s /opt/gatorshare/client/var/shadow
+      mono --debug "$client_dir/FushareApp.exe" -o allow_other -m /mnt/$app_name -s /opt/$app_name/client/var/shadow
   fi
 fi

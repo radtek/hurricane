@@ -90,12 +90,19 @@ namespace Fushare.Filesystem {
     /// </summary>
     /// <param name="path">The path.</param>
     /// <param name="info">The info.</param>
-    /// <remarks>
-    /// Does nothing but return as we don't use native API to read/write the file.
-    /// </remarks>
     public override Errno OpenHandle(string path, Mono.Fuse.OpenedPathInfo info) {
-      // Do nothing. 
-      return 0;
+      String readPath =_pathFactory.CreateVirtualPath4Read(new VirtualRawPath(path));
+      ShadowFullPath fullReadPath = 
+        _pathFactory.CreateShadowFullPath4Read(new VirtualPath(new VirtualRawPath(path)));
+      if (File.Exists(fullReadPath.PathString)) {
+        return base.OpenHandle(readPath, info);
+      } else {
+        // This is a write.
+        // @TODO Write to an existing file is not supported by BitTorrent.
+        // It has to be enforced somewhere.
+        String writePath = _pathFactory.CreateVirtualPath4Write(new VirtualRawPath(path));
+        return base.OpenHandle(writePath, info);
+      }
     }
 
     /// <summary>
@@ -112,53 +119,16 @@ namespace Fushare.Filesystem {
       return base.CreateHandle(writePath, info, mode);
     }
 
-    /// <summary>
-    /// Gets the handle status.
-    /// </summary>
-    /// <param name="path">The path.</param>
-    /// <param name="info">The info.</param>
-    /// <param name="buf">The buf.</param>
-    /// <returns>This method is for FilesysOp.Write.</returns>
-    public override Errno GetHandleStatus(string path, OpenedPathInfo info, out Stat buf) {
-      var writePath =
-        _pathFactory.CreateVirtualPath4Write(new VirtualRawPath(path));
-      return base.GetHandleStatus(writePath, info, out buf);
-    }
-
     public override unsafe Errno WriteHandle(string path, OpenedPathInfo info, 
       byte[] buf, long offset, out int bytesWritten) {
-      var writePath =
-        _pathFactory.CreateVirtualPath4Write(new VirtualRawPath(path));
       try {
-        return base.WriteHandle(writePath, info, buf, offset, out bytesWritten);
+        // "path" is not used in base.WriteHandle
+        return base.WriteHandle(path, info, buf, offset, out bytesWritten);
       } catch (Exception ex) {
         Logger.WriteLineIf(LogLevel.Error, _log_props, string.Format(
           "Exception caught when writing to file. {0}", ex));
         throw;
       }
-    }
-
-    /// <summary>
-    /// Flushes the handle.
-    /// </summary>
-    /// <param name="path">The path.</param>
-    /// <param name="info">The info.</param>
-    /// <remarks>
-    /// Does nothing but return as we don't use native API to read/write the file.
-    /// </remarks>
-    public override Errno FlushHandle(string path, OpenedPathInfo info) {
-      // Do nothing.
-      return 0;
-    }
-
-    /// <summary>
-    /// Releases the handle.
-    /// </summary>
-    /// <param name="path">The path.</param>
-    /// <param name="info">The info.</param>
-    /// <remarks>We already closed the handle somewhere else.</remarks>
-    public override Errno ReleaseHandle(string path, OpenedPathInfo info) {
-      return 0;
     }
   }
 }
