@@ -47,7 +47,7 @@ namespace FushareApp {
               "Mounting Point: {0}", v)); 
           }
         },
-        { "s|shadow-path=", "the path to the shadow directory.",
+        { "S|shadow-path=", "the path to the shadow directory.",
           v => {
             shadowDirPath = v;
             Logger.WriteLineIf(LogLevel.Info, _log_props, string.Format(
