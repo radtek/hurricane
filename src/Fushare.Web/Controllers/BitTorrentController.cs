@@ -36,7 +36,8 @@ namespace Fushare.Web.Controllers {
 
     public ActionResult Index(string nameSpace, string name) {
       Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
-        "Received request {0} from {1}", Request.RawUrl, Request.UserHostAddress));
+        "Received request ({2}){0} from {1}", Request.RawUrl,
+        Request.UserHostAddress, Request.HttpMethod));
 
       if (!string.IsNullOrEmpty(Request.Params["path"])) {
         // This is allowed for both GET and POST.
@@ -59,45 +60,41 @@ namespace Fushare.Web.Controllers {
       return PublishInternal(nameSpace, name);
     }
 
+    /// <summary>
+    /// Gets the data. It includes peeking, downloading entire data and data chunk.
+    /// </summary>
+    /// <param name="nameSpace">The name space.</param>
+    /// <param name="name">The name.</param>
+    /// <returns></returns>
     [AcceptVerbs("GET")]
     public ActionResult Get(string nameSpace, string name) {
       string offset = Request.Params["offset"];
       string bytesToRead = Request.Params["bytesToRead"];
       string peek = Request.Params["peek"];
 
-      if(!string.IsNullOrEmpty(peek) && Boolean.Parse(peek)) {
-        // If peek == false, go to the next if condition.
-        DataMetaInfo meta = _service.Peek(nameSpace, name);
-        var xmlString = XmlUtil.ToXml<DataMetaInfo>(meta);
-        return Content(xmlString);
-      } else if (string.IsNullOrEmpty(offset) && string.IsNullOrEmpty(bytesToRead)) {
-        var xmlString = GetWholeData(nameSpace, name);
-        return Content(xmlString);
-      } else if (!string.IsNullOrEmpty(bytesToRead) &&
-        !string.IsNullOrEmpty(bytesToRead)) {
-        // Have both needed arguments
-        var dataBlock = 
-          _service.Get(nameSpace, name, Int64.Parse(offset), Int32.Parse(bytesToRead));
-        return File(dataBlock, HttpUtil.OctetStreamContentType, 
-          string.Format("{0}.{1}.{2}", name, offset, bytesToRead));
-      } else {
-        var toThrow = new HttpException((int)HttpStatusCode.BadRequest,
-          "Unclear whether to download piece or whole data.");
-        Util.LogBeforeThrow(toThrow, _log_props);
-        throw toThrow;
-      }
-    }
-
-    /// <summary>
-    /// Gets the whole data as opposed to piece-level downloading.
-    /// </summary>
-    /// <param name="nameSpace">The name space.</param>
-    /// <param name="name">The name.</param>
-    /// <returns>XML string of <see cref="DataMetaInfo"/>.</returns>
-    private string GetWholeData(string nameSpace, string name) {
-      DataMetaInfo meta;
       try {
-        meta = _service.Get(nameSpace, name);
+        if (!string.IsNullOrEmpty(peek) && Boolean.Parse(peek)) {
+          // If peek == false, go to the next if condition.
+          DataMetaInfo meta = _service.Peek(nameSpace, name);
+          var xmlString = XmlUtil.ToXml<DataMetaInfo>(meta);
+          return Content(xmlString);
+        } else if (string.IsNullOrEmpty(offset) && string.IsNullOrEmpty(bytesToRead)) {
+          DataMetaInfo meta = _service.Get(nameSpace, name);
+          var xmlString = XmlUtil.ToXml<DataMetaInfo>(meta);
+          return Content(xmlString);
+        } else if (!string.IsNullOrEmpty(bytesToRead) &&
+          !string.IsNullOrEmpty(bytesToRead)) {
+          // Have both needed arguments
+          var dataBlock =
+            _service.Get(nameSpace, name, Int64.Parse(offset), Int32.Parse(bytesToRead));
+          return File(dataBlock, HttpUtil.OctetStreamContentType,
+            string.Format("{0}.{1}.{2}", name, offset, bytesToRead));
+        } else {
+          var toThrow = new HttpException((int)HttpStatusCode.BadRequest,
+            "Unclear whether to download piece or whole data.");
+          Util.LogBeforeThrow(toThrow, _log_props);
+          throw toThrow;
+        }
       } catch (ResourceNotFoundException ex) {
         var toThrow = new HttpException((int)HttpStatusCode.NotFound,
           "No file/directory available at this key.", ex);
@@ -109,10 +106,6 @@ namespace Fushare.Web.Controllers {
         Util.LogBeforeThrow(toThrow, _log_props);
         throw toThrow;
       }
-
-      // @TODO Check the location of the client and return the path correspondently.
-      var xmlString = XmlUtil.ToXml<DataMetaInfo>(meta);
-      return xmlString;
     }
 
     private ActionResult PublishInternal(string nameSpace, string name) {

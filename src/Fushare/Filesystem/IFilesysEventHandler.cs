@@ -33,5 +33,13 @@ namespace Fushare.Filesystem {
     /// <see cref="Fushare.Filesystem.ReadFileEventArgs"/> instance containing the 
     /// event data.</param>
     void HandleReadingFile(IFushareFilesys sender, ReadFileEventArgs args);
+
+    /// <summary>
+    /// Handles the opening file event.
+    /// </summary>
+    /// <param name="sender">The sender.</param>
+    /// <param name="args">The <see cref="Fushare.Filesystem.OpenFileEventArgs"/> 
+    /// instance containing the event data.</param>
+    void HandleOpeningFile(IFushareFilesys sender, OpenFileEventArgs args);
   }
 }

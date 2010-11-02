@@ -17,14 +17,16 @@ namespace Fushare.Filesystem {
     protected readonly ServerProxy _serverProxy;
     protected readonly FushareFileManager _fileManager;
     protected readonly FusharePathFactory _pathFactory;
+    protected readonly FilesysContext _filesysContext;
     #endregion
 
     #region Constructor
     public FilesysEventHandlerBase(ServerProxy serverProxy, FushareFileManager 
-      fileManager, FusharePathFactory pathFactory) {
+      fileManager, FusharePathFactory pathFactory, FilesysContext filesysContext) {
       _serverProxy = serverProxy;
       _fileManager = fileManager;
       _pathFactory = pathFactory;
+      _filesysContext = filesysContext;
     }
     #endregion
 
@@ -38,6 +40,9 @@ namespace Fushare.Filesystem {
 
     public abstract void HandleReadingFile(IFushareFilesys sender,
       ReadFileEventArgs args);
+
+    public abstract void HandleOpeningFile(IFushareFilesys sender,
+      OpenFileEventArgs args);
 
     #endregion
 

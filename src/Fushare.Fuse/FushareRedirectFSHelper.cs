@@ -6,6 +6,7 @@ using System.Text;
 using Mono.Unix.Native;
 using System.IO;
 using Mono.Fuse;
+using System.Security.AccessControl;
 
 namespace Fushare.Filesystem {
   /// <summary>
@@ -16,6 +17,7 @@ namespace Fushare.Filesystem {
     readonly FusharePathFactory _pathFactory;
     static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(FushareRedirectFSHelper));
     readonly FushareFileManager _fileManager;
+    readonly FilesysContext _filesysContext;
     #region Constructors
     /// <summary>
     /// Initializes a new instance of the <see cref="FushareRedirectFSHelper"/> class.
@@ -23,9 +25,10 @@ namespace Fushare.Filesystem {
     /// <param name="baseDir">The base dir.</param>
     /// <param name="pathFactory">The path factory.</param>
     public FushareRedirectFSHelper(ShadowDirPath baseDir, FusharePathFactory 
-      pathFactory, FushareFileManager fileManager) : base(baseDir.PathString) {
+      pathFactory, FushareFileManager fileManager, FilesysContext filesysContext) : base(baseDir.PathString) {
       _pathFactory = pathFactory;
       _fileManager = fileManager;
+      _filesysContext = filesysContext;
       // Create the meta direcotry.
       Directory.CreateDirectory(_pathFactory.CreateShadowFullPath(
         new VirtualPath(Path.DirectorySeparatorChar.ToString()),
@@ -34,10 +37,11 @@ namespace Fushare.Filesystem {
     #endregion
 
     public override Errno GetPathStatus(string path, out Stat buf) {
+      // Read the meta folder.
       var vrp = new VirtualRawPath(path);
       var ret = base.GetPathStatus(
         _pathFactory.CreateVirtualPath4Read(vrp), out buf);
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format("Path Mode: {0}", buf.st_mode));
+
       if ((buf.st_mode & FilePermissions.S_IFREG) != 0) {
         // Make a change to file size if is a file (S_IFREG)
         buf.st_size = _fileManager.GetFileLength(new VirtualPath(vrp));
@@ -90,19 +94,27 @@ namespace Fushare.Filesystem {
     /// </summary>
     /// <param name="path">The path.</param>
     /// <param name="info">The info.</param>
-    public override Errno OpenHandle(string path, Mono.Fuse.OpenedPathInfo info) {
-      String readPath =_pathFactory.CreateVirtualPath4Read(new VirtualRawPath(path));
-      ShadowFullPath fullReadPath = 
-        _pathFactory.CreateShadowFullPath4Read(new VirtualPath(new VirtualRawPath(path)));
-      if (File.Exists(fullReadPath.PathString)) {
-        return base.OpenHandle(readPath, info);
+    public override Errno OpenHandle(string path, OpenedPathInfo info) {
+      Errno retVal;
+      if (info.OpenAccess == OpenFlags.O_RDONLY) {
+        String readPath = _pathFactory.CreateVirtualPath4Read(new VirtualRawPath(path));
+        retVal = base.OpenHandle(readPath, info);
       } else {
         // This is a write.
         // @TODO Write to an existing file is not supported by BitTorrent.
         // It has to be enforced somewhere.
         String writePath = _pathFactory.CreateVirtualPath4Write(new VirtualRawPath(path));
-        return base.OpenHandle(writePath, info);
+        retVal = base.OpenHandle(writePath, info);
       }
+
+      // Add to filesys context.
+      VirtualPath vp = VirtualPath.CreateFromRawString(path);
+      VirtualFile vf = _fileManager.ReadVirtualFile(vp);
+      FileAccess fa = IOUtil.OpenFlags2FileAccess(info.OpenAccess);
+      var openFileInfo = new OpenFileInfo(info.Handle, vp, vf, fa);
+      _filesysContext.AddOpenFile(info.Handle, openFileInfo);
+
+      return retVal;
     }
 
     /// <summary>
@@ -114,9 +126,17 @@ namespace Fushare.Filesystem {
     /// <returns></returns>
     /// <remarks>This method is for FilesysOp.Write.</remarks>
     public override Errno CreateHandle(string path, OpenedPathInfo info, FilePermissions mode) {
-      var writePath = 
+      // Create the handle for the write.
+      String writePath = 
         _pathFactory.CreateVirtualPath4Write(new VirtualRawPath(path));
-      return base.CreateHandle(writePath, info, mode);
+      Errno retVal = base.CreateHandle(writePath, info, mode);
+
+      // Create the VF so the reads afterwards knows about the file.
+      VirtualPath vp = VirtualPath.CreateFromRawString(path);
+      VirtualFile vf = CreateAndWriteVirtualFile(vp);
+      var ofi = new OpenFileInfo(info.Handle, vp, vf, FileAccess.Write);
+      _filesysContext.AddOpenFile(info.Handle, ofi);
+      return retVal;
     }
 
     public override unsafe Errno WriteHandle(string path, OpenedPathInfo info, 
@@ -129,6 +149,34 @@ namespace Fushare.Filesystem {
           "Exception caught when writing to file. {0}", ex));
         throw;
       }
+    }
+
+    public override Errno ReleaseHandle(string path, OpenedPathInfo info) {
+      _filesysContext.RemoveOpenFile(info.Handle);
+      return base.ReleaseHandle(path, info);
+    }
+
+    public override Errno AccessPath(string path, AccessModes mask) {
+      String readPath = _pathFactory.CreateVirtualPath4Read(new VirtualRawPath(path));
+      return base.AccessPath(readPath, mask);
+    }
+
+    /// <summary>
+    /// Creates a virtual file with the Physical location information in it.
+    /// </summary>
+    /// <param name="vp">The vp.</param>
+    private VirtualFile CreateAndWriteVirtualFile(VirtualPath vp) {
+      ShadowFullPath readPath = _pathFactory.CreateShadowFullPath4Read(vp);
+      ShadowFullPath writePath = _pathFactory.CreateShadwoFullPath4Write(vp);
+      var virtualFile = new VirtualFile() {
+        PhysicalUri = new Uri(writePath.PathString)
+      };
+      IOUtil.PrepareParentDirForPath(readPath.PathString);
+      XmlUtil.WriteXml<VirtualFile>(virtualFile, readPath.PathString);
+
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+        string.Format("A virtual file is created at {0}", readPath.PathString));
+      return virtualFile;
     }
   }
 }

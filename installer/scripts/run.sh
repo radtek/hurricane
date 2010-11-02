@@ -65,7 +65,7 @@ if [ "$run_client" ]; then
   done
 
   eval LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$libdir" \
-    mono --debug "$client_bin/FushareApp.exe" -o allow_other -m "$mount_point" -s "$proj_dir/client/var/shadow" $bg_suffix
+    mono --debug "$client_bin/FushareApp.exe" -o allow_other -m "$mount_point" -S "$proj_dir/client/var/shadow" $bg_suffix
 
   # Make sure the file system is fully started.
   while [[ -z `mount | grep "/dev/fuse"` ]]; do

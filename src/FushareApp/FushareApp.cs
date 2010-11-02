@@ -82,6 +82,7 @@ namespace FushareApp {
       container.RegisterInstance<ShadowDirPath>(new ShadowDirPath(shadowDirPath));
       container.RegisterType<FusharePathFactory>(new ContainerControlledLifetimeManager());
       container.RegisterType<FushareFileManager>(new ContainerControlledLifetimeManager());
+      container.RegisterType<FilesysContext>(new ContainerControlledLifetimeManager());
 
       var proxy = new ServerProxy(ConfigurationManager.AppSettings[
         "FushareServerBaseAddress"]);

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using System.Net;
+using Mono.Unix.Native;
 
 namespace Fushare {
   public static class IOUtil {
@@ -190,6 +191,19 @@ namespace Fushare {
       using (var stream = File.OpenWrite(path)) {
         stream.Seek(offset, SeekOrigin.Begin);
         stream.Write(buffer, 0, buffer.Length);
+      }
+    }
+
+    public static FileAccess OpenFlags2FileAccess(OpenFlags openFlags) {
+      switch (openFlags) {
+        case OpenFlags.O_RDONLY:
+          return FileAccess.Read;
+        case OpenFlags.O_WRONLY:
+          return FileAccess.Write;
+        case OpenFlags.O_RDWR:
+          return FileAccess.ReadWrite;
+        default:
+          throw new ArgumentException();
       }
     }
   }

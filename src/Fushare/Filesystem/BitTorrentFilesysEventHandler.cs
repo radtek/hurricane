@@ -23,8 +23,9 @@ namespace Fushare.Filesystem {
 
     #region Constructors
     public BitTorrentFilesysEventHandler(ServerProxy serverProxy,
-      FushareFileManager fileManager, FusharePathFactory pathFactory) :
-      base(serverProxy, fileManager, pathFactory) { }
+      FushareFileManager fileManager, FusharePathFactory pathFactory, 
+      FilesysContext filesysContext) :
+      base(serverProxy, fileManager, pathFactory, filesysContext) { }
     #endregion
 
     #region IFilesysEventHandler Members
@@ -42,17 +43,19 @@ namespace Fushare.Filesystem {
         if (IOUtil.FileOrDirectoryExists(shadowFullPath.PathString)) {
           // @TODO return for now but the path could be stale.
           return;
+        } else {
+          String nameStr = match.BoundVariables[2];
+          if (nameStr.StartsWith(".")) {
+            // We don't deal with hidden files.
+            return;
+          }
         }
 
-        // else
+        // The path doesn't exsit locally. Check the server.
         Uri reqUri;
-        if (!string.IsNullOrEmpty(match.QueryParameters[OnDemandParamName])) {
-          reqUri = BasicPathMatch2ReqUri(match, new NameValueCollection() {
+        reqUri = BasicPathMatch2ReqUri(match, new NameValueCollection() {
           { PeekParamName, "true" }
           });
-        } else {
-          reqUri = BasicPathMatch2ReqUri(match, null);
-        }
         Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
           "Requesting meta info from Uri {0}", reqUri.ToString()));
         string xmlString;
@@ -61,13 +64,15 @@ namespace Fushare.Filesystem {
           xmlString = _serverProxy.GetUTF8String(reqUri,
             System.Threading.Timeout.Infinite);
         } catch (WebException ex) {
-          Logger.WriteLineIf(LogLevel.Error, _log_props, string.Format(
+          Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
             "Exception thrown from server: {0}", ex));
           // Handle different types of error accodingly.
           if (ex is WebException) {
             if (((HttpWebResponse)((ex as WebException).Response)).StatusCode ==
               HttpStatusCode.NotFound) {
-              // Normal. Server says requested file/directory doesn't exist.
+              // Normal. 
+              Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
+                "Server says {0} doesn't exist online.", args.VritualRawPath));
               return;
             } else {
               // Other protocol level errors.
@@ -79,9 +84,56 @@ namespace Fushare.Filesystem {
           }
         }
 
-        // If everything is fine so far, we are good to for subsequent read!
+        // If everything is fine so far, we are good for subsequent read!
         CreateVirtualFiles(new ShadowMetaFullPath(sender.ShadowDirPath,
           new VirtualPath(args.VritualRawPath)), xmlString);
+      }
+    }
+
+    /// <summary>
+    /// Handles the opening file event.
+    /// </summary>
+    /// <param name="sender">The sender.</param>
+    /// <param name="args">The <see cref="Fushare.Filesystem.OpenFileEventArgs"/> instance containing the event data.</param>
+    public override void HandleOpeningFile(IFushareFilesys sender, OpenFileEventArgs args) {
+      UriTemplateMatch match;
+      var succ = TryMatchPath(BasicTemplateString,
+        args.VritualRawPath.PathString, out match);
+      if (succ && args.FileAccess == FileAccess.Read) {
+        Uri reqUri;
+        if (!string.IsNullOrEmpty(match.QueryParameters[OnDemandParamName])) {
+          // It's on-demand read, downloading is postponed to read().
+        } else {
+          // Otherwise, we download the file now.
+          reqUri = BasicPathMatch2ReqUri(match, null);
+          Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
+            "Requesting meta info from Uri {0}", reqUri.ToString()));
+          string xmlString;
+          try {
+            // This can be a while.
+            xmlString = _serverProxy.GetUTF8String(reqUri,
+              System.Threading.Timeout.Infinite);
+          } catch (WebException ex) {
+            Logger.WriteLineIf(LogLevel.Error, _log_props, string.Format(
+              "Exception thrown from server: {0}", ex));
+            // Handle different types of error accodingly.
+            if (ex is WebException) {
+              if (((HttpWebResponse)((ex as WebException).Response)).StatusCode ==
+                HttpStatusCode.NotFound) {
+                // Normal. 
+                Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+                  string.Format("Server says requested file/directory doesn't exist."));
+                return;
+              } else {
+                // Other protocol level errors.
+                throw;
+              }
+            } else {
+              // Non-procotol-level errors. 
+              throw;
+            }
+          }
+        }
       }
     }
 
@@ -92,26 +144,30 @@ namespace Fushare.Filesystem {
         args.VritualRawPath.PathString, out match);
       // Only files under /bt directory are supported.
       if (succ) {
-        var fullPath = _pathFactory.CreateShadwoFullPath4Write(new VirtualPath(args.VritualRawPath));
-        if (!File.Exists(fullPath.PathString)) {
-          // It's a read, not a write
-          return;
-        } else {
+        IntPtr handle = args.Handle;
+        OpenFileInfo openFileInfo;
+        if (_filesysContext.TryGetOpenFileInfo(handle, out openFileInfo) && 
+          openFileInfo.FileAccess != FileAccess.Read) {
           // Stage in the file for publishing.
           _fileManager.CopyToServer(new VirtualPath(args.VritualRawPath));
+          var uri = BasicPathMatch2ReqUri(match, null);
+          Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
+            "POSTing to server to publish the file: {0}", uri));
+          _serverProxy.Post(uri, new byte[] { });
         }
-        var uri = BasicPathMatch2ReqUri(match, null);
-        Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
-          "Posting to server: {0}", uri));
-        _serverProxy.Post(uri, new byte[] { });
       }
     }
 
     public override void HandleReadingFile(IFushareFilesys sender,
       ReadFileEventArgs args) {
       // A read here should be preceded by a path status inquiry.
-
-      var vf = _fileManager.ReadVirtualFile(new VirtualPath(args.VritualRawPath));
+      OpenFileInfo ofi;
+      VirtualFile vf;
+      if (_filesysContext.TryGetOpenFileInfo(args.Handle, out ofi)) {
+        vf = ofi.VirtualFile;
+      } else {
+        throw new InvalidOperationException();
+      }
 
       if (vf.OnDemand) {
         Logger.WriteLineIf(LogLevel.Verbose, _log_props,

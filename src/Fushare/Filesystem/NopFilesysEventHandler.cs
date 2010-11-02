@@ -24,6 +24,10 @@ namespace Fushare.Filesystem {
       throw new NotImplementedException();
     }
 
+    public void HandleOpeningFile(IFushareFilesys sender, OpenFileEventArgs args) {
+      throw new NotImplementedException();
+    }
+
     #endregion
   }
 }

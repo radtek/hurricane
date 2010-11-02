@@ -116,7 +116,7 @@ namespace Fushare.Services.BitTorrent {
     public DataMetaInfo Peek(string nameSpace, string name) {
       string downloadPath;
       byte[] torrentBytes = _manager.PeekData(nameSpace, name, out downloadPath);
-      return MakeDataMetaInfo(downloadPath, torrentBytes, true);
+      return MakeDataMetaInfo(downloadPath, torrentBytes, false);
     }
 
     #endregion

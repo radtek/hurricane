@@ -12,7 +12,7 @@ namespace Fushare.Filesystem {
   /// constrain the input path type and prevent mistakes.
   /// </remarks>
   public abstract class FusharePath {
-    private readonly string _pathString;
+    protected readonly string _pathString;
     
     /// <summary>
     /// This should the a string path conforms to the PathType.
@@ -23,9 +23,7 @@ namespace Fushare.Filesystem {
     /// simply trimmed.
     /// </remarks>
     public string PathString {
-      get {
-        return _pathString;
-      }
+      get { return _pathString; }
     }
 
     /// <summary>
@@ -47,26 +45,37 @@ namespace Fushare.Filesystem {
       }
     }
 
+    /// <summary>
+    /// Performs an explicit conversion from <see cref="Fushare.Filesystem.FusharePath"/> 
+    /// to <see cref="System.String"/>.
+    /// </summary>
+    /// <param name="path">The path object.</param>
+    /// <returns>The path string.</returns>
     public static explicit operator string(FusharePath path) {
       return path.PathString;
+    }
+
+    /// <summary>
+    /// The hash code is its path string's hash code.
+    /// </summary>
+    /// <returns>
+    /// A hash code for this instance.
+    /// </returns>
+    public override int GetHashCode() {
+      return _pathString.GetHashCode();
+    }
+
+    public override string ToString() {
+      return _pathString;
     }
 
   }
 
   /// <summary>
-  /// The same as <see cref="VirtualPath"/> except that it includes parameter 
-  /// string, if present.
+  /// The base class for virtual path types.
   /// </summary>
-  public class VirtualRawPath : FusharePath {
-    public VirtualRawPath(string pathString) : base(pathString) { }
-
-  }
-
-  /// <summary>
-  /// The virutal path represented in the user level file system.
-  /// </summary>
-  public class VirtualPath : FusharePath {
-    public VirtualPath(string pathString) : base(pathString) { }
+  public abstract class VirtualPathBase : FusharePath {
+    public VirtualPathBase(string pathString) : base(pathString) { }
 
     /// <summary>
     /// Trims the raw path args.
@@ -78,11 +87,58 @@ namespace Fushare.Filesystem {
       return new Uri(string.Format(
       "http://localhost/{0}", rawPath)).LocalPath;
     }
+  }
+
+  /// <summary>
+  /// The same as <see cref="VirtualPath"/> except that it includes parameter 
+  /// string, if present.
+  /// </summary>
+  public class VirtualRawPath : VirtualPathBase {
+    public VirtualRawPath(string pathString) : base(pathString) { }
+
+    /// <summary>
+    /// Returns the virtual path out of the raw path.
+    /// </summary>
+    /// <value>The virtual path.</value>
+    public VirtualPath VirtualPath {
+      get {
+        string virtualPathStr = TrimRawPathArgs(_pathString);
+        return new VirtualPath(virtualPathStr);
+      }
+    }
+
+    /// <summary>
+    /// Performs an explicit conversion from <see cref="Fushare.Filesystem.VirtualRawPath"/> 
+    /// to <see cref="Fushare.Filesystem.VirtualPath"/>.
+    /// </summary>
+    /// <param name="vrp">The VirtualRawPath.</param>
+    /// <returns>The result of the conversion.</returns>
+    public static explicit operator VirtualPath(VirtualRawPath vrp) {
+      return vrp.VirtualPath;
+    }
+  }
+
+  /// <summary>
+  /// The virutal path represented in the user level file system.
+  /// </summary>
+  public class VirtualPath : VirtualPathBase {
+    public VirtualPath(string pathString) : base(pathString) { }
+
+    /// <summary>
+    /// Creates the virtual path from raw string.
+    /// </summary>
+    /// <param name="virtualRawPath">The virtual raw path.</param>
+    /// <remarks>
+    /// This is a convenience method.
+    /// </remarks>
+    public static VirtualPath CreateFromRawString(
+      string virtualRawPath) {
+      return new VirtualPath(new VirtualRawPath(virtualRawPath));
+    }
 
     public VirtualPath(VirtualRawPath vrp)
       : base(TrimRawPathArgs(vrp.PathString)) {
     }
-
   }
 
   /// <summary>

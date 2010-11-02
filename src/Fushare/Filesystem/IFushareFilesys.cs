@@ -27,6 +27,10 @@ namespace Fushare.Filesystem {
     /// </summary>
     event EventHandler<GetPathStatusEventArgs> GettingPathStatus;
     /// <summary>
+    /// Occurs when the file is being opened.
+    /// </summary>
+    event EventHandler<OpenFileEventArgs> OpeningFile;
+    /// <summary>
     /// Starts this file system daemon.
     /// </summary>
     void Start();

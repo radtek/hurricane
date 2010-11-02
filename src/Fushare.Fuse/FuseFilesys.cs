@@ -56,8 +56,8 @@ namespace Fushare.Filesystem {
           GettingPathStatus(this, new GetPathStatusEventArgs(new VirtualRawPath(path)));
         } catch (Exception ex) {
           Logger.WriteLineIf(LogLevel.Error, _log_props, string.Format(
-          "Exception thrown when handling GettingPathStatus event. Exception: {0}", ex));
-          throw;
+            "Exception thrown when handling GettingPathStatus event. Exception: {0}", ex));
+          // If the event handler fails, we can still read the file system as it is.
         }
       }
 
@@ -76,7 +76,8 @@ namespace Fushare.Filesystem {
         "OnReadHandle, path={0}, handle={1}, buflength={2}, offset={3}", 
         path, info.Handle, buf.Length, offset));
 
-      var eventArgs = new ReadFileEventArgs(new VirtualRawPath(path), buf, offset);
+      var eventArgs = new ReadFileEventArgs(new VirtualRawPath(path), buf, 
+        offset, info.Handle);
       if (this.ReadingFile != null) {
         try {
           ReadingFile(this, eventArgs);
@@ -95,21 +96,46 @@ namespace Fushare.Filesystem {
     }
 
     protected override Errno OnReleaseHandle(string path, OpenedPathInfo info) {
-      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format(
-        "OnReleaseHandle, path={0}, handle={1}, openflags={2}", 
-        path, info.Handle, info.OpenFlags));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
+        "OnReleaseHandle, path={0}, handle={1}, openflags={2}, OpenAccess={3}", 
+        path, info.Handle, info.OpenFlags, info.OpenAccess));
 
-      if (ReleasedFile != null) {
-        try {
-          ReleasedFile(this, new ReleaseFileEventArgs(new VirtualRawPath(path)));
-        } catch (Exception ex) {
-          Logger.WriteLineIf(LogLevel.Error, _log_props, string.Format(
-            "Exception thrown when handling ReleasedFile event. Exception: {0}", ex));
-          throw;
+      try {
+        if (ReleasedFile != null) {
+          ReleasedFile(this, new ReleaseFileEventArgs(new VirtualRawPath(path),
+            info.Handle));
         }
+      } catch (Exception ex) {
+        Logger.WriteLineIf(LogLevel.Error, _log_props, string.Format(
+          "Exception thrown when handling ReleasedFile event. Exception: {0}", ex));
+        throw;
       }
 
       return _rfs.ReleaseHandle(path, info);
+    }
+
+    /// <summary>
+    /// Called when a file is opened.
+    /// </summary>
+    /// <param name="path">The path.</param>
+    /// <param name="info">The info.</param>
+    /// <returns></returns>
+    protected override Errno OnOpenHandle(string path, OpenedPathInfo info) {
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
+        "OnOpenHandle, path={0}, OpenFlags={1}, OpenAccess={2}", path, 
+        info.OpenFlags, info.OpenAccess));
+
+      if (OpeningFile != null) {
+        try {
+          FileAccess fa = IOUtil.OpenFlags2FileAccess(info.OpenAccess);
+          OpeningFile(this, new OpenFileEventArgs(new VirtualRawPath(path), info.Handle, fa));
+        } catch (Exception ex) {
+          Logger.WriteLineIf(LogLevel.Error, _log_props, 
+            string.Format("Exception thrown when opening the file. Exception: {0}", ex));
+        }
+      }
+
+      return this._rfs.OpenHandle(path, info);
     }
  
     #endregion
@@ -166,13 +192,6 @@ namespace Fushare.Filesystem {
       return this._rfs.ChangePathPermissions(path, mode);
     }
 
-    protected override Errno OnOpenHandle(string path, OpenedPathInfo info) {
-
-      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnOpenHandle, path={0}, openflags={1}", path, info.OpenFlags));
-
-      return this._rfs.OpenHandle(path, info);
-    }
-
     protected override Errno OnFlushHandle(string path, OpenedPathInfo info) {
 
       Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnFlushHandle, path={0}, handle={1}", path, info.Handle));
@@ -182,7 +201,9 @@ namespace Fushare.Filesystem {
 
     protected override Errno OnCreateHandle(string path, OpenedPathInfo info, FilePermissions mode) {
 
-      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnCreateHandle, path={0}, openflags={1}, filepermission={2}", path, info.OpenAccess, mode));
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
+        "OnCreateHandle, path={0}, openflags={1}, filepermission={2}, OpenAccess={3}", 
+        path, info.OpenFlags, mode, info.OpenAccess));
       return this._rfs.CreateHandle(path, info, mode);
     }
 
@@ -324,6 +345,11 @@ namespace Fushare.Filesystem {
     /// be in place.
     /// </summary>
     public event EventHandler<GetPathStatusEventArgs> GettingPathStatus;
+
+    /// <summary>
+    /// Occurs when the file is being opened.
+    /// </summary>
+    public event EventHandler<OpenFileEventArgs> OpeningFile;
 
     /// <summary>
     /// Starts this file system daemon.

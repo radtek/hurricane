@@ -22,6 +22,7 @@ namespace Fushare.Filesystem {
         new EventHandler<ReadFileEventArgs>(FushareFilesys_ReadingFile);
       FushareFilesys.ReleasedFile += 
         new EventHandler<ReleaseFileEventArgs>(FushareFilesys_ReleasedFile);
+      FushareFilesys.OpeningFile += new EventHandler<OpenFileEventArgs>(FushareFilesys_OpeningFile);
     }
 
     #region Dispatching Methods
@@ -39,6 +40,11 @@ namespace Fushare.Filesystem {
       GetEventHandler(sender as IFushareFilesys, e).HandleGettingPathStatus(
         sender as IFushareFilesys, e);
     }
+
+    void FushareFilesys_OpeningFile(object sender, OpenFileEventArgs e) {
+      GetEventHandler(sender as IFushareFilesys, e).HandleOpeningFile(sender as IFushareFilesys, e);
+    }
+
     #endregion
 
     #region Abstract Methods
