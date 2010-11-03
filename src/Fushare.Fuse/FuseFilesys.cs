@@ -211,7 +211,10 @@ namespace Fushare.Filesystem {
 
       Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("OnGetHandleStatus, path={0}, handle={1}", path, info.Handle));
 
-      return this._rfs.GetHandleStatus(path, info, out buf);
+      Errno ret = this._rfs.GetHandleStatus(path, info, out buf);
+
+      Logger.WriteLineIf(LogLevel.Verbose, _fslog_props, string.Format("::Handle Status: Size={0}", buf.st_size));
+      return ret;
     }
 
     protected override Errno OnOpenDirectory(string path, OpenedPathInfo info) {

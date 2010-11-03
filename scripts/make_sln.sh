@@ -71,7 +71,7 @@ if [ "$run_client" ]; then
   libdir=$sln_lib
   if [ "$verbose" ]; then
     sudo LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$libdir" \
-      MONO_TRACE_LISTENER=Console.Out### mono --debug "$client_dir/FushareApp.exe" -odebug -o allow_other -m /mnt/$app_name -s /opt/$app_name/client/var/shadow
+      MONO_TRACE_LISTENER=Console.Out### mono --debug "$client_dir/FushareApp.exe" -odebug -o allow_other -m /mnt/$app_name -S /opt/$app_name/client/var/shadow
   else
     sudo LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$libdir" \
       mono --debug "$client_dir/FushareApp.exe" -o allow_other -m $mount_point -S /opt/$app_name/client/var/shadow

@@ -48,6 +48,22 @@ namespace Fushare.Filesystem {
       }
       return ret;
     }
+
+    /// <summary>
+    /// Gets the handle status. This method gets the status of the virtual file
+    /// and replaces the size with that of the real data file.
+    /// </summary>
+    public override Errno GetHandleStatus(string path, OpenedPathInfo info, 
+      out Stat buf) {
+      Errno ret;
+      ret = base.GetHandleStatus(path, info, out buf);
+      if ((buf.st_mode & FilePermissions.S_IFREG) != 0) {
+        // Make a change to file size if is a file (S_IFREG)
+        buf.st_size = _fileManager.GetFileLength(
+          VirtualPath.CreateFromRawString(path));
+      }
+      return ret;
+    }
     
     /// <summary>
     /// Creates the directory. Both normal and meta directories are created.
