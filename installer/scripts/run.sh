@@ -33,27 +33,30 @@ if [ "$foreground" -a "$run_server" -a "$run_client" ]; then
 fi
 
 my_path=$(readlink -f "$0")
-scripts_dir="$(dirname $my_path)"
-proj_dir="$scripts_dir/.."
-client_bin="$proj_dir/client/bin"
-server_bin="$proj_dir/server/bin"
-mount_point="/mnt/gatorshare"
+scripts_dir=$(dirname "$my_path")
+proj_dir=$scripts_dir/..
+client_bin=$proj_dir/client/bin
+server_bin=$proj_dir/server/bin
+
+# Instance specific parameters
+mount_point=/mnt/gatorshare
+gsserver_port=8080
 
 test ! $foreground && bg_suffix="&"
 
 if [ "$run_server" ]; then
   echo "Running server..."
   MONO_OPTIONS=--debug 
-  eval xsp2 --root "$server_bin" --verbose --nonstop $bg_suffix
+  eval xsp2 --root "$server_bin" --port $gsserver_port --verbose --nonstop $bg_suffix
 fi
 
 if [ "$run_client" ]; then
-  if [[ `mount | grep "/dev/fuse"` ]]; then
-    umount -vl "/dev/fuse"
+  if [[ `mount | grep -w "$mount_point"` ]]; then
+    umount -vl $mount_point
   fi
 
   mkdir -p $proj_dir/client/var/shadow
-  mkdir -p $mount_point 
+  mkdir -p "$mount_point" 
 
   echo "Running client..."
   libdir=$client_bin
@@ -73,7 +76,7 @@ if [ "$run_client" ]; then
     sleep 1s
   done
 
-  if [ ! "$foreground" ]; then
+  if [ ! "$foreground" ] && [ $? -eq 0 ]; then
     namespace=$(hostname)
     mkdir -p "$mount_point/bittorrent/$namespace"
   fi

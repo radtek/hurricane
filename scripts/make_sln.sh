@@ -35,6 +35,7 @@ sln_etc=$sln_dir/.etc
 
 client_dir="$sln_src/$client_proj_name/bin/l4n"
 web_dir="$sln_src/$web_proj_name"
+mount_point=/mnt/$app_name
 
 if [ "$build" ]; then
   echo "Building solution..."
@@ -58,8 +59,8 @@ if [ "$run_client" ]; then
   cp $sln_etc/FushareApp/FushareApp.exe.config $client_dir -v
 
   # Umount the mounting-point first if already mounted.
-  if [[ `mount | grep "/dev/fuse"` ]]; then
-    sudo umount -vl "/dev/fuse"
+  if [[ `mount | grep -w "$mount_point"` ]]; then
+    sudo umount -vl $mount_point
   fi
 
   # Prepare folders
@@ -73,6 +74,6 @@ if [ "$run_client" ]; then
       MONO_TRACE_LISTENER=Console.Out### mono --debug "$client_dir/FushareApp.exe" -odebug -o allow_other -m /mnt/$app_name -s /opt/$app_name/client/var/shadow
   else
     sudo LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$libdir" \
-      mono --debug "$client_dir/FushareApp.exe" -o allow_other -m /mnt/$app_name -S /opt/$app_name/client/var/shadow
+      mono --debug "$client_dir/FushareApp.exe" -o allow_other -m $mount_point -S /opt/$app_name/client/var/shadow
   fi
 fi

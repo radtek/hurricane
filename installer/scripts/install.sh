@@ -22,21 +22,30 @@ iface=$1
 namespace=$(hostname)
 
 my_path=$(readlink -f "$0")
-scripts_dir="$(dirname $my_path)"
+scripts_dir=$(dirname "$my_path")
 proj_dir="$scripts_dir/.."
+
+# Instance specific parameters.
 dest_folder='/opt/gatorshare'
 dest_folder_escaped='\/opt\/gatorshare'
+gsserver_port=8080
+dht_tracker_listening_port=23113
+http_pins_listening_port=23114
+
 
 mkdir -p "$dest_folder"
 cp -rt "$dest_folder" "$proj_dir"
 
-# Edit config file parameters based on the host information
+# Edit Fushare.config file parameters based on the host information
 sed "s/{BitTorrentManagerSelfNamespace}/$namespace/" -i "$dest_folder/server/etc/Fushare.config"
 sed "s/{DhtTrackerIFace}/$iface/" -i "$dest_folder/server/etc/Fushare.config"
 sed "s/{GatorShareHomeDir}/$dest_folder_escaped/" -i "$dest_folder/server/etc/Fushare.config"
+sed "s/{DhtTrackerListeningPort}/$dht_tracker_listening_port/" -i "$dest_folder/server/etc/Fushare.config"
+sed "s/{HttpPieceInfoServerListeningPort}/$http_pins_listening_port/" -i "$dest_folder/server/etc/Fushare.config"
 
+# Edit FushareApp.exe.config
 sed "s/{GatorShareHomeDir}/$dest_folder_escaped/" -i "$dest_folder/client/etc/FushareApp.exe.config"
-
+sed "s/{GSServerPort}/$gsserver_port/" -i "$dest_folder/client/etc/FushareApp.exe.config"
 
 
 # Set up runtime configs.
