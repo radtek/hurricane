@@ -41,13 +41,14 @@ namespace Fushare.Services.BitTorrent {
     /// </returns>
     public IEnumerable<PeerEntry> GetPeers(byte[] infoHash) {
       Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-          string.Format("Getting peers for infoHash: {0} (UrlBase64)", 
-          UrlBase64.Encode(infoHash)));
+          string.Format("Getting peers for infoHash: {0}", 
+          ServiceUtil.GetUrlCompatibleString(infoHash)));
       ICollection<PeerEntry> peers = new List<PeerEntry>();
       // Fire DHT Get
       DhtResults results;
       try {
-        results = _dht.Get(infoHash);
+        byte[] key = ServiceUtil.GetUrlCompatibleBytes(infoHash);
+        results = _dht.Get(key);
       } catch (ResourceException ex) {
         Logger.WriteLineIf(LogLevel.Error, _log_props, string.Format(
           "Exception caught when retrieving peers. Returning empty peers collection.\n{0}",
@@ -94,8 +95,9 @@ namespace Fushare.Services.BitTorrent {
     public void AnnouncePeer(byte[] infoHash, PeerEntry peer) {
       // Firing DHT Put
       byte[] peer_bytes = peer.SerializeTo();
+      byte[] dictKey = ServiceUtil.GetUrlCompatibleBytes(infoHash);
       try {
-        _dht.Put(infoHash, peer_bytes, PeerTtl);
+        _dht.Put(dictKey, peer_bytes, PeerTtl);
       } catch (DhtException ex) {
         Logger.WriteLineIf(LogLevel.Error, _log_props,
           string.Format("Unable to announce peer to DHT. We can try next time. \n{0}", ex));

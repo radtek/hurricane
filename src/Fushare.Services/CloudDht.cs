@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using System.Text;
 
 namespace Fushare.Services {
   /// <summary>
@@ -100,8 +101,13 @@ namespace Fushare.Services {
     #endregion
 
     #region Protected Methods
+    /// <summary>
+    /// Encodes the key bytes into a string.
+    /// </summary>
+    /// <param name="key">The key.</param>
+    /// <returns></returns>
     protected static string EncodeKeyBytes(byte[] key) {
-      var ret = UrlBase64.Encode(key);
+      var ret = Encoding.UTF8.GetString(key);
       return ret;
     }
 

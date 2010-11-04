@@ -57,7 +57,7 @@ namespace Fushare {
     }
 
     public byte[] Get(string relativeUri) {
-      return Get(new Uri(relativeUri));
+      return Get(new Uri(relativeUri, UriKind.Relative));
     }
 
     public string GetUTF8String(Uri uri, int timeout) {
