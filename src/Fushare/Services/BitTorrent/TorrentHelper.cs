@@ -11,7 +11,7 @@ namespace Fushare.Services.BitTorrent {
   /// Helper class that provides torrent related operations.
   /// </summary>
   public class TorrentHelper {
-    public string TorrentsDirPath { get; private set; }
+    readonly BitTorrentCache _bittorrentCache;
 
     /// <summary>
     /// The URL prefix that clients should send requests to.
@@ -19,8 +19,8 @@ namespace Fushare.Services.BitTorrent {
     /// <value>The tracker URL prefix.</value>
     public string TrackerUrlPrefix { get; private set; }
 
-    public TorrentHelper(string torrentsDirPath, string trackrUrlPrefix) {
-      TorrentsDirPath = torrentsDirPath;
+    public TorrentHelper(BitTorrentCache bittorrentCache, string trackrUrlPrefix) {
+      _bittorrentCache = bittorrentCache;
       TrackerUrlPrefix = trackrUrlPrefix;
     }
 
@@ -49,7 +49,7 @@ namespace Fushare.Services.BitTorrent {
     /// <returns>The full path written.</returns>
     public string WriteTorrentFile(string nameSpace, string torrentName, 
       byte[] torrentBytes) {
-      var pathToWrite = GetTorrentFilePath(nameSpace, torrentName);
+      var pathToWrite = _bittorrentCache.GetTorrentFilePath(nameSpace, torrentName);
       WriteTorrent(torrentBytes, pathToWrite);
       return pathToWrite;
     }
@@ -65,18 +65,6 @@ namespace Fushare.Services.BitTorrent {
     }
 
     /// <summary>
-    /// Gets the path of torrent file.
-    /// </summary>
-    /// <param name="nameSpace">The name space.</param>
-    /// <param name="name">The name.</param>
-    /// <returns></returns>
-    public string GetTorrentFilePath(string nameSpace, string torrentName) {
-      // Torrent files have this .torrrent suffix.
-      return Path.Combine(TorrentsDirPath,
-        Path.Combine(nameSpace, torrentName + ".torrent"));
-    }
-
-    /// <summary>
     /// Reads torrent from file system if exists or download it from DHT and writes it 
     /// to file system.
     /// </summary>
@@ -86,7 +74,7 @@ namespace Fushare.Services.BitTorrent {
     /// <returns>Torrent bytes.</returns>
     public byte[] ReadOrDownloadTorrent(string nameSpace, string name, 
       DhtProxy proxy) {
-      var torrentPath = GetTorrentFilePath(nameSpace, name);
+      var torrentPath = _bittorrentCache.GetTorrentFilePath(nameSpace, name);
       if (File.Exists(torrentPath)) {
         return File.ReadAllBytes(torrentPath);
       } else {

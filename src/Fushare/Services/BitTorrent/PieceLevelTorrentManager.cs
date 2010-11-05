@@ -11,17 +11,21 @@ using System.Net;
 
 namespace Fushare.Services.BitTorrent {
   public class PieceLevelTorrentManager {
+    #region Fields
     BitTorrentManager _manager;
     DhtProxy _dhtProxy;
     TorrentHelper _torrentHelper;
     readonly int _pieceInfoServerPort;
     IPieceInfoServer _pieceInfoServer;
-    static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(PieceLevelTorrentManager));
+    BitTorrentCache _bittorrentCache;
+    static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(PieceLevelTorrentManager)); 
+    #endregion
 
-    public PieceLevelTorrentManager(BitTorrentManager manager, 
+    public PieceLevelTorrentManager(BitTorrentManager manager, BitTorrentCache bittorrentCache,
       DhtProxy dhtProxy, TorrentHelper torrentHelper, int pieceInfoServerPort) {
       _manager = manager;
       _dhtProxy = dhtProxy;
+      _bittorrentCache = bittorrentCache;
       _torrentHelper = torrentHelper;
       _pieceInfoServerPort = pieceInfoServerPort;
       _pieceInfoServer = new HttpPieceInfoServer(_pieceInfoServerPort, this);
@@ -41,13 +45,13 @@ namespace Fushare.Services.BitTorrent {
     /// </exception>
     public void ServePiece(string nameSpace, string name, int pieceIndex) {
       string pieceName = MakePieceDataName(name, pieceIndex);
-      if (IOUtil.FileOrDirectoryExists(_torrentHelper.GetTorrentFilePath(
+      if (IOUtil.FileOrDirectoryExists(_bittorrentCache.GetTorrentFilePath(
         nameSpace, pieceName))) {
         // It is already being served.
         return;
       }
 
-      var torrent = Torrent.Load(_torrentHelper.GetTorrentFilePath(nameSpace, 
+      var torrent = Torrent.Load(_bittorrentCache.GetTorrentFilePath(nameSpace, 
         name));
       if (torrent.Files.Length != 1) {
         throw new ArgumentException(
@@ -57,10 +61,10 @@ namespace Fushare.Services.BitTorrent {
 
       var offset = pieceIndex * torrent.PieceLength;
 
-      byte[] pieceData = IOUtil.Read(_manager.GetPathOfItemInDownloads(
+      byte[] pieceData = IOUtil.Read(_bittorrentCache.GetPathOfItemInDownloads(
         nameSpace, name), offset, torrent.PieceLength, torrent.Size);
 
-      var piecePath = _manager.GetPathOfItemInDownloads(nameSpace, 
+      var piecePath = _bittorrentCache.GetPathOfItemInDownloads(nameSpace, 
         pieceName);
       File.WriteAllBytes(piecePath, pieceData);
       Logger.WriteLineIf(LogLevel.Info, _log_props,
@@ -77,7 +81,7 @@ namespace Fushare.Services.BitTorrent {
     /// <returns></returns>
     public byte[] ReadPieceTorrent(string nameSpace, string name, int pieceIndex) {
       var pieceName = MakePieceDataName(name, pieceIndex);
-      return File.ReadAllBytes(_torrentHelper.GetTorrentFilePath(nameSpace, 
+      return File.ReadAllBytes(_bittorrentCache.GetTorrentFilePath(nameSpace, 
         pieceName));
     }
 
@@ -104,7 +108,7 @@ namespace Fushare.Services.BitTorrent {
       int offsetInPiece = (int)(offset % wholeTorrent.PieceLength);
 
       // If the piece is already downloaded, we just return it.
-      string piecePath = _manager.GetPathOfItemInDownloads(
+      string piecePath = _bittorrentCache.GetPathOfItemInDownloads(
         nameSpace, pieceName);
       if (IOUtil.FileOrDirectoryExists(piecePath)) {
         return IOUtil.Read(piecePath, offsetInPiece, bytesToRead);
@@ -136,7 +140,7 @@ namespace Fushare.Services.BitTorrent {
       int pieceIndex) {
       var wholeTorrentDhtKeyStr = ServiceUtil.GetDhtKeyString(nameSpace, name);
       var pieceKeyStr = MakePieceTorrentKey(wholeTorrentDhtKeyStr, pieceIndex);
-      var torrentFilePath = _torrentHelper.GetTorrentFilePath(nameSpace, name);
+      var torrentFilePath = _bittorrentCache.GetTorrentFilePath(nameSpace, name);
       
       byte[] pieceTorrentBytes;
       bool succ = _dhtProxy.TryGetTorrent(

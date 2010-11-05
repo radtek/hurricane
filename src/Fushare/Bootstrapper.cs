@@ -56,12 +56,14 @@ namespace Fushare {
 
       #region TorrentHelper
       // Singleton.
-      var btManagerBaseDirPath =
+      var cacheBaseDirPath =
         ConfigurationManager.AppSettings["BitTorrentManagerBaseDirPath"];
       var ip = NetUtil.GetLocalIPByInterface(
         ConfigurationManager.AppSettings["DhtTrackerIface"]);
+      var bittorrentCache = new BitTorrentCache(cacheBaseDirPath);
+      container.RegisterInstance<BitTorrentCache>(bittorrentCache);
       var torrentHelper = new TorrentHelper(
-        BitTorrentManager.GetTorrentsDirPath(btManagerBaseDirPath), 
+        bittorrentCache,
         string.Format("http://{0}:{1}/", ip.ToString(), dhtTrackerListenerPort));
       container.RegisterInstance<TorrentHelper>(torrentHelper); 
       #endregion
@@ -71,7 +73,7 @@ namespace Fushare {
       container.RegisterType<BitTorrentManager>(
         new ContainerControlledLifetimeManager(),
         new InjectionConstructor(
-          btManagerBaseDirPath,
+          typeof(BitTorrentCache),
           ConfigurationManager.AppSettings["BitTorrentManagerSelfNamespace"],
           typeof(DhtProxy), 
           typeof(DhtTracker), 
@@ -97,6 +99,7 @@ namespace Fushare {
         new ContainerControlledLifetimeManager(),
         new InjectionConstructor(
           typeof(BitTorrentManager),
+          typeof(BitTorrentCache),
           typeof(DhtProxy),
           typeof(TorrentHelper),
           infoServerListeningPort)); 

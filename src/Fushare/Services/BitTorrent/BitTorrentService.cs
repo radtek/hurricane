@@ -216,7 +216,7 @@ namespace Fushare.Services.BitTorrent {
       var ub = new UriBuilder();
       ub.Scheme = "file";
       ub.Path = Path.Combine(WebConfigurationManager.AppSettings[
-        "BitTorrentManagerBaseDirPath"], BitTorrentManager.DownloadsDirName);
+        "BitTorrentManagerBaseDirPath"], BitTorrentCache.DownloadsDirName);
       return new BitTorrentServiceInfo () {
         ServerCacheUri = ub.Uri
       };
