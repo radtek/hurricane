@@ -12,6 +12,7 @@ using System.Collections.Specialized;
 
 namespace Fushare.Web.Controllers {
   [ExceptionHandler]
+  [LogRequest]
   public class BitTorrentController : Controller {
 
     #region Fields
@@ -35,10 +36,6 @@ namespace Fushare.Web.Controllers {
     }
 
     public ActionResult Index(string nameSpace, string name) {
-      Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
-        "Received request ({2}){0} from {1}", Request.RawUrl,
-        Request.UserHostAddress, Request.HttpMethod));
-
       if (!string.IsNullOrEmpty(Request.Params["path"])) {
         // This is allowed for both GET and POST.
         return PublishInternal(nameSpace, name);

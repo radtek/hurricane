@@ -288,7 +288,7 @@ namespace Fushare.Services.BitTorrent {
       byte[] torrentBytes = bdict.Encode();
       TorrentHelper.WriteTorrent(torrentBytes, torrentSavePath);
 
-      string torrentUrl = _torrentHelper.GetTorrentFileDownloadUrl(nameSpace, name);
+      string torrentUrl = _torrentHelper.GetTorrentFileUrlToPublish(nameSpace, name);
       // Put the Url bytes to the dictionary.
       var torrentUrlBytes = Encoding.UTF8.GetBytes(torrentUrl);
 
@@ -301,7 +301,8 @@ namespace Fushare.Services.BitTorrent {
       }
 
       Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-        string.Format("{0}: Torrent file succesfully put into DHT.", torrent.Name));
+        string.Format("{0}: Succesfully registered torrent url to dictionary.", 
+        torrent.Name));
 
       var saveDir = IOUtil.GetParent(dataPath, true).FullName;
       // Download without blocking.

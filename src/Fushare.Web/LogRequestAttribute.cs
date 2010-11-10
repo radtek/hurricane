@@ -27,44 +27,37 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
-using Fushare.Services.BitTorrent;
-using System.IO;
 using System.Collections;
-using System.Net;
 
-namespace Fushare.Web.Controllers {
-  /// <summary>
-  /// Controller for Torrent Data Service.
-  /// </summary>
-  [ExceptionHandler]
-  [LogRequest]
-  public class TorrentDataController : Controller {
-    readonly TorrentDataService _torrentDataService;
-    static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(TorrentDataController));
+namespace Fushare.Web {
+  public class LogRequestAttribute : ActionFilterAttribute {
 
-    public TorrentDataController(TorrentDataService torrentDataService) {
-      _torrentDataService = torrentDataService;
-    }
+    /// <summary>
+    /// Log before serving the request.
+    /// </summary>
+    public override void OnActionExecuting(ActionExecutingContext filterContext) {
+      IDictionary _log_props = Logger.PrepareLoggerProperties(
+        filterContext.Controller.GetType());
 
-    public ActionResult Index() {
-      return View();
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
+        "Received request ({2}){0} from {1}", 
+        filterContext.HttpContext.Request.RawUrl,
+        filterContext.HttpContext.Request.UserHostAddress, 
+        filterContext.HttpContext.Request.HttpMethod));
     }
 
     /// <summary>
-    /// Serves the torrent file downloads.
+    /// Log after serving the request.
     /// </summary>
-    [AcceptVerbs(HttpVerbs.Get)]
-    public ActionResult TorrentFile(string nameSpace, string name) {
-      string fileName;
-      try {
-        Stream stream = _torrentDataService.LoadTorrentFile(nameSpace, name, out fileName);
-        return File(stream, HttpUtil.OctetStreamContentType, fileName);
-      } catch (FileNotFoundException ex) {
-        Logger.WriteLineIf(LogLevel.Error, _log_props, string.Format(
-          "Couldn't find the find requested. Ex: {0}", ex));
-        throw new HttpException((int)HttpStatusCode.NotFound, 
-          "The requested file is not found.");
-      }
+    public override void OnActionExecuted(ActionExecutedContext filterContext) {
+      IDictionary _log_props = Logger.PrepareLoggerProperties(
+        filterContext.Controller.GetType());
+
+      Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
+        "Finished serving request ({2}){0} from {1}",
+        filterContext.HttpContext.Request.RawUrl,
+        filterContext.HttpContext.Request.UserHostAddress,
+        filterContext.HttpContext.Request.HttpMethod));
     }
   }
 }

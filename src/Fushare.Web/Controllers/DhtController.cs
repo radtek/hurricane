@@ -11,6 +11,8 @@ using Fushare.Services.Dht;
 using System.Net;
 
 namespace Fushare.Web.Controllers {
+  [ExceptionHandler]
+  [LogRequest]
   public class DhtController : Controller {
     #region Fields
 

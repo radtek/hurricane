@@ -90,7 +90,7 @@ namespace Fushare.Services.BitTorrent {
     /// </summary>
     /// <param name="nameSpace">The name space.</param>
     /// <param name="name">The name.</param>
-    public string GetTorrentFileDownloadUrl(string nameSpace, string name) {
+    public string GetTorrentFileUrlToPublish(string nameSpace, string name) {
       var template = new UriTemplate("TorrentData/{namespace}/{name}/TorrentFile");
       var baseAddr = string.Format("http://{0}:{1}", _hostIP, _gsserverPort);
       Uri retVal = template.BindByPosition(new Uri(baseAddr), nameSpace, name);
@@ -122,8 +122,12 @@ namespace Fushare.Services.BitTorrent {
       DhtProxy proxy) {
       var torrentPath = _bittorrentCache.GetTorrentFilePath(nameSpace, name);
       if (File.Exists(torrentPath)) {
+        Logger.WriteLineIf(LogLevel.Verbose, _log_props, 
+          string.Format("Torrent file already exists. Reading it."));
         return File.ReadAllBytes(torrentPath);
       } else {
+        Logger.WriteLineIf(LogLevel.Verbose, _log_props,
+          string.Format("Torrent file doesn't exist. Downloading it."));
         byte[] torrentKey = ServiceUtil.GetDhtKeyBytes(nameSpace, name);
         IList<byte[]> urls = proxy.GetUrlsToDownloadTorrent(torrentKey);
         int numServers = urls.Count;
@@ -131,11 +135,14 @@ namespace Fushare.Services.BitTorrent {
         var webClient = new WebClient();
         byte[] torrentBytes = null;
         do {
-          int index = rnd.Next(numServers--);
+          int index = rnd.Next(numServers);
           byte[] urlBytes = urls[index];
           urls.RemoveAt(index);
           string urlToTry = Encoding.UTF8.GetString(urlBytes);
           try {
+            Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
+              "Trying to download torrent from the #{0} peer in the {1}-item list.",
+              index, numServers));
             torrentBytes = webClient.DownloadData(urlToTry);
             break;
           } catch (WebException ex) {
@@ -143,7 +150,7 @@ namespace Fushare.Services.BitTorrent {
               "Failed to download torrent from this peer: {0}. Exception: {1}", 
               urlToTry, ex));
           }
-        } while (numServers > 0);
+        } while (--numServers > 0);
 
         if (torrentBytes == null) {
           throw new ResourceException(string.Format(

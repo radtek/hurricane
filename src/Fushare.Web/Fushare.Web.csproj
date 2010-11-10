@@ -89,6 +89,7 @@
     </Compile>
     <Compile Include="HttpContextLifetimeManager.cs" />
     <Compile Include="HttpUtil.cs" />
+    <Compile Include="LogRequestAttribute.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UnityControllerFactory.cs" />
     <Compile Include="Util.cs" />
