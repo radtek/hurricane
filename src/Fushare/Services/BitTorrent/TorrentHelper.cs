@@ -5,23 +5,43 @@ using System.Text;
 using MonoTorrent.Common;
 using MonoTorrent.BEncoding;
 using System.IO;
+using System.Net;
+using System.Collections;
 
 namespace Fushare.Services.BitTorrent {
   /// <summary>
   /// Helper class that provides torrent related operations.
   /// </summary>
   public class TorrentHelper {
+    private static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(TorrentHelper));
     readonly BitTorrentCache _bittorrentCache;
+    readonly IPAddress _hostIP;
+    readonly int _trackerPort;
+    readonly int _gsserverPort;
 
     /// <summary>
     /// The URL prefix that clients should send requests to.
     /// </summary>
     /// <value>The tracker URL prefix.</value>
-    public string TrackerUrlPrefix { get; private set; }
+    string TrackerUrlPrefix {
+      get { 
+        return string.Format("http://{0}:{1}/", _hostIP.ToString(), _trackerPort); 
+      }
+    }
 
-    public TorrentHelper(BitTorrentCache bittorrentCache, string trackrUrlPrefix) {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TorrentHelper"/> class.
+    /// </summary>
+    /// <param name="bittorrentCache">The bittorrent cache.</param>
+    /// <param name="hostIP">The host IP.</param>
+    /// <param name="trackerPort">The tracker port.</param>
+    /// <param name="gsserverPort">The gsserver port. It is used to register the torrent web server.</param>
+    public TorrentHelper(BitTorrentCache bittorrentCache, IPAddress hostIP, 
+      int trackerPort, int gsserverPort) {
       _bittorrentCache = bittorrentCache;
-      TrackerUrlPrefix = trackrUrlPrefix;
+      _hostIP = hostIP;
+      _trackerPort = trackerPort;
+      _gsserverPort = gsserverPort;
     }
 
     /// <summary>
@@ -32,8 +52,8 @@ namespace Fushare.Services.BitTorrent {
     /// <returns>The torrent</returns>
     public BEncodedDictionary CreateTorrent(string dataPath) {
       TorrentCreator creator = new TorrentCreator();
-      creator.Comment = "Comment";
-      creator.CreatedBy = "Fushare";
+      creator.Comment = "This torrent file is automatically created.";
+      creator.CreatedBy = "GatorShare";
       creator.Path = dataPath;
       creator.Announces.Add(new List<string>());
       creator.Announces[0].Add(TrackerUrlPrefix);
@@ -65,6 +85,30 @@ namespace Fushare.Services.BitTorrent {
     }
 
     /// <summary>
+    /// Gets the torrent file download Uri with which other peers can download 
+    /// the torrent file from this server.
+    /// </summary>
+    /// <param name="nameSpace">The name space.</param>
+    /// <param name="name">The name.</param>
+    public string GetTorrentFileDownloadUrl(string nameSpace, string name) {
+      var template = new UriTemplate("TorrentData/{namespace}/{name}/TorrentFile");
+      var baseAddr = string.Format("http://{0}:{1}", _hostIP, _gsserverPort);
+      Uri retVal = template.BindByPosition(new Uri(baseAddr), nameSpace, name);
+      return retVal.ToString();
+    }
+
+    public bool TryReadOrDownloadTorrent(string nameSpace, string name,
+      DhtProxy proxy, out byte[] torrent) {
+        try {
+          torrent = ReadOrDownloadTorrent(nameSpace, name, proxy);
+          return true;
+        } catch (ResourceException) {
+          torrent = null;
+          return false;
+        }
+    }
+
+    /// <summary>
     /// Reads torrent from file system if exists or download it from DHT and writes it 
     /// to file system.
     /// </summary>
@@ -72,16 +116,38 @@ namespace Fushare.Services.BitTorrent {
     /// <param name="name">The name.</param>
     /// <param name="proxy">The proxy.</param>
     /// <returns>Torrent bytes.</returns>
+    /// <exception cref="ResourceException">When such a torrent isn't available.
+    /// </exception>
     public byte[] ReadOrDownloadTorrent(string nameSpace, string name, 
       DhtProxy proxy) {
       var torrentPath = _bittorrentCache.GetTorrentFilePath(nameSpace, name);
       if (File.Exists(torrentPath)) {
         return File.ReadAllBytes(torrentPath);
       } else {
-        var torrentKey = ServiceUtil.GetDhtKeyBytes(nameSpace, name);
-        byte[] torrentBytes = proxy.GetTorrent(torrentKey);
+        byte[] torrentKey = ServiceUtil.GetDhtKeyBytes(nameSpace, name);
+        IList<byte[]> urls = proxy.GetUrlsToDownloadTorrent(torrentKey);
+        int numServers = urls.Count;
+        var rnd = new Random();
+        var webClient = new WebClient();
+        byte[] torrentBytes = null;
+        do {
+          int index = rnd.Next(numServers--);
+          byte[] urlBytes = urls[index];
+          urls.RemoveAt(index);
+          string urlToTry = Encoding.UTF8.GetString(urlBytes);
+          try {
+            torrentBytes = webClient.DownloadData(urlToTry);
+            break;
+          } catch (WebException ex) {
+            Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
+              "Failed to download torrent from this peer: {0}. Exception: {1}", 
+              urlToTry, ex));
+          }
+        } while (numServers > 0);
+
         if (torrentBytes == null) {
-          throw new ResourceException();
+          throw new ResourceException(string.Format(
+            "No such torrent file: {0} available.", name));
         }
         IOUtil.PrepareParentDirForPath(torrentPath);
         File.WriteAllBytes(torrentPath, torrentBytes);

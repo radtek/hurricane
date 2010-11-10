@@ -30,6 +30,8 @@ using System.Web;
 using System.Web.Mvc;
 using Fushare.Services.BitTorrent;
 using System.IO;
+using System.Collections;
+using System.Net;
 
 namespace Fushare.Web.Controllers {
   /// <summary>
@@ -38,6 +40,7 @@ namespace Fushare.Web.Controllers {
   [ExceptionHandler]
   public class TorrentDataController : Controller {
     readonly TorrentDataService _torrentDataService;
+    static readonly IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(TorrentDataController));
 
     public TorrentDataController(TorrentDataService torrentDataService) {
       _torrentDataService = torrentDataService;
@@ -53,8 +56,15 @@ namespace Fushare.Web.Controllers {
     [AcceptVerbs(HttpVerbs.Get)]
     public ActionResult TorrentFile(string nameSpace, string name) {
       string fileName;
-      Stream stream = _torrentDataService.LoadTorrentFile(nameSpace, name, out fileName);
-      return File(stream, HttpUtil.OctetStreamContentType, fileName);
+      try {
+        Stream stream = _torrentDataService.LoadTorrentFile(nameSpace, name, out fileName);
+        return File(stream, HttpUtil.OctetStreamContentType, fileName);
+      } catch (FileNotFoundException ex) {
+        Logger.WriteLineIf(LogLevel.Error, _log_props, string.Format(
+          "Couldn't find the find requested. Ex: {0}", ex));
+        throw new HttpException((int)HttpStatusCode.NotFound, 
+          "The requested file is not found.");
+      }
     }
   }
 }

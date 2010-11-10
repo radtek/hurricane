@@ -143,8 +143,8 @@ namespace Fushare.Services.BitTorrent {
       var torrentFilePath = _bittorrentCache.GetTorrentFilePath(nameSpace, name);
       
       byte[] pieceTorrentBytes;
-      bool succ = _dhtProxy.TryGetTorrent(
-        ServiceUtil.GetDhtKeyBytes(pieceKeyStr), out pieceTorrentBytes);
+      bool succ = _torrentHelper.TryReadOrDownloadTorrent(
+        nameSpace, name, _dhtProxy, out pieceTorrentBytes);
       if (succ) {
         // Somebody else already requested this piece.
         return pieceTorrentBytes;

@@ -58,13 +58,13 @@ namespace Fushare {
       // Singleton.
       var cacheBaseDirPath =
         ConfigurationManager.AppSettings["BitTorrentManagerBaseDirPath"];
-      var ip = NetUtil.GetLocalIPByInterface(
+      IPAddress ip = NetUtil.GetLocalIPByInterface(
         ConfigurationManager.AppSettings["DhtTrackerIface"]);
+      int gsserverPort = Int32.Parse(ConfigurationManager.AppSettings["GSServerPort"]);
       var bittorrentCache = new BitTorrentCache(cacheBaseDirPath);
       container.RegisterInstance<BitTorrentCache>(bittorrentCache);
       var torrentHelper = new TorrentHelper(
-        bittorrentCache,
-        string.Format("http://{0}:{1}/", ip.ToString(), dhtTrackerListenerPort));
+        bittorrentCache, ip, dhtTrackerListenerPort, gsserverPort);
       container.RegisterInstance<TorrentHelper>(torrentHelper); 
       #endregion
 

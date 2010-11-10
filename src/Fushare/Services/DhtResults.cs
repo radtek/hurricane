@@ -11,7 +11,7 @@ namespace Fushare.Services {
     #region Fields
     readonly IDictionary<string, object> _metaInfo = 
       new Dictionary<string, object>();
-    readonly IList<DhtResultEntry> _entryList = new List<DhtResultEntry>(); 
+    readonly List<DhtResultEntry> _entryList = new List<DhtResultEntry>(); 
     #endregion
 
     #region Properties

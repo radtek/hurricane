@@ -8,6 +8,7 @@ using MonoTorrent.Client;
 using MonoTorrent.Client.Tracker;
 using MonoTorrent.Common;
 using MonoTorrent.Tracker;
+using System.Text;
 
 namespace Fushare.Services.BitTorrent {
   /// <summary>
@@ -287,11 +288,15 @@ namespace Fushare.Services.BitTorrent {
       byte[] torrentBytes = bdict.Encode();
       TorrentHelper.WriteTorrent(torrentBytes, torrentSavePath);
 
+      string torrentUrl = _torrentHelper.GetTorrentFileDownloadUrl(nameSpace, name);
+      // Put the Url bytes to the dictionary.
+      var torrentUrlBytes = Encoding.UTF8.GetBytes(torrentUrl);
+
       if (unique) {
-        _dhtProxy.CreateTorrent(dhtKey, torrentBytes, TorrentTtl);
+        _dhtProxy.CreateTorrent(dhtKey, torrentUrlBytes, TorrentTtl);
         CacheRegistry.AddPathToRegistry(dataPath, true);
       } else {
-        _dhtProxy.PutTorrent(dhtKey, torrentBytes, TorrentTtl);
+        _dhtProxy.PutTorrent(dhtKey, torrentUrlBytes, TorrentTtl);
         CacheRegistry.UpdatePathInRegistry(dataPath, true);
       }
 

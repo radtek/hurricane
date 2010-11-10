@@ -84,8 +84,13 @@ namespace FushareApp {
       container.RegisterType<FushareFileManager>(new ContainerControlledLifetimeManager());
       container.RegisterType<FilesysContext>(new ContainerControlledLifetimeManager());
 
-      var proxy = new ServerProxy(ConfigurationManager.AppSettings[
-        "FushareServerBaseAddress"]);
+      int gsserverPort = Int32.Parse(ConfigurationManager.AppSettings["GSServerPort"]);
+      string gsserverHost = ConfigurationManager.AppSettings["GSServerHost"];
+      string gsserverBaseAddr = string.Format("http://{0}:{1}", gsserverHost, gsserverPort);
+      
+      // This proxy is registered here as this is the only ServerProxy
+      // instance needed on GSClient.
+      var proxy = new ServerProxy(gsserverBaseAddr);
       container.RegisterInstance<ServerProxy>(proxy);
 
       // Register file system frontend.

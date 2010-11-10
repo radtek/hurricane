@@ -42,11 +42,11 @@ sed "s/{DhtTrackerIFace}/$iface/" -i "$dest_folder/server/etc/Fushare.config"
 sed "s/{GatorShareHomeDir}/$dest_folder_escaped/" -i "$dest_folder/server/etc/Fushare.config"
 sed "s/{DhtTrackerListeningPort}/$dht_tracker_listening_port/" -i "$dest_folder/server/etc/Fushare.config"
 sed "s/{HttpPieceInfoServerListeningPort}/$http_pins_listening_port/" -i "$dest_folder/server/etc/Fushare.config"
+sed "s/{GSServerPort}/$gsserver_port/" -i "$dest_folder/server/etc/Fushare.config"
 
 # Edit FushareApp.exe.config
 sed "s/{GatorShareHomeDir}/$dest_folder_escaped/" -i "$dest_folder/client/etc/FushareApp.exe.config"
 sed "s/{GSServerPort}/$gsserver_port/" -i "$dest_folder/client/etc/FushareApp.exe.config"
-
 
 # Set up runtime configs.
 ln -sf "$dest_folder/client/etc/FushareApp.exe.config" "$dest_folder/client/bin/FushareApp.exe.config" 
