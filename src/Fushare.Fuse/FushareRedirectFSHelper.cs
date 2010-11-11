@@ -1,4 +1,28 @@
-﻿using System;
+﻿/*
+Copyright (c) 2010 Jiangyan Xu <jiangyan@ufl.edu>, University of Florida
+
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without
+restriction, including without limitation the rights to use,
+copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+*/
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -169,6 +193,8 @@ namespace Fushare.Filesystem {
 
     public override Errno ReleaseHandle(string path, OpenedPathInfo info) {
       _filesysContext.RemoveOpenFile(info.Handle);
+      VirtualPath vp = VirtualPath.CreateFromRawString(path);
+      UpdateFileSizeInVirtualFile(vp);
       return base.ReleaseHandle(path, info);
     }
 
@@ -181,7 +207,7 @@ namespace Fushare.Filesystem {
     /// Creates a virtual file with the Physical location information in it.
     /// </summary>
     /// <param name="vp">The vp.</param>
-    private VirtualFile CreateAndWriteVirtualFile(VirtualPath vp) {
+    VirtualFile CreateAndWriteVirtualFile(VirtualPath vp) {
       ShadowFullPath readPath = _pathFactory.CreateShadowFullPath4Read(vp);
       ShadowFullPath writePath = _pathFactory.CreateShadwoFullPath4Write(vp);
       var virtualFile = new VirtualFile() {
@@ -193,6 +219,19 @@ namespace Fushare.Filesystem {
       Logger.WriteLineIf(LogLevel.Verbose, _log_props,
         string.Format("A virtual file is created at {0}", readPath.PathString));
       return virtualFile;
+    }
+
+    /// <summary>
+    /// Updates the file size in virtual file.
+    /// </summary>
+    void UpdateFileSizeInVirtualFile(VirtualPath vp) {
+      ShadowFullPath readPath = _pathFactory.CreateShadowFullPath4Read(vp);
+      ShadowFullPath writePath = _pathFactory.CreateShadwoFullPath4Write(vp);
+      var virtualFile = XmlUtil.ReadXml<VirtualFile>(readPath.PathString);
+      // Get the size from the real file.
+      long fileSize = new FileInfo(writePath.PathString).Length;
+      virtualFile.FileSize = fileSize;
+      XmlUtil.WriteXml<VirtualFile>(virtualFile, readPath.PathString);
     }
   }
 }
