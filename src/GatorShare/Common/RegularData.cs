@@ -12,7 +12,7 @@ namespace GatorShare {
    * 
    * Detailed.
    */
-  class RegularData : DictionaryData {
+  public class RegularData : DictionaryData {
     public enum RegularDataType {
       Text,
       Binary

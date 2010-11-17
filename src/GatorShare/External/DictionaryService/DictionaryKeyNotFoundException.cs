@@ -28,6 +28,9 @@ using System.Linq;
 using System.Text;
 
 namespace GatorShare.External.DictionaryService {
+  /// <summary>
+  /// The exception thrown when the key cannot be found in the dictionary.
+  /// </summary>
   public class DictionaryKeyNotFoundException : DictionaryServiceException{
     public DictionaryKeyNotFoundException() : base() { }
     public DictionaryKeyNotFoundException(string message) : base(message) { }

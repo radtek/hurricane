@@ -1,15 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Collections;
-using System.Text;
-using Brunet.Rpc;
-using Brunet.DistributedServices;
-using System.Diagnostics;
-using MonoTorrent.Tracker;
-using Brunet;
-using GatorShare.Services;
+using System.Collections.Generic;
 using GatorShare.External.DictionaryService;
-using GatorShare.External;
+using MonoTorrent.Tracker;
 
 namespace GatorShare.Services.BitTorrent {
   /// <summary>
@@ -100,7 +93,7 @@ namespace GatorShare.Services.BitTorrent {
       byte[] dictKey = ServiceUtil.GetUrlCompatibleBytes(infoHash);
       try {
         _dictSvc.Put(dictKey, peer_bytes, PeerTtl);
-      } catch (DhtException ex) {
+      } catch (Exception ex) {
         Logger.WriteLineIf(LogLevel.Error, _log_props,
           string.Format("Unable to announce peer to DHT. We can try next time. \n{0}", ex));
         return;

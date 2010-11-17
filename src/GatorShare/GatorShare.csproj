@@ -89,30 +89,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\lib\Brunet.dll</HintPath>
     </Reference>
-    <Reference Include="Brunet.BasicNode, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\Brunet.BasicNode.dll</HintPath>
-    </Reference>
-    <Reference Include="Brunet.Coordinate, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\Brunet.Coordinate.dll</HintPath>
-    </Reference>
-    <Reference Include="Brunet.Dht, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\Brunet.Dht.dll</HintPath>
-    </Reference>
-    <Reference Include="Brunet.DhtService, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\Brunet.DhtService.dll</HintPath>
-    </Reference>
-    <Reference Include="Brunet.IPAddresses, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\Brunet.IPAddresses.dll</HintPath>
-    </Reference>
-    <Reference Include="Brunet.XmlRpc, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\Brunet.XmlRpc.dll</HintPath>
-    </Reference>
     <Reference Include="CookComputing.XmlRpcV2, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\lib\CookComputing.XmlRpcV2.dll</HintPath>
@@ -170,7 +146,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Bootstrapper.cs" />
-    <Compile Include="Common\BrunetDhtEntry.cs" />
     <Compile Include="Common\DictionaryData.cs" />
     <Compile Include="Common\DictionaryDataDecorator.cs" />
     <Compile Include="Common\DictionaryDataUtil.cs" />
@@ -223,10 +198,6 @@
     <Compile Include="Filesystem\FilesysPath.cs" />
     <Compile Include="Filesystem\RedirectFS-FH.cs" />
     <Compile Include="Services\BitTorrent\IBitTorrentService.cs" />
-    <Compile Include="External\DictionaryService\BrunetDht.Async.cs" />
-    <Compile Include="External\DictionaryService\BrunetDht.cs" />
-    <Compile Include="External\DictionaryService\BrunetDhtClientOperations.cs" />
-    <Compile Include="External\DictionaryService\BrunetDht.Bulk.cs" />
     <Compile Include="External\DictionaryService\OpenDht.cs" />
     <Compile Include="External\DictionaryService\DictionaryServiceFactory.cs" />
     <Compile Include="External\DictionaryService\IDict.cs" />

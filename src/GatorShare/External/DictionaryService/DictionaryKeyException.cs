@@ -29,7 +29,8 @@ using System.Text;
 
 namespace GatorShare.External.DictionaryService {
   /// <summary>
-  /// The exception that is thrown when the provided Resource key already exists in Dht.
+  /// The exception that is thrown when the provided key already exists
+  /// in the dictionary or is invalid.
   /// </summary>
   public class DictionaryKeyException : DictionaryServiceException {
     public DictionaryKeyException() : base() { }

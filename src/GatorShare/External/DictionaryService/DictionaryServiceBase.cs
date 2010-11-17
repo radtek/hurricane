@@ -28,10 +28,10 @@ using System.Text;
 
 namespace GatorShare.External.DictionaryService {
   /// <summary>
-  /// Implements the IDict interface using Dht.
+  /// Implements the IDict interface using dictionary service.
   /// </summary>
-  /// <remarks>"Distributed" means data goes to the wire so a set of byte array 
-  /// interfaces are added.</remarks>
+  /// <remarks>To access a distributed dictionary service the data goes to the 
+  /// wire so a set of byte array interfaces are added.</remarks>
   public abstract class DictionaryServiceBase : IDict {
 
     #region IDict Members

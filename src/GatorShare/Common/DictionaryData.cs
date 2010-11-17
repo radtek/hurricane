@@ -39,7 +39,7 @@ namespace GatorShare {
     /// <remarks>
     /// Allows fields to be set after been instantiated.
     /// </remarks>
-    internal DictionaryData() { } 
+    public DictionaryData() { } 
 
     #endregion
 

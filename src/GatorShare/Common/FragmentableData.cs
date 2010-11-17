@@ -8,7 +8,7 @@ namespace GatorShare {
   /**
    * A decorator that enables the fragmentation functionality of data.
    */
-  class FragmentableData : DictionaryDataDecorator {
+  public class FragmentableData : DictionaryDataDecorator {
     private FragmentationInfo _info;
     private IList<byte[]> _fragments_in_bytes;
 

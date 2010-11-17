@@ -13,7 +13,7 @@ namespace GatorShare {
    * Wrapper of regular data which indicates that this data is only
    * part of a larger datum.
    */
-  class FingerprintedData : DictionaryDataDecorator {
+  public class FingerprintedData : DictionaryDataDecorator {
     #region Fields
     private byte[] _sha1;
     #endregion

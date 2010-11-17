@@ -9,7 +9,7 @@ namespace GatorShare {
    * DictionaryDataDecorator to add additional functionalities
    * 
    */
-  abstract class DictionaryDataDecorator : DictionaryData {
+  public abstract class DictionaryDataDecorator : DictionaryData {
 
     /**
      * Regular data or another decorator
