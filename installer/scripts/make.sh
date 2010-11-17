@@ -40,8 +40,8 @@ if [ "$build" ]; then
     exit 1
   fi
 
-  client_proj_name="FushareApp"
-  web_proj_name="Fushare.Web"
+  client_proj_name="GSClientApp"
+  web_proj_name="GatorShare.Web"
   client_dir="$gatorshare_src/$client_proj_name/bin/l4n"
   web_dir="$gatorshare_src/$web_proj_name"
 

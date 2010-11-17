@@ -68,15 +68,15 @@ if [ "$run_client" ]; then
   done
 
   eval LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$libdir" \
-    mono --debug "$client_bin/FushareApp.exe" -o allow_other -m "$mount_point" -S "$proj_dir/client/var/shadow" $bg_suffix
+    mono --debug "$client_bin/GSClientApp.exe" -o allow_other -m "$mount_point" -S "$proj_dir/client/var/shadow" $bg_suffix
 
   # Make sure the file system is fully started.
-  while [[ -z `mount | grep "/dev/fuse"` ]]; do
+  while [[ -z `mount | grep -w "$mount_point"` ]]; do
     echo "FUSE is not up yet. Sleeping 1s..."
     sleep 1s
   done
 
-  if [ ! "$foreground" ] && [ $? -eq 0 ]; then
+  if [ ! "$foreground" ]; then
     namespace=$(hostname)
     mkdir -p "$mount_point/bittorrent/$namespace"
   fi

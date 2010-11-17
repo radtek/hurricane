@@ -7,7 +7,7 @@
     <OutputType>Exe</OutputType>
     <NoStandardLibraries>false</NoStandardLibraries>
     <AssemblyName>TrackerApp</AssemblyName>
-    <RootNamespace>Fushare</RootNamespace>
+    <RootNamespace>GatorShare</RootNamespace>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
     <OldToolsVersion>3.5</OldToolsVersion>
@@ -97,13 +97,13 @@
     <Compile Include="TrackerApp.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Fushare.Util\Fushare.Util.csproj">
+    <ProjectReference Include="..\GatorShare.Util\GatorShare.Util.csproj">
       <Project>{2253759E-5110-4DBA-9969-32A76F3DB5B1}</Project>
-      <Name>Fushare.Util</Name>
+      <Name>GatorShare.Util</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Fushare\Fushare.csproj">
+    <ProjectReference Include="..\GatorShare\GatorShare.csproj">
       <Project>{BF49E836-A893-4487-BDC6-3CF146CCBC01}</Project>
-      <Name>Fushare</Name>
+      <Name>GatorShare</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
