@@ -89,10 +89,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\lib\Brunet.dll</HintPath>
     </Reference>
-    <Reference Include="CookComputing.XmlRpcV2, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\CookComputing.XmlRpcV2.dll</HintPath>
-    </Reference>
     <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\lib\log4net.dll</HintPath>
@@ -157,7 +153,6 @@
     <Compile Include="Common\IDto.cs" />
     <Compile Include="Common\ISerializer.cs" />
     <Compile Include="Common\RegularData.cs" />
-    <Compile Include="Common\XmlRpcTracer.cs" />
     <Compile Include="Filesystem\BitTorrentFilesysEventHandler.cs" />
     <Compile Include="Filesystem\FilesysContext.cs" />
     <Compile Include="Filesystem\FilesysEventDispatcher.cs" />
@@ -198,15 +193,8 @@
     <Compile Include="Filesystem\FilesysPath.cs" />
     <Compile Include="Filesystem\RedirectFS-FH.cs" />
     <Compile Include="Services\BitTorrent\IBitTorrentService.cs" />
-    <Compile Include="External\DictionaryService\OpenDht.cs" />
     <Compile Include="External\DictionaryService\DictionaryServiceFactory.cs" />
     <Compile Include="External\DictionaryService\IDict.cs" />
-    <Compile Include="Services\OpenDHTLib\IOpenDHT.cs" />
-    <Compile Include="Services\OpenDHTLib\IOpenDHTKeyValue.cs" />
-    <Compile Include="Services\OpenDHTLib\OpenDHT.cs" />
-    <Compile Include="Services\OpenDHTLib\OpenDHTBase.cs" />
-    <Compile Include="Services\OpenDHTLib\OpenDHTMessage.cs" />
-    <Compile Include="Services\OpenDHTLib\OpenDHTMessageDetails.cs" />
     <Compile Include="Services\BitTorrent\DictionaryServiceTrackerListener.cs" />
     <Compile Include="Services\BitTorrent\DictionaryServiceProxy.cs" />
     <Compile Include="Services\BitTorrent\PeerEntry.cs" />

@@ -45,6 +45,9 @@
     <Optimize>false</Optimize>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="CookComputing.XmlRpcV2">
+      <HintPath>..\..\lib\CookComputing.XmlRpcV2.dll</HintPath>
+    </Reference>
     <Reference Include="Mono.Posix">
       <HintPath>..\..\lib\Mono.Posix.dll</HintPath>
     </Reference>
@@ -83,6 +86,7 @@
     <Compile Include="TextUtil.cs" />
     <Compile Include="UriUtil.cs" />
     <Compile Include="UrlBase64.cs" />
+    <Compile Include="XmlRpcTracer.cs" />
     <Compile Include="XmlUtil.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
