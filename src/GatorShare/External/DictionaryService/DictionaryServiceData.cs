@@ -29,41 +29,30 @@ using System.Text;
 
 namespace GatorShare.External.DictionaryService {
   /// <summary>
-  /// The data class for the results returned by DHT.
+  /// The class that represents the data stored in the dictionary service
+  /// from the client's perspective.
   /// </summary>
-  public class DictionaryServiceData {
-    #region Fields
-    readonly IDictionary<string, object> _metaInfo = 
-      new Dictionary<string, object>();
-    readonly List<DictionaryServiceDataEntry> _entryList = new List<DictionaryServiceDataEntry>(); 
-    #endregion
-
+  public abstract class DictionaryServiceData {
     #region Properties
-    public IDictionary<string, object> MetaInfo {
-      get {
-        return _metaInfo;
-      }
-    }
+    public abstract IDictionary<string, object> MetaInfo { get; }
+    public abstract DictionaryServiceDataEntry[] DataEntries { get; }
+    public abstract byte[] Key { get; }
 
-    public IList<DictionaryServiceDataEntry> ResultEntries {
-      get {
-        return _entryList;
-      }
-    }
-
-    public IList<byte[]> Values {
+    /// <summary>
+    /// A convenience property to get the values without meta info.
+    /// </summary
+    public byte[][] Values {
       get {
         var retList = new List<byte[]>();
-        foreach (DictionaryServiceDataEntry entry in _entryList) {
-          retList.Add(entry.Value);
-        }
-        return retList;
+        Array.ForEach<DictionaryServiceDataEntry>(DataEntries, 
+          x => retList.Add(x.Value));
+        return retList.ToArray();
       }
     }
 
     public bool HasMultipleEntries {
       get {
-        return _entryList.Count > 1 ? true : false;
+        return DataEntries.Length > 1 ? true : false;
       }
     }
 
@@ -71,9 +60,9 @@ namespace GatorShare.External.DictionaryService {
     /// Gets the (first) value. Null returned if ResultEntry is empty.
     /// </summary>
     /// <value>The value.</value>
-    public byte[] Value {
+    public byte[] FirstValue {
       get {
-        return ResultEntry != null ? ResultEntry.Value : null;
+        return FirstEntry != null ? FirstEntry.Value : null;
       }
     }
 
@@ -81,11 +70,11 @@ namespace GatorShare.External.DictionaryService {
     /// Gets the first result entry.
     /// </summary>
     /// <value>The result entry.</value>
-    public DictionaryServiceDataEntry ResultEntry {
+    public DictionaryServiceDataEntry FirstEntry {
       get {
-        return _entryList.Count > 0 ? _entryList[0] : null;
+        return DataEntries.Length > 0 ? DataEntries[0] : null;
       }
-    } 
+    }
     #endregion
   }
 }

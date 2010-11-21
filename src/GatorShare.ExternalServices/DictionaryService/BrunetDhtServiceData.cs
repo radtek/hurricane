@@ -26,38 +26,44 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Collections;
+using System.Collections.Specialized;
 
 namespace GatorShare.External.DictionaryService {
   /// <summary>
-  /// Thrown if there is some error while accessing the dictionary service.
+  /// The class that implements the <see cref="DictionaryServiceData"/> for 
+  /// BrunetDhtService.
   /// </summary>
-  public class DictionaryServiceException : Exception {
-    public DictionaryServiceException() : base() { }
-    public DictionaryServiceException(string message) : base(message) { }
-    public DictionaryServiceException(string message, Exception innerException) :
-      base(message, innerException) { }
+  public class BrunetDhtServiceData : DictionaryServiceData {
 
-    /// <summary>
-    /// Gets or sets the resource key.
-    /// </summary>
-    /// <value>The resource key.</value>
-    /// <remarks>Could be a key, name, uri, etc.</remarks>
-    public byte[] DictionaryKey {
+    readonly Hashtable[] _data;
+    readonly byte[] _key;
+
+    public BrunetDhtServiceData(byte[] key, Hashtable[] data) {
+      _data = data;
+      _key = key;
+    }
+
+    public override IDictionary<string, object> MetaInfo {
+      get { return new Dictionary<string, object>(); }
+    }
+
+    public override DictionaryServiceDataEntry[] DataEntries {
       get {
-        return _dictKey;
-      }
-      set {
-        _dictKey = value;
+        var list = new List<DictionaryServiceDataEntry>();
+        Array.ForEach<Hashtable>(_data, delegate(Hashtable item) {
+          IDictionary<string, object> metaInfo = new Dictionary<string, object>();
+          metaInfo["age"] = item["age"];
+          metaInfo["ttl"] = item["ttl"];
+          var entry = new DictionaryServiceDataEntry(item["value"] as byte[], metaInfo);
+          list.Add(entry);
+        });
+        return list.ToArray();
       }
     }
-    byte[] _dictKey;
 
-    public override string ToString() {
-      StringBuilder sb = new StringBuilder();
-      sb.Append(base.ToString());
-      sb.Append(System.Environment.NewLine);
-      sb.Append(string.Format("Key: {0}", Encoding.UTF8.GetString(DictionaryKey)));
-      return sb.ToString();
+    public override byte[] Key {
+      get { return _key; }
     }
   }
 }

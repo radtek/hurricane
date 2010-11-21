@@ -27,7 +27,7 @@ namespace GatorShare.Services.Dict {
 
     public byte[] Get(string nameSpace, string name) {
       var keyStr = ServiceUtil.GetDictKeyBytes(nameSpace, name);
-      return _dict.Get(keyStr).Value;
+      return _dict.Get(keyStr).FirstValue;
     }
 
     #endregion

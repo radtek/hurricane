@@ -42,7 +42,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <OutputType>Exe</OutputType>
-    <RootNamespace>Fushare</RootNamespace>
+    <RootNamespace>GatorShare</RootNamespace>
     <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -54,7 +54,7 @@
     <WarningLevel>4</WarningLevel>
     <OutputType>Exe</OutputType>
     <DebugSymbols>true</DebugSymbols>
-    <RootNamespace>Fushare</RootNamespace>
+    <RootNamespace>GatorShare</RootNamespace>
     <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'l4npf|AnyCPU' ">
@@ -66,7 +66,7 @@
     <ErrorReport>prompt</ErrorReport>
     <OutputType>Exe</OutputType>
     <DebugSymbols>true</DebugSymbols>
-    <RootNamespace>Fushare</RootNamespace>
+    <RootNamespace>GatorShare</RootNamespace>
     <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>

@@ -26,7 +26,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <OutputType>Library</OutputType>
-    <RootNamespace>Fushare</RootNamespace>
+    <RootNamespace>GatorShare</RootNamespace>
     <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -38,7 +38,7 @@
     <WarningLevel>4</WarningLevel>
     <OutputType>Library</OutputType>
     <DebugSymbols>true</DebugSymbols>
-    <RootNamespace>Fushare</RootNamespace>
+    <RootNamespace>GatorShare</RootNamespace>
     <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'l4n|AnyCPU' ">
@@ -79,15 +79,20 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="External\BrunetDhtServiceTest.cs" />
     <Compile Include="Filesystem\BitTorrentFilesysEventHandlerTest.cs" />
     <Compile Include="Services\BitTorrent\DataMetaInfoTest.cs" />
-    <Compile Include="External\BigTableDhtTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\BitTorrent\CacheRegistryTest.cs" />
-    <Compile Include="External\SimpleStorageDhtTest.cs" />
+    <Compile Include="External\SimpleStorageDictionaryTest.cs" />
     <Compile Include="UtilTest.cs" />
+    <Compile Include="Util\RetryUtilTest.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\GatorShare.ExternalServices\GatorShare.ExternalServices.csproj">
+      <Project>{689AE079-C153-4EC5-BF41-B0BD9C65539D}</Project>
+      <Name>GatorShare.ExternalServices</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\src\GatorShare.Util\GatorShare.Util.csproj">
       <Project>{2253759E-5110-4DBA-9969-32A76F3DB5B1}</Project>
       <Name>GatorShare.Util</Name>
@@ -95,10 +100,6 @@
     <ProjectReference Include="..\..\src\GatorShare\GatorShare.csproj">
       <Project>{BF49E836-A893-4487-BDC6-3CF146CCBC01}</Project>
       <Name>GatorShare</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\src\GatorShare.ExternalServices\GatorShare.ExternalServices.csproj">
-      <Project>{689AE079-C153-4EC5-BF41-B0BD9C65539D}</Project>
-      <Name>GatorShare.ExternalServices</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

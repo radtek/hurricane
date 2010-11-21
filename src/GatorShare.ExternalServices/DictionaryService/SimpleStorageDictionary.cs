@@ -25,6 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections;
 using System.Text;
+using System.Net;
 using GatorShare.External.DictionaryService;
 
 namespace GatorShare.External.DictionaryService {
@@ -52,41 +53,57 @@ namespace GatorShare.External.DictionaryService {
       string relativeUri = string.Format("/{0}/{1}", _controller, key);
       Logger.WriteLineIf(LogLevel.Verbose, _log_props,
         string.Format("Getting by the URL: {0}", relativeUri));
-      // Give the server another chance if it's busy.
-      byte[] resultBytes = _serverProxy.GetWithRetries(relativeUri, 1);
+      byte[] resultBytes;
+      try {
+        // Give the server another chance if it's busy.
+        resultBytes = _serverProxy.GetWithRetries(relativeUri, 1);
+      } catch (WebException) {
+        
+        throw;
+      }
       string resultString = Encoding.UTF8.GetString(resultBytes);
-      var val = ConvertFromJsonString<SimpleStorageDictionaryData>(resultString);
-      return ConvertToDhtResults(val);
+      var data = ConvertFromJsonString<SimpleStorageDictionaryData>(resultString);
+      if (data == null || data.DataEntries.Length == 0) {
+        throw new DictionaryKeyNotFoundException() {
+          DictionaryKey = Encoding.UTF8.GetBytes(key)
+        };
+      }
+      return data;
     }
 
     public override void Put(string key, byte[] value) {
       string relativeUri = string.Format("/{0}/{1}", _controller, key);
-      _serverProxy.Post(relativeUri, TextUtil.ToUTF8Base64(value));
+      try {
+        _serverProxy.Post(relativeUri, TextUtil.ToUTF8Base64(value));
+      } catch (WebException ex) {
+        throw new DictionaryServiceException("Cannot do put.", ex) { 
+          DictionaryKey = Encoding.UTF8.GetBytes(key) 
+        };
+      }
       Logger.WriteLineIf(LogLevel.Verbose, _log_props,
         string.Format("Put or Create successfully by the URL: {0}", relativeUri));
     }
 
     public override void Create(string key, byte[] value) {
       var results = GetMultiple(key, 1);
-      if (results.Value == null) {
+      if (results.FirstValue == null) {
         Put(key, value);
       } else {
         throw new DictionaryKeyException(
-          string.Format("The same key {0} alreay exists in current table.", key));
+          "The same key alreay exists in current table.") { 
+          DictionaryKey = Encoding.UTF8.GetBytes(key) 
+        };
       }
     }
-    #endregion
 
-    #region Private Methods
-    private static DictionaryServiceData ConvertToDhtResults(SimpleStorageDictionaryData val) {
-      var results = new DictionaryServiceData();
-      foreach (var valString in val.values) {
-        // We use base64 string to encode value bytes when we do puts.
-        var entry = new DictionaryServiceDataEntry(Convert.FromBase64String(valString));
-        results.ResultEntries.Add(entry);
-      }
-      return results;
-    } 
+    public override void Put(byte[] key, byte[] value) {
+      Put(Encoding.UTF8.GetString(key), value);
+    }
+
+    public override void Create(byte[] key, byte[] value) {
+      Create(Encoding.UTF8.GetString(key), value);
+    }
+
     #endregion
   }
 }

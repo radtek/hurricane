@@ -54,9 +54,9 @@ namespace GatorShare.Services.BitTorrent {
       }
 
       Logger.WriteLineIf(LogLevel.Info, _log_props,
-          string.Format("{0} peer(s) retrieved from DHT", results.ResultEntries.Count));
+          string.Format("{0} peer(s) retrieved from DHT", results.DataEntries.Length));
       int index = 0;
-      foreach (var r in results.ResultEntries) {
+      foreach (var r in results.DataEntries) {
         try {
           PeerEntry entry = (PeerEntry)DictionaryData.CreateDictionaryData(r.Value);
           Logger.WriteLineIf(LogLevel.Verbose, _log_props,
@@ -92,7 +92,7 @@ namespace GatorShare.Services.BitTorrent {
       byte[] peer_bytes = peer.SerializeTo();
       byte[] dictKey = ServiceUtil.GetUrlCompatibleBytes(infoHash);
       try {
-        _dictSvc.Put(dictKey, peer_bytes, PeerTtl);
+        _dictSvc.Put(dictKey, peer_bytes);
       } catch (Exception ex) {
         Logger.WriteLineIf(LogLevel.Error, _log_props,
           string.Format("Unable to announce peer to DHT. We can try next time. \n{0}", ex));
@@ -107,12 +107,12 @@ namespace GatorShare.Services.BitTorrent {
     /// <summary>
     /// Puts torrent file value to DHT.
     /// </summary>
-    public void PutTorrent(byte[] dhtKey, byte[] torrent, int ttl) {
-      _dictSvc.Put(dhtKey, torrent, ttl);
+    public void PutTorrent(byte[] dhtKey, byte[] torrentUrl, int ttl) {
+      _dictSvc.Put(dhtKey, torrentUrl);
     }
 
-    public void CreateTorrent(byte[] dhtKey, byte[] torrent, int ttl) {
-      _dictSvc.Create(dhtKey, torrent, ttl);
+    public void CreateTorrent(byte[] dhtKey, byte[] torrentUrl, int ttl) {
+      _dictSvc.Create(dhtKey, torrentUrl);
     }
 
     /// <summary>
@@ -120,7 +120,7 @@ namespace GatorShare.Services.BitTorrent {
     /// </summary>
     /// <param name="dictKey">The dict key.</param>
     /// <returns>The list of urls in byte[] form.</returns>
-    public IList<byte[]> GetUrlsToDownloadTorrent(byte[] dictKey) {
+    public byte[][] GetUrlsToDownloadTorrent(byte[] dictKey) {
       DictionaryServiceData results = _dictSvc.Get(dictKey);
       return results.Values;
     }

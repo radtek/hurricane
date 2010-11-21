@@ -33,6 +33,10 @@ namespace GatorShare.External.DictionaryService {
       new Dictionary<string, object>();
     readonly byte[] _value;
 
+    /// <summary>
+    /// Gets the meta info for this entry.
+    /// </summary>
+    /// <value>The meta info.</value>
     public IDictionary<string, object> MetaInfo {
       get {
         return _metaInfo;

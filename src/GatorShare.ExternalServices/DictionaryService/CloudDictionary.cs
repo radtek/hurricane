@@ -49,16 +49,7 @@ namespace GatorShare.External.DictionaryService {
       }
     }
 
-    #region DhtBase Memebers
-    /// <summary>
-    /// Gets or sets the default TTL.
-    /// </summary>
-    /// <value>The default TTL.</value>
-    /// <remarks>We don't really need TTL in BigTable.</remarks>
-    public override int DefaultTtl {
-      get { return -1; }
-      set { }
-    }
+    #region DictionaryServiceBase Memebers
 
     /// <summary>
     /// Dht Put.
@@ -70,12 +61,12 @@ namespace GatorShare.External.DictionaryService {
     /// along. But if the problem that causes the failure is clear, a more meaningful
     /// exception is always thrown.</remarks>
     /// <exception cref="DhtException">WebException caught.</exception>
-    public override void Put(byte[] key, byte[] value, int ttl) {
+    public override void Put(byte[] key, byte[] value) {
       var keyStr = EncodeKeyBytes(key);
       try {
         Put(keyStr, value);
       } catch (WebException ex) {
-        throw BuildDictionaryServiceException(ex, keyStr);
+        throw BuildDictionaryServiceException(ex, key);
       }
     }
 
@@ -86,12 +77,12 @@ namespace GatorShare.External.DictionaryService {
     /// <param name="value">The value.</param>
     /// <param name="ttl">The TTL.</param>
     /// <exception cref="DhtException">WebException caught.</exception>
-    public override void Create(byte[] key, byte[] value, int ttl) {
+    public override void Create(byte[] key, byte[] value) {
       var keyStr = EncodeKeyBytes(key);
       try {
         Create(keyStr, value);
       } catch (WebException ex) {
-        throw BuildDictionaryServiceException(ex, keyStr);
+        throw BuildDictionaryServiceException(ex, key);
       }
     }
 
@@ -110,13 +101,13 @@ namespace GatorShare.External.DictionaryService {
         results = GetMultiple(keyStr, DefaultGetCount);
       } catch (WebException ex) {
         // There won't be an exception thrown if the key doesn't exist.
-        throw BuildDictionaryServiceException(ex, keyStr);
+        throw BuildDictionaryServiceException(ex, key);
       }
 
-      if (results.Values.Count == 0) {
+      if (results.Values.Length == 0) {
         var ex = new DictionaryKeyNotFoundException(string.Format(
-          "Key {0} doesn't exist.", keyStr));
-        ex.DictionaryKey = keyStr;
+          "Key {0} doesn't exist.", key));
+        ex.DictionaryKey = key;
         throw ex;
       }
 
@@ -135,11 +126,11 @@ namespace GatorShare.External.DictionaryService {
       return ret;
     }
 
-    protected static DictionaryServiceException BuildDictionaryServiceException(WebException ex, string keyStr) {
+    protected static DictionaryServiceException BuildDictionaryServiceException(WebException ex, byte[] key) {
       var newEx = new DictionaryServiceException(string.Format(
         "WebException thrown when communicating with Dht. \nReturned Data:{0}",
         ex.Data), ex);
-      newEx.DictionaryKey = keyStr;
+      newEx.DictionaryKey = key;
       throw newEx;
     }
 

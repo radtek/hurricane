@@ -32,6 +32,8 @@ namespace GatorShare.External.DictionaryService {
   /// </summary>
   /// <remarks>To access a distributed dictionary service the data goes to the 
   /// wire so a set of byte array interfaces are added.</remarks>
+  /// <exception cref="DictionaryServiceException">Thrown when errors occur during
+  /// dictionary operations.</exception>
   public abstract class DictionaryServiceBase : IDict {
 
     #region IDict Members
@@ -46,7 +48,7 @@ namespace GatorShare.External.DictionaryService {
       if(!(key is byte[] && value is byte[])) {
         throw  new ArgumentException("Key/value should be byte[]");
       }
-      Put(key as byte[], value as byte[], DefaultTtl);
+      Put(key as byte[], value as byte[]);
     }
 
     /// <summary>
@@ -54,12 +56,14 @@ namespace GatorShare.External.DictionaryService {
     /// </summary>
     /// <param name="key">The key.</param>
     /// <returns>the value object.</returns>
+    /// <exception cref="DictionaryKeyNotFoundException">Thrown when the 
+    /// specified key is not found.</exception>
     public virtual object Get(object key) {
       if (!(key is byte[])) {
         throw new ArgumentException("Key should be byte[]");
       }
-      var dhtResult = Get(key as byte[]);
-      return dhtResult.Value;
+      var data = Get(key as byte[]);
+      return data.FirstValue;
     }
     /// <summary>
     /// Creates a key,value pair to the dictionary.
@@ -67,36 +71,30 @@ namespace GatorShare.External.DictionaryService {
     /// <param name="key">The key.</param>
     /// <param name="value">The value.</param>
     /// <remarks>Duplicated key throws an exception.</remarks>
+    /// <exception cref="DictionaryKeyException">Thrown when same key already exists.
+    /// </exception>
     public virtual void Create(object key, object value) {
       if (!(key is byte[] && value is byte[])) {
         throw new ArgumentException("Key/value should be byte[]");
       }
-      Create(key as byte[], value as byte[], DefaultTtl);
+      Create(key as byte[], value as byte[]);
     }
     #endregion
 
     #region Abstracts
 
+    public abstract void Put(byte[] key, byte[] value);
     /// <summary>
-    /// Gets or sets the default TTL.
-    /// </summary>
-    /// <value>The default TTL.</value>
-    public abstract int DefaultTtl { get; set; }
-    /// <summary>
-    /// Dht Put.
+    /// Creates value with the specified key.
     /// </summary>
     /// <param name="key">The key.</param>
     /// <param name="value">The value.</param>
-    /// <param name="ttl">The TTL.</param>
-    public abstract void Put(byte[] key, byte[] value, int ttl);
-    public abstract void Create(byte[] key, byte[] value, int ttl);
+    /// <exception cref="DictionaryKeyException">Thrown when key already exists.</exception>
+    public abstract void Create(byte[] key, byte[] value);
     /// <summary>
     /// Gets the value by the specified key.
     /// </summary>
-    /// <param name="key">The key.</param>
-    /// <returns>The wrapper of returned value.</returns>
-    /// <exception cref="DhtException">WebException caught.</exception>
-    /// <exception cref="DictionaryKeyNotFoundException">Such key doesn't exist.
+    /// <exception cref="DictionaryKeyNotFoundException">Thrown when key doesn't exist.
     /// </exception>
     public abstract DictionaryServiceData Get(byte[] key); 
     #endregion

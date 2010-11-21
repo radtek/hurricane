@@ -76,15 +76,11 @@ namespace GatorShare {
     /// <remarks>Sometimes web services can fail due to load and other issues.
     /// </remarks>
     public byte[] GetWithRetries(string relativeUri, int retries) {
-      for (; retries > 0; retries--) {
-        try {
-          return Get(relativeUri);
-        } catch (WebException ex) {
-          Logger.WriteLineIf(LogLevel.Verbose, _log_props, string.Format(
-            "Exception caught: {0}. Retrying...", ex));
-        }
-      }
-      return Get(relativeUri);
+      var ru = new RetryUtil();
+      ru.NumRetries = retries;
+      return ru.RetryFunc<string, byte[], WebException>(Get, relativeUri, 
+        x => (x.Response as HttpWebResponse).StatusCode == 
+          HttpStatusCode.ServiceUnavailable);
     }
 
     /// <summary>

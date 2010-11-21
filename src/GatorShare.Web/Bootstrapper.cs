@@ -27,6 +27,8 @@ using GatorShare.External.DictionaryService;
 using GatorShare.Services.BitTorrent;
 using GatorShare.Services.Dict;
 using Microsoft.Practices.Unity;
+using System.Configuration;
+using System;
 
 namespace GatorShare.Web {
   public static class Bootstrapper {
@@ -34,8 +36,22 @@ namespace GatorShare.Web {
       // Registrations
       container.RegisterType<IDictService, DictService>(
         new HttpContextLifetimeManager<IDictService>());
-      container.RegisterType<DictionaryServiceBase, SimpleStorageDictionary>(
-        new ContainerControlledLifetimeManager());
+
+      string dictSvcChoice = ConfigurationManager.AppSettings["DictionaryService"];
+      if (dictSvcChoice.Equals("BrunetDht")) {
+        string brunetDhtSvcHost =
+          ConfigurationManager.AppSettings["BrunetDhtServiceHost"];
+        int brunetDhtSvcPort = Int32.Parse(
+          ConfigurationManager.AppSettings["BrunetDhtServicePort"]);
+        string brunetDhtSvcPath =
+          ConfigurationManager.AppSettings["BrunetDhtServicePath"];
+        var brunetDhtSvc = new BrunetDhtService(
+          brunetDhtSvcHost, brunetDhtSvcPort, brunetDhtSvcPath);
+        container.RegisterInstance<DictionaryServiceBase>(brunetDhtSvc);
+      } else {
+        container.RegisterType<DictionaryServiceBase, SimpleStorageDictionary>(
+          new ContainerControlledLifetimeManager());
+      }
 
       container.RegisterType<IBitTorrentService, BitTorrentService>(
         new HttpContextLifetimeManager<IBitTorrentService>());

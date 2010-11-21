@@ -26,7 +26,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <OutputType>Library</OutputType>
-    <RootNamespace>Fushare.Services</RootNamespace>
+    <RootNamespace>GatorShare.External</RootNamespace>
     <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -38,7 +38,7 @@
     <WarningLevel>4</WarningLevel>
     <OutputType>Library</OutputType>
     <DebugSymbols>true</DebugSymbols>
-    <RootNamespace>Fushare.Services</RootNamespace>
+    <RootNamespace>GatorShare.External</RootNamespace>
     <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'l4n|AnyCPU' ">
@@ -79,11 +79,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DictionaryService\BigTableDictionary.cs" />
-    <Compile Include="DictionaryService\BigTableDictionaryData.cs" />
     <Compile Include="DictionaryService\BrunetDhtService.cs" />
+    <Compile Include="DictionaryService\BrunetDhtServiceData.cs" />
     <Compile Include="DictionaryService\CloudDictionary.cs" />
-    <Compile Include="DictionaryService\OpenDht.cs" />
     <Compile Include="DictionaryService\OpenDHTLib\IOpenDHT.cs" />
     <Compile Include="DictionaryService\OpenDHTLib\IOpenDHTKeyValue.cs" />
     <Compile Include="DictionaryService\OpenDHTLib\OpenDHT.cs" />
