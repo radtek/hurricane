@@ -15,8 +15,8 @@ namespace GatorShare.Services.BitTorrent {
   public class DictionaryServiceTracker {
     #region Fields
     Tracker _tracker;
-    DictionaryServiceTrackerListener _dht_listener;
-    HttpListener _http_listener;
+    DictionaryServiceTrackerListener _dictListener;
+    HttpListener _httpListener;
     private static IDictionary _log_props = Logger.PrepareLoggerProperties(typeof(DictionaryServiceTracker));
     #endregion
 
@@ -39,30 +39,30 @@ namespace GatorShare.Services.BitTorrent {
     /// </summary>
     /// <param name="dhtProxy"></param>
     public DictionaryServiceTracker(DictionaryServiceProxy dhtProxy, string listeningPrefix) {
-      _dht_listener = new DictionaryServiceTrackerListener(dhtProxy);
+      _dictListener = new DictionaryServiceTrackerListener(dhtProxy);
       ListeningPrefix = listeningPrefix;
-      _http_listener = new HttpListener(ListeningPrefix);
+      _httpListener = new HttpListener(ListeningPrefix);
       Logger.WriteLineIf(LogLevel.Info, _log_props, string.Format(
-        "DhtTracker starting at: {0}", ListeningPrefix));
+        "DictionaryServiceTracker starting at: {0}", ListeningPrefix));
       // Subscribe the HttpListener events to do our nifty stuff.
-      _http_listener.AnnounceReceived += this.OnAnnounceReceived;
-      _http_listener.ScrapeReceived += this.OnScrapeReceived;
+      _httpListener.AnnounceReceived += this.OnAnnounceReceived;
+      _httpListener.ScrapeReceived += this.OnScrapeReceived;
 
       _tracker = new Tracker();
 
       // This also subscribes the same above 2 events but does this AFTER them, 
       // so HttpListener invokes DHT operations first.
-      _tracker.RegisterListener(_http_listener);
+      _tracker.RegisterListener(_httpListener);
       // And... the events from DHT
-      _tracker.RegisterListener(_dht_listener);
+      _tracker.RegisterListener(_dictListener);
     }
 
     /// <summary>
     /// Starts all the listeners in this tracker.
     /// </summary>
     public void Start() {
-      _dht_listener.Start();
-      _http_listener.Start();
+      _dictListener.Start();
+      _httpListener.Start();
       Logger.WriteLineIf(LogLevel.Verbose, _log_props,
         string.Format("DhtTracker started."));
     }
@@ -75,7 +75,7 @@ namespace GatorShare.Services.BitTorrent {
       Logger.WriteLineIf(LogLevel.Verbose, _log_props,
         string.Format("Annoucement received from {0}", e.RemoteAddress));
       try {
-        _dht_listener.HandleAnnounceRequest(e);
+        _dictListener.HandleAnnounceRequest(e);
       } catch (Exception ex) {
         Logger.WriteLineIf(LogLevel.Error, _log_props, 
           string.Format("Exception caught while processing announce request. {0}", ex));
@@ -85,7 +85,7 @@ namespace GatorShare.Services.BitTorrent {
 
     private void OnScrapeReceived(object sender, ScrapeParameters e) {
       Logger.WriteLineIf(LogLevel.Verbose, _log_props,
-        string.Format("Scrape received from {0}", e.RemoteAddress));
+        string.Format("Scrape received from {0}. Ignoring it.", e.RemoteAddress));
       // Do nothing.
     }
   }

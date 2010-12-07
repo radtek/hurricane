@@ -247,8 +247,8 @@ namespace GatorShare.Services.BitTorrent {
     #endregion
 
     #region Private Methods
-    private static void RegisterClientEngineEventHandlers(ClientEngine cliengEngine) {
-      cliengEngine.CriticalException += delegate(object sender, CriticalExceptionEventArgs args) {
+    private static void RegisterClientEngineEventHandlers(ClientEngine clientEngine) {
+      clientEngine.CriticalException += delegate(object sender, CriticalExceptionEventArgs args) {
         Logger.WriteLineIf(LogLevel.Error, _log_props,
           string.Format("ClientEngine Critical Exception: {0}", args.Exception));
       };
@@ -258,7 +258,7 @@ namespace GatorShare.Services.BitTorrent {
       //    string.Format("ClientEngine Stats Update"));
       //};
 
-      cliengEngine.TorrentRegistered += delegate(object sender, TorrentEventArgs args) {
+      clientEngine.TorrentRegistered += delegate(object sender, TorrentEventArgs args) {
         Logger.WriteLineIf(LogLevel.Verbose, _log_props,
           string.Format("ClientEngine Torrent Registered: {0}.", args.TorrentManager.Torrent.Name));
       };
