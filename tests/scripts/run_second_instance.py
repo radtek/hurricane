@@ -12,10 +12,12 @@ def run_second_instance(iface):
   install2_path = join(installer_scripts_dir, "install2.sh")
   run2_path = join(installer_scripts_dir, "run2.sh")
   uninstall2_path = join(installer_scripts_dir, "uninstall2.sh")
+  stop2_path = join(installer_scripts_dir, "stop2.sh")
 
   shutil.copy(join(installer_scripts_dir, "install.sh"), install2_path)
   shutil.copy(join(installer_scripts_dir, "run.sh"), run2_path)
   shutil.copy(join(installer_scripts_dir, "uninstall.sh"), uninstall2_path)
+  shutil.copy(join(installer_scripts_dir, "stop.sh"), stop2_path)
 
   #os.system("sed \"s/\/opt\/gatorshare/\/opt\/gatorshare2/\" -i " + join(installer_scripts_dir, "install2.sh"))
 
@@ -40,6 +42,12 @@ def run_second_instance(iface):
     content = f.read()
     content = content.replace('/mnt/gatorshare', '/mnt/gatorshare2')
     content = content.replace('/opt/gatorshare', '/opt/gatorshare2')
+  with open(uninstall2_path, 'w') as f:
+    f.write(content)
+    
+  with open(stop2_path) as f:
+    content = f.read()
+    content = content.replace('gatorshare', 'gatorshare2')
   with open(uninstall2_path, 'w') as f:
     f.write(content)
 
