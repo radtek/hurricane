@@ -132,13 +132,7 @@ namespace GatorShare.Services.BitTorrent {
           string.Format("Torrent file doesn't exist. Downloading it."));
         byte[] torrentKey = ServiceUtil.GetDictKeyBytes(nameSpace, name);
         IList<byte[]> urls;
-        try {
-          urls = proxy.GetUrlsToDownloadTorrent(torrentKey).ToList<byte[]>();
-        } catch (DictionaryKeyNotFoundException ex) {
-          throw new DependencyException(
-            "Cannot get the URLs to download torrent from the dictionary service.", 
-            ex);
-        }
+        urls = proxy.GetUrlsToDownloadTorrent(torrentKey).ToList<byte[]>();
         // Count should > 0 otherwise it's an exception.
         int numServers = urls.Count;
         var rnd = new Random();
