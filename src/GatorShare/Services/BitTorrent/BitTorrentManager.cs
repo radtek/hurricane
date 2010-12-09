@@ -327,9 +327,9 @@ namespace GatorShare.Services.BitTorrent {
       // When any preprocessing has been completed, you create a TorrentManager
       // which you then register with the engine.
       TorrentManager torrentManager;
-      if (_fastResumeData.ContainsKey(torrent.InfoHash)) {
-        torrentManager = new TorrentManager(torrent, saveDir, _torrentDefaults,
-          new FastResume((BEncodedDictionary)_fastResumeData[torrent.InfoHash]));
+      if (_fastResumeData.ContainsKey(torrent.InfoHash.ToArray())) {
+        torrentManager = new TorrentManager(torrent, saveDir, _torrentDefaults);
+        torrentManager.LoadFastResume(new FastResume((BEncodedDictionary)_fastResumeData[torrent.InfoHash.ToArray()]));
       } else {
         torrentManager = new TorrentManager(torrent, saveDir, _torrentDefaults);
       }

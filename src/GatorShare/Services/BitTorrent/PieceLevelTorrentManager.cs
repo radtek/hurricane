@@ -152,7 +152,7 @@ namespace GatorShare.Services.BitTorrent {
         return pieceTorrentBytes;
       } else {
         // We need to request the seeder to make a new piece.
-        IEnumerable<PeerEntry> peers = _dhtProxy.GetPeers(wholeTorrent.InfoHash);
+        IEnumerable<PeerEntry> peers = _dhtProxy.GetPeers(wholeTorrent.InfoHash.ToArray());
         bool foundCompletePeer = false;
 
         // The list most likely has only one entry.

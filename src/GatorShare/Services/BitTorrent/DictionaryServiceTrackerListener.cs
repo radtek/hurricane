@@ -40,10 +40,10 @@ namespace GatorShare.Services.BitTorrent {
     /// AnnounceParameters from the requesting client. It's modified in method.
     /// </param>
     internal void HandleAnnounceRequest(AnnounceParameters parameters) {
-      IEnumerable<PeerEntry> entries = _proxy.GetPeers(parameters.InfoHash);
+      IEnumerable<PeerEntry> entries = _proxy.GetPeers(parameters.InfoHash.ToArray());
       foreach (PeerEntry entry in entries) {
         AnnounceParameters par = GenerateAnnounceParameters(
-          parameters.InfoHash, entry);
+          parameters.InfoHash.ToArray(), entry);
         if (par.IsValid) {
           // Tracker will write to the par.Response but we don't use it
           // ListenerBase.Handle use par.ClientAddress to generate 
@@ -62,7 +62,7 @@ namespace GatorShare.Services.BitTorrent {
 
       // Got all I need, now announce myself to DHT.
       try {
-        _proxy.AnnouncePeer(parameters.InfoHash, parameters);
+        _proxy.AnnouncePeer(parameters.InfoHash.ToArray(), parameters);
       } catch (Exception ex) {
         // It is OK to temporarily unable to announce to Dht. We can try the next time.
         Logger.WriteLineIf(LogLevel.Error, _log_props, string.Format(
