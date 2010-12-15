@@ -1,15 +1,10 @@
 using System;
-using System.Collections.Generic;
 using System.Collections;
-using System.Collections.Specialized;
-using System.Diagnostics;
+using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using Mono.Fuse;
 using Mono.Unix.Native;
-using System.Threading;
-using System.Runtime.Remoting.Messaging;
-using System.IO;
-using GatorShare.Filesystem;
 
 namespace GatorShare.Filesystem {
   /// <summary>

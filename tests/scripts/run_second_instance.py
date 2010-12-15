@@ -10,12 +10,12 @@ def run_second_instance(iface):
   installer_scripts_dir = join(join(sln_dir, "installer"), "scripts")
 
   install2_path = join(installer_scripts_dir, "install2.sh")
-  run2_path = join(installer_scripts_dir, "run2.sh")
+  run2_path = join(installer_scripts_dir, "run2.py")
   uninstall2_path = join(installer_scripts_dir, "uninstall2.sh")
   stop2_path = join(installer_scripts_dir, "stop2.sh")
 
   shutil.copy(join(installer_scripts_dir, "install.sh"), install2_path)
-  shutil.copy(join(installer_scripts_dir, "run.sh"), run2_path)
+  shutil.copy(join(installer_scripts_dir, "run.py"), run2_path)
   shutil.copy(join(installer_scripts_dir, "uninstall.sh"), uninstall2_path)
   shutil.copy(join(installer_scripts_dir, "stop.sh"), stop2_path)
 
@@ -48,12 +48,12 @@ def run_second_instance(iface):
   with open(stop2_path) as f:
     content = f.read()
     content = content.replace('gatorshare', 'gatorshare2')
-  with open(uninstall2_path, 'w') as f:
+  with open(stop2_path, 'w') as f:
     f.write(content)
 
   os.system("sudo " + uninstall2_path)
   os.system("sudo " + install2_path + " " + iface)
-  os.system("sudo /opt/gatorshare2/scripts/run2.sh -sc")
+  os.system("sudo /opt/gatorshare2/scripts/run2.py -scb")
 
 def main():
   if len(sys.argv) == 1:
@@ -65,4 +65,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
