@@ -30,84 +30,104 @@ shadow_dir = join(join(join(installer_dir, "client"), "var"), "shadow")
 mount_point = "/mnt/gatorshare"
 gsserver_port = 8080
 
-def run_gatorshare():
-  try:
-    optlist, args = getopt.getopt(sys.argv[1:], "scvb")
-    run_server = run_client = run_bundle = False
-    if len(optlist) == 0:
-      assert False
-    for k,v in optlist:
-      if k == "-s":
-        run_server = True
-      elif k == "-c":
-        run_client = True
-      elif k == "-v":
-        verbose = True
-      elif k == "-b":
-        run_bundle = True
-      else:
-        assert False, "unhandled option"
-  except:
-    print usage
-    sys.exit(2)
-  
-  if run_bundle:
-    server_app = server_bundle
-    client_app = client_bundle
-  else:
-    server_app = "xsp2"
-    client_app = "mono " + client_exe
+class GatorShareRunner:
+  def run_gatorshare(self):
+    try:
+      optlist, args = getopt.getopt(sys.argv[1:], "scvb")
+      self.verbose = False
+      run_server = run_client = run_bundle = False
+      if len(optlist) == 0:
+        assert False
+      for k,v in optlist:
+        if k == "-s":
+          run_server = True
+        elif k == "-c":
+          run_client = True
+        elif k == "-v":
+          self.verbose = True
+        elif k == "-b":
+          run_bundle = True
+        else:
+          assert False, "unhandled option"
+    except:
+      print usage
+      sys.exit(2)
     
-  if run_server:
-    run_gsserver(server_app)
-  
-  if run_client:
-    run_gsclient(client_app)
-
-def run_gsserver(server_app):
-  """ Runs GSServer"""
-  server_cmd = "%s --root %s --port %s --verbose --nonstop" % (server_app, \
-    server_bin, gsserver_port)
-  print "Going to run command in background:", server_cmd
-  # Run as a background job
-  lib_path = config.server_lib + os.pathsep + config.ld_library_path
-  print "lib path:", lib_path
-  Popen(server_cmd, shell=True, env={"LD_LIBRARY_PATH": lib_path}, cwd=config.server_lib)
-  
-def run_gsclient(client_app):
-  """ Runs GSClient """
-  mounts = Popen(["mount"], stdout=PIPE).communicate()[0]
-  if mount_point in mounts.split():
-    # unmount if already mounted.
-    call(["umount", "-vl", mount_point])
+    if run_bundle:
+      server_app = server_bundle
+      client_app = client_bundle
+    else:
+      server_app = "xsp2"
+      client_app = "mono " + client_exe
+      
+    if run_server:
+      self.run_gsserver(server_app)
     
-  call(["mkdir", "-pv", shadow_dir])
-  call(["mkdir", "-pv", mount_point])
+    if run_client:
+      self.run_gsclient(client_app)
   
-  libdir = client_bin
-  
-  call("modprobe fuse".split())
-  while not os.path.exists("/dev/fuse"):
-    time.sleep(1)
-  
-  client_cmd = "%(client_app)s -o allow_other -m %(mount_point)s -S %(shadow)s" % \
-    { "client_app": client_app, "mount_point": mount_point, "shadow": shadow_dir }
-  print "Going to run command as a background job:", client_cmd
-  # Run as a background job.
-  Popen(client_cmd, shell=True, env={"LD_LIBRARY_PATH": config.ld_library_path \
-    + os.pathsep + libdir}, cwd=config.client_bin)
-  
-  mounts = Popen(["mount"], stdout=PIPE).communicate()[0]
-  if not mount_point in mounts.split():
-    print "FUSE is not up yet. Sleeping 1s..."
-    time.sleep(1)
-  
-  namespace = platform.uname()[1]
-  publish_dir = join(join(mount_point, "bittorrent"), namespace)
-  
-  if not os.path.exists(publish_dir):
-    print "Creating %s ..." % publish_dir
-    os.makedirs(publish_dir)
+  def run_gsserver(self, server_app):
+    """ Runs GSServer"""
+    server_cmd = "%s --root %s --port %s --verbose --nonstop 2>&1 | tee %s" % (server_app, \
+      server_bin, gsserver_port, \
+      join(config.server_log, "output-server-$(date +%y%m%d%H%M%S).txt"))
+    # Run as a background job
+    lib_path = config.server_lib + os.pathsep + config.ld_library_path
+    path_env = config.server_lib + os.pathsep + os.environ["PATH"]
+    
+    environment = {"LD_LIBRARY_PATH": lib_path, \
+      "MONO_CFG_DIR": config.installer_etc, "PATH": path_env}
+    if self.verbose:
+      environment["MONO_LOG_LEVEL"] = "debug"
+    cwd = config.server_lib
+    
+    print "Going to run command %s in background. Env=%s, CWD=%s" % \
+      (server_cmd, environment, cwd)
+    Popen(server_cmd, shell=True, env=environment, cwd=cwd)
+    
+  def run_gsclient(self, client_app):
+    """ Runs GSClient """
+    mounts = Popen(["mount"], stdout=PIPE).communicate()[0]
+    if mount_point in mounts.split():
+      # unmount if already mounted.
+      call(["umount", "-vl", mount_point])
+      
+    call(["mkdir", "-pv", shadow_dir])
+    call(["mkdir", "-pv", mount_point])
+    
+    libdir = client_bin
+    
+    call("modprobe fuse".split())
+    while not os.path.exists("/dev/fuse"):
+      time.sleep(1)
+    
+    client_cmd = "%(client_app)s -o allow_other -m %(mount_point)s -S %(shadow)s 2>&1 | tee %(output)s" % \
+      { "client_app": client_app, "mount_point": mount_point, \
+        "shadow": shadow_dir, \
+        "output": join(config.client_log, "output-client-$(date +%y%m%d%H%M%S).txt") }
+    lib_path = config.client_bin + os.pathsep + config.ld_library_path
+    # Run as a background job.
+    
+    environment = { "LD_LIBRARY_PATH": lib_path, \
+      "MONO_CFG_DIR": config.installer_etc }
+    if self.verbose:
+       environment["MONO_LOG_LEVEL"] = "debug"
+    cwd = config.client_bin
+    print "Going to run command %s as a background job. Env=%s; CWD=%s" % \
+      (client_cmd, environment, config.client_bin)
+    
+    Popen(client_cmd, shell=True, env=environment, cwd=cwd)
+    
+    while not mount_point in Popen(["mount"], stdout=PIPE).communicate()[0].split():
+      print "FUSE is not up yet. Sleeping 1s..."
+      time.sleep(1)
+    
+    namespace = platform.uname()[1]
+    publish_dir = join(join(mount_point, "bittorrent"), namespace)
+    
+    if not os.path.exists(publish_dir):
+      print "Creating %s ..." % publish_dir
+      os.makedirs(publish_dir)
 
 if __name__ == "__main__":
-  run_gatorshare()
+  GatorShareRunner().run_gatorshare()

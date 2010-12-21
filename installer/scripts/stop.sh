@@ -1,3 +1,5 @@
 #!/bin/bash
 
-sudo pkill -f gatorshare
+# Trailing / prevents pkill from killing processes with gatorshare prefix.
+sudo pkill -KILL -f gatorshare/
+sudo umount /mnt/gatorshare

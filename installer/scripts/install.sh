@@ -60,7 +60,9 @@ sed "s/{GatorShareHomeDir}/$dest_folder_escaped/" -i "$dest_folder/server/etc/l4
 
 # Set up libraries
 if [[ -n `uname -m | grep 64` ]]; then
-  ln -sf $dest_folder/client/bin/libMonoFuseHelper.so.64 $dest_folder/client/bin/libMonoFuseHelper.so 
+  ln -sf $dest_folder/client/bin/libMonoFuseHelper.so.64 $dest_folder/client/bin/libMonoFuseHelper.so
+  ln -sf $dest_folder/client/bin/libMonoPosixHelper.so.64 $dest_folder/client/bin/libMonoPosixHelper.so  
 else 
   ln -sf $dest_folder/client/bin/libMonoFuseHelper.so.32 $dest_folder/client/bin/libMonoFuseHelper.so
+  ln -sf $dest_folder/client/bin/libMonoPosixHelper.so.32 $dest_folder/client/bin/libMonoPosixHelper.so
 fi

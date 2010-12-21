@@ -64,4 +64,4 @@ def main():
   run_second_instance(iface)
 
 if __name__ == "__main__":
-    main()
+  main()

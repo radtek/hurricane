@@ -10,22 +10,29 @@ my_path = path.abspath(__file__)
 installer_dir = dirname(dirname(my_path))
 
 installer_etc = join(installer_dir, "etc")
-client_bin = join(join(installer_dir, "client"), "bin")
+machine_config = join(join(join(installer_etc, "mono"), "2.0"), "machine.config")
+
+sys_config = join(join(installer_etc, "mono"), "config")
+
+client_base = join(installer_dir, "client")
+client_bin = join(client_base, "bin")
+client_log = join(join(client_base, "var"), "log")
 
 # Server bin is the root of "binaries" in the server module which include ASP.NET
 # Pages
-server_bin = join(join(installer_dir, "server"), "bin")
+server_base = join(installer_dir, "server")
+server_bin = join(server_base, "bin")
 
 # Server lib is the "bin" subfolder under the server_bin root where dlls reside. 
 server_lib = join(server_bin, "bin")
+server_log = join(join(server_base, "var"), "log")
 
 # Location of bundles.
 client_bundle = join(client_bin, "gsclient.bundle")
 server_bundle = join(join(server_bin, "bin"), "gsserver.bundle")
 
 client_exe = join(client_bin, "GSClientApp.exe")
-#xsp_exe = "/usr/lib/mono/2.0/xsp2.exe"
-xsp_exe = join(server_lib, "xsp2.exe")
+xsp_exe = "/usr/lib/mono/2.0/xsp2.exe"
 
 shadow_dir = join(join(join(installer_dir, "client"), "var"), "shadow")
 ld_library_path = "/lib:/usr/lib:/usr/local/lib" 

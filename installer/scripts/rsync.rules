@@ -6,7 +6,11 @@
 + *.aspx
 + *.asax
 + *.js
++ *.Master
++ *.compiled
++ *.bundle
 - /obj/
 + */
 + Web.config
++ PrecompiledApp.config
 - *

@@ -7,6 +7,8 @@ print_help_and_exit() {
   -b Build application.
   -v Verbose.
   -c Compress and make a tarball.
+  -a Make a tarball.
+  -d Bundle the compiled artifacts.
 EOF
   exit 2
 }
@@ -15,11 +17,13 @@ if [[ -z $1 ]]; then
   print_help_and_exit
 fi
 
-while getopts "bvc" optNames; do
+while getopts "bvcda" optNames; do
 case "$optNames" in
   b) build=1;;
   v) verbose=1;;
   c) compress=1;;
+  a) archive=1;;
+  d) bundle=1;;
   ?) print_help_and_exit;;
   esac
 done
@@ -48,9 +52,23 @@ if [ "$build" ]; then
   rsync -avLm --delete --include-from="$scripts_dir/rsync.rules" --exclude-from="$scripts_dir/rsync.rules" "$client_dir/" "$installer_dir/client/bin/"
   rsync -avLm --delete --include-from="$scripts_dir/rsync.rules" --exclude-from="$scripts_dir/rsync.rules" "$web_dir/" "$installer_dir/server/bin/"
   rsync -avLm --delete $gatorshare_lib/libMonoFuseHelper.so.* "$installer_dir/client/bin/"
+  rsync -avLm --delete $gatorshare_lib/libMonoPosixHelper.so.* "$installer_dir/client/bin/"
 fi
 
-if [ "$compress" ]; then
-  # Make a tarball gatorshare.tar.gz with gatorshare as the root directory inside.
-  tar -C $installer_dir -czvf "$installer_dir/../../gatorshare.tar.gz" . --exclude="*~"
+if [[ $bundle ]]; then
+  $scripts_dir/makebundle.py
+fi 
+
+if [[ $archive ]] || [[ $compress ]]; then
+  if [[ $bundle ]]; then
+    # Make a tarball gatorshare.tar.gz with gatorshare as the root directory inside.
+    tar -C $gatorshare_sln -cvf "$installer_dir/../gshare.tar" "./installer" --exclude="*~"
+  else
+    # Make a tarball gatorshare.tar.gz with gatorshare as the root directory inside.
+    tar -C $gatorshare_sln -cvf "$installer_dir/../gshare.tar" "./installer" --exclude="*~" --exclude="*bundle"
+  fi
+
+  if [[ $compress ]]; then
+    gzip -f "$installer_dir/../gshare.tar"
+  fi 
 fi

@@ -55,11 +55,7 @@
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
-    <Reference Include="System.Data" />
     <Reference Include="System.Web" />
-    <Reference Include="System.Xml.Linq">
-      <RequiredTargetFramework>3.5</RequiredTargetFramework>
-    </Reference>
     <Reference Include="System.Xml" />
     <Reference Include="JsonExSerializer, Version=3.0.25.205, Culture=neutral, PublicKeyToken=6be1316762335bd4">
       <SpecificVersion>False</SpecificVersion>
