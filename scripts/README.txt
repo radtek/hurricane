@@ -1,0 +1,1 @@
+This directory contains general purpose or solution level scripts.
