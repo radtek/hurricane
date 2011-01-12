@@ -2,6 +2,7 @@
 import sys, os, shutil
 from os import path
 from os.path import dirname, join
+import fileinput
 
 def run_second_instance(iface):
   """ Copies and modifies installer files to run a second instance of GatorShare on the same machine. """
@@ -21,35 +22,24 @@ def run_second_instance(iface):
 
   #os.system("sed \"s/\/opt\/gatorshare/\/opt\/gatorshare2/\" -i " + join(installer_scripts_dir, "install2.sh"))
 
-  with open(install2_path) as f:
-    content = f.read()
-    content = content.replace('/opt/gatorshare', '/opt/gatorshare2')
-    content = content.replace('\/opt\/gatorshare', '\/opt\/gatorshare2')
-    content = content.replace('8080', '8081')
-    content = content.replace('23113', '23115')
-    content = content.replace('23114', '23116')
-  with open(install2_path, 'w') as f:
-    f.write(content)
+  for line in fileinput.input(install2_path, inplace=1):
+    print line.replace('/opt/gatorshare', '/opt/gatorshare2') \
+      .replace('\/opt\/gatorshare', '\/opt\/gatorshare2') \
+      .replace('8080', '8081') \
+      .replace('23113', '23115') \
+      .replace('23114', '23116') \
+      .replace('run.py', 'run2.py'),
     
-  with open(run2_path) as f:
-    content = f.read()
-    content = content.replace('/mnt/gatorshare', '/mnt/gatorshare2')
-    content = content.replace('8080', '8081')
-  with open(run2_path, 'w') as f:
-    f.write(content)
+  for line in fileinput.input(run2_path, inplace=1):
+    print line.replace('/mnt/gatorshare', '/mnt/gatorshare2') \
+      .replace('8080', '8081'),
     
-  with open(uninstall2_path) as f:
-    content = f.read()
-    content = content.replace('/mnt/gatorshare', '/mnt/gatorshare2')
-    content = content.replace('/opt/gatorshare', '/opt/gatorshare2')
-  with open(uninstall2_path, 'w') as f:
-    f.write(content)
+  for line in fileinput.input(uninstall2_path, inplace=1):
+    print line.replace('/mnt/gatorshare', '/mnt/gatorshare2') \
+      .replace('/opt/gatorshare', '/opt/gatorshare2'),
     
-  with open(stop2_path) as f:
-    content = f.read()
-    content = content.replace('gatorshare', 'gatorshare2')
-  with open(stop2_path, 'w') as f:
-    f.write(content)
+  for line in fileinput.input(stop2_path, inplace=1):
+    print line.replace('gatorshare', 'gatorshare2'),
 
   os.system("sudo " + uninstall2_path)
   os.system("sudo " + install2_path + " " + iface)
@@ -65,3 +55,4 @@ def main():
 
 if __name__ == "__main__":
   main()
+  

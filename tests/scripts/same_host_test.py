@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # This script interacts with running GatorShare file systems.
 
+from __future__ import with_statement
 import sys, os, shutil
 from subprocess import Popen, PIPE
 from os import path

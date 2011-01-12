@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # Configuration that python files in the same directory can import.
 
+import os
 from os import path
-from os.path import join, dirname
+from os.path import join, dirname, split
+from subprocess import Popen, PIPE
 
 
 my_path = path.abspath(__file__)
@@ -32,7 +34,12 @@ client_bundle = join(client_bin, "gsclient.bundle")
 server_bundle = join(join(server_bin, "bin"), "gsserver.bundle")
 
 client_exe = join(client_bin, "GSClientApp.exe")
-xsp_exe = "/usr/lib/mono/2.0/xsp2.exe"
+
+mono_prefix = split(split(Popen("which mono", shell=True, stdout=PIPE).communicate()[0])[0])[0]
+
+xsp_exe = join(mono_prefix, "lib", "mono", "2.0", "xsp2.exe")
 
 shadow_dir = join(join(join(installer_dir, "client"), "var"), "shadow")
 ld_library_path = "/lib:/usr/lib:/usr/local/lib" 
+
+install_dest_unix = "/opt/gatorshare"

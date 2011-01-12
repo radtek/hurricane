@@ -66,3 +66,5 @@ else
   ln -sf $dest_folder/client/bin/libMonoFuseHelper.so.32 $dest_folder/client/bin/libMonoFuseHelper.so
   ln -sf $dest_folder/client/bin/libMonoPosixHelper.so.32 $dest_folder/client/bin/libMonoPosixHelper.so
 fi
+
+chmod +x "$dest_folder/scripts/run.py"

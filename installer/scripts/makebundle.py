@@ -39,7 +39,9 @@ def bundle_server():
     "exe": "/usr/lib/mono/2.0/gmcs.exe" }
     
   print "Running command:", mkbundle_cmd
-  call(mkbundle_cmd, shell=True)
+  environment = os.environ
+  environment["LD_LIBRARY_PATH"] = config.ld_library_path
+  call(mkbundle_cmd, shell=True, env=environment)
   
   # No need to bundle gmcs for precompiled gsserver.
   #print "Running command:", mkbundle_gmcs_cmd
@@ -62,7 +64,9 @@ def bundle_client():
     "exe": config.client_exe, "dlls": dlls}
     
   print "Running command:", mkbundle_cmd
-  call(mkbundle_cmd, shell=True)
+  environment = os.environ
+  environment["LD_LIBRARY_PATH"] = config.ld_library_path
+  call(mkbundle_cmd, shell=True, env=environment)
   
 if __name__ == "__main__":
   makebundle()

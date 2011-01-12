@@ -75,8 +75,11 @@ class GatorShareRunner:
     lib_path = config.server_lib + os.pathsep + config.ld_library_path
     path_env = config.server_lib + os.pathsep + os.environ["PATH"]
     
-    environment = {"LD_LIBRARY_PATH": lib_path, \
-      "MONO_CFG_DIR": config.installer_etc, "PATH": path_env}
+    environment = os.environ
+    environment["LD_LIBRARY_PATH"] = lib_path
+    environment["MONO_CFG_DIR"] = config.installer_etc
+    environment["PATH"] = path_env
+
     if self.verbose:
       environment["MONO_LOG_LEVEL"] = "debug"
     cwd = config.server_lib
@@ -108,8 +111,10 @@ class GatorShareRunner:
     lib_path = config.client_bin + os.pathsep + config.ld_library_path
     # Run as a background job.
     
-    environment = { "LD_LIBRARY_PATH": lib_path, \
-      "MONO_CFG_DIR": config.installer_etc }
+    environment = os.environ
+    environment["LD_LIBRARY_PATH"] = lib_path
+    environment["MONO_CFG_DIR"] = config.installer_etc
+
     if self.verbose:
        environment["MONO_LOG_LEVEL"] = "debug"
     cwd = config.client_bin
@@ -131,3 +136,4 @@ class GatorShareRunner:
 
 if __name__ == "__main__":
   GatorShareRunner().run_gatorshare()
+  
