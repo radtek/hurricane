@@ -40,6 +40,7 @@ mono_prefix = split(split(Popen("which mono", shell=True, stdout=PIPE).communica
 xsp_exe = join(mono_prefix, "lib", "mono", "2.0", "xsp2.exe")
 
 shadow_dir = join(join(join(installer_dir, "client"), "var"), "shadow")
+
 ld_library_path = "/lib:/usr/lib:/usr/local/lib" 
 
 install_dest_unix = "/opt/gatorshare"

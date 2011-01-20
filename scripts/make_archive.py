@@ -16,7 +16,7 @@ usage = """Usage: %s [-tbd]
 def main():
   """ Makes an archive from selected directories """
   try:
-    optlist, args = getopt.getopt(sys.argv[1:], "tbd", ["include-this"])
+    optlist, args = getopt.getopt(sys.argv[1:], "tbdav", ["include-this"])
   except getopt.GetoptError, err:
     # print help information and exit:
     print str(err)
@@ -25,6 +25,7 @@ def main():
   
   include_tests = include_brunet = exclude_bundle = False
   include_this = False
+  verbose = False
   for k,v in optlist:
     if k == "-t":
       include_tests = True
@@ -34,6 +35,10 @@ def main():
       exclude_bundle = True
     elif k == "--include-this":
       include_this = True
+    elif k == "-a":
+      include_this = include_brunet = include_tests = True
+    elif k == "-v":
+      verbose = True
     else:
       assert False, "unhandled option"
       
@@ -49,7 +54,9 @@ def main():
   if exclude_bundle:
     excludes += "--exclude='*.bundle'"
     
-  cmd = "tar -C %s -czvf %s %s %s" % (config.sln_dir, tar_output, includes, excludes)
+  cmd = "tar -C %s -cz%sf %s %s %s" % (config.sln_dir, verbose and "v" or "", 
+    tar_output, includes, excludes)
+  print cmd
   call(cmd, shell=True)
   
 if __name__ == "__main__":

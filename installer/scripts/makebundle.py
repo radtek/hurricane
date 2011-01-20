@@ -15,6 +15,19 @@ def makebundle():
   bundle_client()
   shutil.copy(config.xsp_exe, config.server_bin)
   
+def _modify_env():
+  environment = os.environ
+  try:
+    ld_library_path = environment["LD_LIBRARY_PATH"]
+  except KeyError:
+    ld_library_path = ""
+  
+  ld_library_path += config.ld_library_path
+  environment["LD_LIBRARY_PATH"] = ld_library_path
+  
+  return environment
+  
+  
 def bundle_server():
   """ Bundle GatorShare.Web """
   dlls = "System.Xml.Linq.dll "
@@ -39,8 +52,7 @@ def bundle_server():
     "exe": "/usr/lib/mono/2.0/gmcs.exe" }
     
   print "Running command:", mkbundle_cmd
-  environment = os.environ
-  environment["LD_LIBRARY_PATH"] = config.ld_library_path
+  environment = _modify_env()
   call(mkbundle_cmd, shell=True, env=environment)
   
   # No need to bundle gmcs for precompiled gsserver.
@@ -64,8 +76,7 @@ def bundle_client():
     "exe": config.client_exe, "dlls": dlls}
     
   print "Running command:", mkbundle_cmd
-  environment = os.environ
-  environment["LD_LIBRARY_PATH"] = config.ld_library_path
+  environment = _modify_env()
   call(mkbundle_cmd, shell=True, env=environment)
   
 if __name__ == "__main__":
