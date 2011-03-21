@@ -26,7 +26,7 @@ class GatorShareInstaller:
       print "GatorShare is already installed at %s" % config.install_dest_unix
       exit(1)
     else:
-      reinstall(iface)
+      self.reinstall(iface)
   
   def uninstall(self):
     this_dir = dirname(path.abspath(__file__))
@@ -49,7 +49,7 @@ def main():
       elif k == "-u":
         do_uninstall = True
       elif k == "-v":
-        self.verbose = True
+        installer.verbose = True
       elif k == "-b":
         do_install_brunet = True
       else:

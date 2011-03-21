@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
 # This file handles brunet related operations.
-import sys
-
 from __future__ import with_statement
 from subprocess import Popen, call, PIPE
 import tarfile, os, urllib2
@@ -15,7 +13,7 @@ usage =  """Usage: %s [-n <brunet_namespace>]
 """ % sys.argv[0]
 
 def install_brunet_bundle(bundle_download_url):
-  """ Download the bundle from GA.org and decompress. """
+  """ Downloads the bundle from GA.org and decompresses it. """
   install_tgz = "install.tgz"
   download_to = join(config.brunet_basedir, install_tgz)
   
@@ -39,13 +37,15 @@ def install_brunet_bundle(bundle_download_url):
   
   return True
     
-def configure_brunet(brunet_ns, remote_tas_file):
+def configure_brunet(brunet_ns, remote_tas_file, edge_listener_port=0):
+  """ Choosing edge_listener_port=0 picks a random available port. """
   with open(remote_tas_file, 'r') as f:
     remote_tas = f.read()
   
   for line in fileinput.input(config.node_config_file, inplace=1):
     print line.replace('{BrunetNamespace}', brunet_ns) \
-      .replace('{RemoteTAs}', remote_tas),
+      .replace('{RemoteTAs}', remote_tas) \
+      .replace('{EdgeListenerPort}', edge_listener_port),
 
 def main():
   pass

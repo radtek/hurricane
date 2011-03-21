@@ -7,11 +7,11 @@ from subprocess import Popen, PIPE
 from subprocess import call
 import setupconfig as config
 
-usage = """Usage: %s [-scfv]
+usage = """Usage: %s [-scvb]
   -s  Run server.
   -c  Run client.
   -v  Verbose.
-  -f  Run applications as foreground processes.
+  -b  Run bundled application.
 """ % sys.argv[0]
 
 # Constants
@@ -31,43 +31,19 @@ mount_point = "/mnt/gatorshare"
 gsserver_port = 8080
 
 class GatorShareRunner:
-  def run_gatorshare(self):
-    try:
-      optlist, args = getopt.getopt(sys.argv[1:], "scvb")
-      self.verbose = False
-      run_server = run_client = run_bundle = False
-      if len(optlist) == 0:
-        assert False
-      for k,v in optlist:
-        if k == "-s":
-          run_server = True
-        elif k == "-c":
-          run_client = True
-        elif k == "-v":
-          self.verbose = True
-        elif k == "-b":
-          run_bundle = True
-        else:
-          assert False, "unhandled option"
-    except:
-      print usage
-      sys.exit(2)
-    
-    if run_bundle:
-      server_app = server_bundle
-      client_app = client_bundle
-    else:
-      server_app = "xsp2"
-      client_app = "mono " + client_exe
-      
-    if run_server:
-      self.run_gsserver(server_app)
-    
-    if run_client:
-      self.run_gsclient(client_app)
+   
+  def run(self, run_bundle=False):
+      self.run_gsserver(run_bundle)
+      self.run_gsclient(run_bundle)
   
-  def run_gsserver(self, server_app):
+  def run_gsserver(self, run_bundle=False, server_app=None):
     """ Runs GSServer"""
+    if server_app is None:
+      if run_bundle:
+        server_app = server_bundle
+      else:
+        server_app = "xsp2"
+    
     server_cmd = "%s --root %s --port %s --verbose --nonstop 2>&1 | tee %s" % (server_app, \
       server_bin, gsserver_port, \
       join(config.server_log, "output-server-$(date +%y%m%d%H%M%S).txt"))
@@ -88,8 +64,14 @@ class GatorShareRunner:
       (server_cmd, environment, cwd)
     Popen(server_cmd, shell=True, env=environment, cwd=cwd)
     
-  def run_gsclient(self, client_app):
+  def run_gsclient(self, run_bundle=False, client_app=None):
     """ Runs GSClient """
+    if client_app is None:
+      if run_bundle:
+        client_app = client_bundle
+      else:
+        client_app = "mono " + client_exe
+          
     mounts = Popen(["mount"], stdout=PIPE).communicate()[0]
     if mount_point in mounts.split():
       # unmount if already mounted.
@@ -116,7 +98,7 @@ class GatorShareRunner:
     environment["MONO_CFG_DIR"] = config.installer_etc
 
     if self.verbose:
-       environment["MONO_LOG_LEVEL"] = "debug"
+      environment["MONO_LOG_LEVEL"] = "debug"
     cwd = config.client_bin
     print "Going to run command %s as a background job. Env=%s; CWD=%s" % \
       (client_cmd, environment, config.client_bin)
@@ -134,6 +116,36 @@ class GatorShareRunner:
       print "Creating %s ..." % publish_dir
       os.makedirs(publish_dir)
 
+def main():
+  try:
+    optlist, args = getopt.getopt(sys.argv[1:], "scvb")
+    verbose = False
+    run_server = run_client = run_bundle = False
+    if len(optlist) == 0:
+      assert False
+    for k,v in optlist:
+      if k == "-s":
+        run_server = True
+      elif k == "-c":
+        run_client = True
+      elif k == "-v":
+        verbose = True
+      elif k == "-b":
+        run_bundle = True
+      else:
+        assert False, "unhandled option"
+  except:
+    print usage
+    sys.exit(2)
+  
+  gs = GatorShareRunner()
+  
+  if run_server:
+    gs.run_gsserver(run_bundle=run_bundle)
+  
+  if run_client:
+    gs.run_gsclient(run_bundle=run_bundle)
+
 if __name__ == "__main__":
-  GatorShareRunner().run_gatorshare()
+  main()
   

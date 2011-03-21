@@ -8,6 +8,8 @@ import configuration as config
 
 brunet_install_dest = "/opt"
 brunet_basedir = join(config.sln_dir, "misc", "brunet")
+usage = """Usage: %s [-v] [-n brunet_namespace] [-t remote_ta_file] [-l brunet_download_url]
+""" % sys.argv[0]
 
 def main():
   

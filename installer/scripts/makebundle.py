@@ -1,18 +1,21 @@
 #!/usr/bin/env python
 
-import os
+import os, logging, sys, getopt
 from os import path
 from os.path import dirname, join
-from subprocess import call
+from subprocess import call, PIPE
 import setupconfig as config
-import shutil
+import shutil, logging.config
 
-mkbundle_cmd_tmpl = "MONO_OPTIONS=--runtime=v2.0.50215 mkbundle2 -o %(output_bundle)s --deps --config-dir " + \
+mkbundle_cmd_tmpl = "MONO_OPTIONS=--runtime=v2.0.50215 mkbundle -o %(output_bundle)s --deps --config-dir " + \
     "%(config_dir)s --machine-config %(machine_config)s --config %(config)s --static -z %(exe)s "
 
 def makebundle():
   bundle_server()
+  logging.info("Finished bundling gsserver.")
   bundle_client()
+  logging.info("Finished bundling gsclient.")
+  # For some reason, the xsp executable has to be in the server root
   shutil.copy(config.xsp_exe, config.server_bin)
   
 def _modify_env():
@@ -44,16 +47,20 @@ def bundle_server():
                    "config": config.sys_config,
                    "exe": config.xsp_exe, "dlls": dlls}
     
-  mkbundle_gmcs_cmd = mkbundle_cmd_tmpl % {
+  
+  mkbundle_gmcs_cmd = mkbundle_cmd_tmpl % { #@UnusedVariable
     "output_bundle": join(config.server_lib, "gmcs"), 
     "config_dir": config.installer_etc,
     "machine_config": config.machine_config, 
     "config": config.sys_config,
     "exe": "/usr/lib/mono/2.0/gmcs.exe" }
     
-  print "Running command:", mkbundle_cmd
+  logging.debug("Running command: " + mkbundle_cmd)
   environment = _modify_env()
-  call(mkbundle_cmd, shell=True, env=environment)
+  stdout = \
+    None if logging.getLogger().getEffectiveLevel() == logging.DEBUG else PIPE
+  call(mkbundle_cmd, shell=True, env=environment, stdout=stdout)
+  
   
   # No need to bundle gmcs for precompiled gsserver.
   #print "Running command:", mkbundle_gmcs_cmd
@@ -75,9 +82,28 @@ def bundle_client():
     "config": config.sys_config,
     "exe": config.client_exe, "dlls": dlls}
     
-  print "Running command:", mkbundle_cmd
+  logging.debug("Running command: " + mkbundle_cmd)
   environment = _modify_env()
-  call(mkbundle_cmd, shell=True, env=environment)
+  stdout = \
+    None if logging.getLogger().getEffectiveLevel() == logging.DEBUG else PIPE
+  call(mkbundle_cmd, shell=True, env=environment, stdout=stdout)
+
+def main():
+  try:
+    optlist, args = getopt.getopt(sys.argv[1:], "v")
+  except getopt.GetoptError, err:
+    # print help information and exit:
+    print >> sys.stderr, str(err)
+    sys.exit(2)
+    
+  logging.config.fileConfig(join(config.installer_etc, "logging.conf"))
+  for k, v in optlist:
+    if k == "-v":
+      logging.getLogger().setLevel(logging.DEBUG)
+    else:
+      assert False, "unhandled option"
+        
+  makebundle()
   
 if __name__ == "__main__":
-  makebundle()
+  main()
