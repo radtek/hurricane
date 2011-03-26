@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-import os
-from subprocess import Popen, PIPE
+import os, logging
+from subprocess import Popen, PIPE, STDOUT
 from os.path import join
 import configuration as config
 
@@ -38,9 +38,10 @@ def run_brunet_bundle(count=1):
     "cronolog": join(p2pnode_dir, "cronolog"), 
     "log": join(p2pnode_dir, "node.log.%y%m%d.txt") }
     
-  print cmd, environment
+  logging.info(cmd)
+  logging.debug(environment)
   
-  Popen(cmd, shell=True, env=environment, cwd=p2pnode_dir)
+  Popen(cmd, shell=True, env=environment, cwd=p2pnode_dir, stdout=PIPE, stderr=STDOUT)
   
 def main():
   pass

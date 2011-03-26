@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 
-import os, shutil, getopt
+import os, getopt, sys
 from os.path import join, dirname
 from subprocess import call
-import sys
 import configuration as config
+sln_dir = config.sln_dir
+sln_etc = config.sln_etc 
 
 brunet_install_dest = "/opt"
-brunet_basedir = join(config.sln_dir, "misc", "brunet")
+brunet_basedir = join(sln_dir, "misc", "brunet")
 usage = """Usage: %s [-v] [-n brunet_namespace] [-t remote_ta_file] [-l brunet_download_url]
 """ % sys.argv[0]
 
@@ -40,7 +41,7 @@ def main():
     print "Warning: Brunet namespace or RemoteTAs is not specified."
     
   if download_link is None:
-    sys.path.append(config.sln_etc)
+    sys.path.append(sln_etc)
     import localconfig
     try:
       download_link = localconfig.brunet_bundle_url
@@ -49,7 +50,7 @@ def main():
       exit()
     
   install_brunet_basedir()
-  sys.path.append(join(brunet_install_dest, "scripts"))
+  sys.path.append(join(brunet_install_dest, "pysrc"))
   import brunet.install
   brunet.install.install_brunet_bundle()
   

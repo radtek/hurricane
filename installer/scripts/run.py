@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-import getopt, sys, os, time, platform
+import getopt, sys, os, time, platform, logging
 from os import path
 from os.path import dirname, join
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, STDOUT
 from subprocess import call
 import setupconfig as config
 
@@ -56,13 +56,14 @@ class GatorShareRunner:
     environment["MONO_CFG_DIR"] = config.installer_etc
     environment["PATH"] = path_env
 
-    if self.verbose:
+    verbose = (logging.getLogger().getEffectiveLevel() == logging.DEBUG)
+    if verbose:
       environment["MONO_LOG_LEVEL"] = "debug"
     cwd = config.server_lib
     
     print "Going to run command %s in background. Env=%s, CWD=%s" % \
       (server_cmd, environment, cwd)
-    Popen(server_cmd, shell=True, env=environment, cwd=cwd)
+    Popen(server_cmd, shell=True, env=environment, cwd=cwd, stdout=PIPE, stderr=STDOUT)
     
   def run_gsclient(self, run_bundle=False, client_app=None):
     """ Runs GSClient """
@@ -97,13 +98,14 @@ class GatorShareRunner:
     environment["LD_LIBRARY_PATH"] = lib_path
     environment["MONO_CFG_DIR"] = config.installer_etc
 
-    if self.verbose:
+    verbose = (logging.getLogger().getEffectiveLevel() == logging.DEBUG)
+    if verbose:
       environment["MONO_LOG_LEVEL"] = "debug"
     cwd = config.client_bin
     print "Going to run command %s as a background job. Env=%s; CWD=%s" % \
       (client_cmd, environment, config.client_bin)
     
-    Popen(client_cmd, shell=True, env=environment, cwd=cwd)
+    Popen(client_cmd, shell=True, env=environment, cwd=cwd, stdout=PIPE, stderr=STDOUT)
     
     while not mount_point in Popen(["mount"], stdout=PIPE).communicate()[0].split():
       print "FUSE is not up yet. Sleeping 1s..."

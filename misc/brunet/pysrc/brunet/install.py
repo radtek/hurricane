@@ -1,35 +1,21 @@
-#!/usr/bin/env python
-
 # This file handles brunet related operations.
 from __future__ import with_statement
 from subprocess import Popen, call, PIPE
 import tarfile, os, urllib2
 from os import path
 from os.path import dirname, join
-import configuration as config
+from . import configuration as config
 import shutil, sys, getopt, fileinput
 
 usage =  """Usage: %s [-n <brunet_namespace>]
 """ % sys.argv[0]
 
-def install_brunet_bundle(bundle_download_url):
-  """ Downloads the bundle from GA.org and decompresses it. """
-  install_tgz = "install.tgz"
-  download_to = join(config.brunet_basedir, install_tgz)
-  
-  # If it's already downloaded, abort the installation process.
-  if path.exists(download_to):
-    return False
-  
-#  download_cmd = "curl -o %s %s" % (download_to, config.brunet_bundle_url)
-#  call(download_cmd, shell=True)
-  
-  bundle = urllib2.urlopen(bundle_download_url)
-  with open(download_to,'wb') as f:
-    f.write(bundle.read())
-  
-  tar = tarfile.TarFile.open(join(config.brunet_basedir, install_tgz))
-  tar.extractall(config.brunet_basedir)
+def install_brunet_bundle(tar_decompressed_dir):
+  """ Takes the descompressed directory of the bundle files and installs it. 
+  """
+    
+  cmd =  "cp -R %s %s" % (tar_decompressed_dir, config.brunet_basedir)
+  call(cmd, shell=True)
   
   cronolog_path = join(config.brunet_basedir, "node", "cronolog")
   cmd = "chmod +x %s" % cronolog_path
