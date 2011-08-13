@@ -201,8 +201,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Common\default.build" />
-    <None Include="default.build" />
-    <None Include="Filesystem\default.build" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\GatorShare.Util\GatorShare.Util.csproj">
