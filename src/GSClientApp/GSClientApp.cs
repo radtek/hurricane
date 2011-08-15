@@ -26,7 +26,7 @@ namespace GatorShareApp {
     /// </summary>
     static GSClientApp() {
       var logconfig = ConfigurationManager.AppSettings["L4nConfigPath"];
-      Logger.LoadConfig(logconfig);
+      Logger.ConfigureLogger(logconfig);
       _log_props = Logger.PrepareLoggerProperties(typeof(GSClientApp));
     }
 

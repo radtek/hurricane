@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using System.Text;
 using System.IO;
-using Brunet;
+using Brunet.Util;
 
 namespace GatorShare {
   /**

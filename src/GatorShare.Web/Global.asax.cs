@@ -42,7 +42,7 @@ namespace GatorShare.Web {
     }
 
     protected void Application_Start() {
-      Logger.LoadConfig(WebConfigurationManager.AppSettings["L4nConfigPath"]);
+      Logger.ConfigureLogger(WebConfigurationManager.AppSettings["L4nConfigPath"]);
 
       AppDomain.CurrentDomain.UnhandledException +=
         new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);

@@ -3,9 +3,8 @@ using System.Collections;
 using System.Text;
 using System.Diagnostics;
 using System.Collections.Specialized;
-#if LOG4NET
-using log4net;
-using log4net.Config;
+#if UNIT_TEST
+using NUnit.Framework; 
 #endif
 
 namespace GatorShare {
@@ -44,65 +43,38 @@ namespace GatorShare {
   }
 
   public class Logger {
-    #region Switches used by Systen.Diagnostics
-    public static readonly TraceSwitch TrackerLog = new TraceSwitch("trackerLog", "Logs in tracker");
-    public static readonly BooleanSwitch FilesysLog = new BooleanSwitch("filesysLog", "Logs in FUSE File system"); 
-    #endregion
-
     /// <summary>
-    /// Types of logging systems
+    /// There is only one logger globally.
     /// </summary>
-    public enum TraceType {
-      Trace, Debug, Log4Net
-    }
+    static ILogger _logger;
 
     /// <summary>
-    /// Loads the config file from ./l4n.config
-    /// </summary>
-    public static void LoadConfig() {
-      LoadConfig("l4n.config");
-    }
-
-    public static void LoadConfig(string configFile) {
-      LoadConfig(configFile, new NameValueCollection());
-    }
-
-    /// <summary>
-    /// Loads config file for the logger.
+    /// Initializes the <see cref="Logger"/> class.
     /// </summary>
     /// <remarks>
-    /// Currently only for log4net. 
+    /// To change to another logging tool, modify this method.
     /// </remarks>
-    public static void LoadConfig(string configFile, NameValueCollection properties) {
-#if LOG4NET
-      XmlConfigurator.Configure(new System.IO.FileInfo(configFile));
-#endif
+    static Logger() {
+      _logger = new Log4NetLogger();
     }
 
-    /**
-     * Should be called by every class who wants to be logged to prepare the 
-     * logging properties.
-     * If LOG4NET, Logger of the specific type is attached
-     * If DEBUG || TRACE, TraceSwitch is added
-     */
-    public static IDictionary PrepareLoggerProperties(Type objType) {
-      IDictionary dic = new System.Collections.Specialized.ListDictionary();
-#if LOG4NET
-      ILog log = LogManager.GetLogger(objType);
-      dic.Add("logger", log);
-#endif
+    public static void ConfigureLogger(string configFile) {
+      _logger.ConfigureLogger(configFile);
+    }
 
-#if (DEBUG || TRACE)
-      TraceSwitch ts = null;
-      if (objType.Namespace.EndsWith("Tracker")) {
-        ts = Logger.TrackerLog;
-      } else {
-        //Is this the right thing to do?
-        ts = new TraceSwitch("Undefined", "Undefined");
-      }
-      dic.Add("trace_switch", ts);
-#endif
-      return dic;
+    public static void ConfigureLogger() {
+      _logger.ConfigureLogger();
+    }
+
+    /// <summary>
+    /// Prepares the logger properties.
+    /// This method should be called by every class who wants to be logged to 
+    /// prepare the logging properties.
+    /// </summary>
+    /// <param name="objType">Type of the object.</param>
+    /// <returns>A dictionary with the properties of the logger.</returns>
+    public static IDictionary PrepareLoggerProperties(Type objType) {
+      return _logger.PrepareLoggerProperties(objType);
     }
 
     /// <summary>
@@ -113,267 +85,33 @@ namespace GatorShare {
     /// <param name="loggerName"></param>
     /// <returns></returns>
     public static IDictionary PrepareNamedLoggerProperties(string loggerName) {
-      IDictionary dict = new System.Collections.Specialized.ListDictionary();
-#if LOG4NET
-      ILog log = LogManager.GetLogger(loggerName);
-      dict.Add("logger", log); 
-#endif
-      return dict;
+      return _logger.PrepareNamedLoggerProperties(loggerName);
     }
 
     #region Log Methods
 
-    /// <summary>
-    /// Main method for multi-tool logging.
-    /// </summary>
-    /// <remarks>
-    /// Which logging tool to use depends on the MACROS defined.
-    /// </remarks>
-    /// <param name="level">level of logging</param>
-    /// <param name="props">properties of logging</param>
-    /// <param name="args">
-    /// <list type="table">
-    /// <item>
-    /// <term>
-    /// DEBUG || TRACE
-    /// </term>
-    /// <description>
-    /// args[0] object to log; args[1]: (optional) string category
-    /// </description>
-    /// </item>
-    /// <item>
-    /// <term>
-    /// LOG4NET
-    /// </term>
-    /// <description>
-    /// args[0]: object message; args[1]: (optional) Exception
-    /// </description>
-    /// </item>
-    /// </list>
-    /// </param>
-    public static void WriteLineIf(LogLevel level, IDictionary props, params object[] args) {
-      if (args.Length == 0) {
-        throw new ArgumentException("Object(s) to log needed.");
-      }
-#if TRACE
-      TraceWriteLineIf(level, props["trace_switch"] as TraceSwitch, args);
-#endif
-#if DEBUG
-      DebugWriteLineIf(level, props["trace_switch"] as TraceSwitch, args);
-#endif
-#if LOG4NET
-      ILog log = props["logger"] as ILog;
-      Log4NetWriteLineIf(level, log, args);
-#endif
+    public static void WriteLineIf(LogLevel level, IDictionary logProperties, 
+      object message) {
+      _logger.WriteLineIf(level, logProperties, message);
     }
 
-
-#if LOG4NET
-    /**
-     * @param log ILog instance
-     */
-    private static void Log4NetWriteLineIf(LogLevel level, ILog log, params object[] args) {
-      if (args.Length == 1) {
-        //void Fatal(object message);
-        object message = args[0];
-        switch (level) {
-          case LogLevel.Fatal:
-            log.Fatal(message);
-            break;
-          case LogLevel.Error:
-            log.Error(message);
-            break;
-          case LogLevel.Warning:
-            log.Warn(message);
-            break;
-          case LogLevel.Info:
-            log.Info(message);
-            break;
-          case LogLevel.Verbose:
-          case LogLevel.All:
-            log.Debug(message);
-            break;
-          default:
-            break;
-        }
-      } else if (args.Length == 2) {
-        object message = args[0];
-        Exception e = args[1] as Exception;
-        switch (level) {
-          case LogLevel.Fatal:
-            log.Fatal(message, e);
-            break;
-          case LogLevel.Error:
-            log.Error(message, e);
-            break;
-          case LogLevel.Warning:
-            log.Warn(message, e);
-            break;
-          case LogLevel.Info:
-            log.Info(message, e);
-            break;
-          case LogLevel.Verbose:
-          case LogLevel.All:
-            log.Debug(message, e);
-            break;
-          default:
-            break;
-        }
-      }
-    }
-#endif
-
-#if TRACE
-    /**
-     * @param ts TraceSwitch that defined the logging conditions
-     */
-    private static void TraceWriteLineIf(LogLevel level, TraceSwitch ts, params object[] args) {
-      //TraceSwitch
-      if (args.Length == 1) {
-        object val = args[0];
-        switch (level) {
-          case LogLevel.Error:
-            Trace.WriteLineIf(ts.TraceError, val);
-            break;
-          case LogLevel.Warning:
-            Trace.WriteLineIf(ts.TraceWarning, val);
-            break;
-          case LogLevel.Info:
-            Trace.WriteLineIf(ts.TraceInfo, val);
-            break;
-          case LogLevel.Verbose:
-            Trace.WriteLineIf(ts.TraceVerbose, val);
-            break;
-          case LogLevel.Fatal:
-            Trace.Fail(val as string);
-            break;
-          default:
-            break;
-        }
-      } else if (args.Length == 2) {
-        object val = args[0];
-        if (args[1] is string) {
-          string cat = args[1] as string;
-          switch (level) {
-            case LogLevel.Error:
-              Trace.WriteLineIf(ts.TraceError, val, cat);
-              break;
-            case LogLevel.Warning:
-              Trace.WriteLineIf(ts.TraceWarning, val, cat);
-              break;
-            case LogLevel.Info:
-              Trace.WriteLineIf(ts.TraceInfo, val, cat);
-              break;
-            case LogLevel.Verbose:
-              Trace.WriteLineIf(ts.TraceVerbose, val, cat);
-              break;
-            case LogLevel.Fatal:
-              string detail_message = cat;
-              Trace.Fail(val as string, detail_message);
-              break;
-            default:
-              break;
-          }
-        } else if (args[1] is Exception) {
-          Exception e = args[1] as Exception;
-          switch (level) {
-            case LogLevel.Error:
-              Trace.WriteLineIf(ts.TraceError, val);
-              Trace.WriteLineIf(ts.TraceError, e);
-              break;
-            case LogLevel.Warning:
-              Trace.WriteLineIf(ts.TraceWarning, val);
-              Trace.WriteLineIf(ts.TraceWarning, e);
-              break;
-            case LogLevel.Info:
-              Trace.WriteLineIf(ts.TraceInfo, val);
-              Trace.WriteLineIf(ts.TraceInfo, e);
-              break;
-            case LogLevel.Verbose:
-              Trace.WriteLineIf(ts.TraceVerbose, val);
-              Trace.WriteLineIf(ts.TraceVerbose, e);
-              break;
-            default:
-              break;
-          }
-        }
-      }
-    }
-#endif
-
-#if DEBUG
-    private static void DebugWriteLineIf(LogLevel level, TraceSwitch ts, params object[] args) {
-      if (args.Length == 1) {
-        object val = args[0];
-        switch (level) {
-          case LogLevel.Error:
-            Debug.WriteLineIf(ts.TraceError, val);
-            break;
-          case LogLevel.Warning:
-            Debug.WriteLineIf(ts.TraceWarning, val);
-            break;
-          case LogLevel.Info:
-            Debug.WriteLineIf(ts.TraceInfo, val);
-            break;
-          case LogLevel.Verbose:
-            Debug.WriteLineIf(ts.TraceVerbose, val);
-            break;
-          case LogLevel.Fatal:
-            Debug.Fail(val as string);
-            break;
-          default:
-            break;
-        }
-      } else if (args.Length == 2) {
-        object val = args[0];
-        if (args[1] is string) {
-          string cat = args[1] as string;
-          switch (level) {
-            case LogLevel.Error:
-              Debug.WriteLineIf(ts.TraceError, val, cat);
-              break;
-            case LogLevel.Warning:
-              Debug.WriteLineIf(ts.TraceWarning, val, cat);
-              break;
-            case LogLevel.Info:
-              Debug.WriteLineIf(ts.TraceInfo, val, cat);
-              break;
-            case LogLevel.Verbose:
-              Debug.WriteLineIf(ts.TraceVerbose, val, cat);
-              break;
-            case LogLevel.Fatal:
-              string detail_message = cat;
-              Debug.Fail(val as string, detail_message);
-              break;
-            default:
-              break;
-          }
-        } else if (args[1] is Exception) {
-          Exception e = args[1] as Exception;
-          switch (level) {
-            case LogLevel.Error:
-              Debug.WriteLineIf(ts.TraceError, val);
-              Debug.WriteLineIf(ts.TraceError, e);
-              break;
-            case LogLevel.Warning:
-              Debug.WriteLineIf(ts.TraceWarning, val);
-              Debug.WriteLineIf(ts.TraceWarning, e);
-              break;
-            case LogLevel.Info:
-              Debug.WriteLineIf(ts.TraceInfo, val);
-              Debug.WriteLineIf(ts.TraceInfo, e);
-              break;
-            case LogLevel.Verbose:
-              Debug.WriteLineIf(ts.TraceVerbose, val);
-              Debug.WriteLineIf(ts.TraceVerbose, e);
-              break;
-            default:
-              break;
-          }
-        }
-      }
-    }
-#endif
     #endregion
   }
+
+#if UNIT_TEST
+  [TestFixture]
+  public class LoggerTest {
+    [Test]
+    [ExpectedException(typeof(ArgumentException))]
+    public void TestNonexistentConfigFile() {
+      Logger.ConfigureLogger(@"C:\Temp\Nonexistent");
+    }
+
+    public void TestBasicConfig() {
+      Logger.ConfigureLogger();
+      var dict = Logger.PrepareNamedLoggerProperties("testLog");
+      Logger.WriteLineIf(LogLevel.Verbose, dict, "test message");
+    }
+  }
+#endif
 }

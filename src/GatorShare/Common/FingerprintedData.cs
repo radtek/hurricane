@@ -3,7 +3,7 @@ using System.Collections.Specialized;
 using System.Collections;
 using System.Text;
 using System.Security.Cryptography;
-using MemBlock = Brunet.MemBlock;
+using System.Linq;
 #if FUSHARE_NUNIT
 using NUnit.Framework; 
 #endif
@@ -49,8 +49,8 @@ namespace GatorShare {
       using (SHA1 hash = new SHA1CryptoServiceProvider()) {
         sha1_of_inner = hash.ComputeHash(_inner_data.SerializeTo());
       }
-      MemBlock mb = MemBlock.Reference(sha1_of_inner);
-      if (!mb.Equals(_sha1))
+
+      if (sha1_of_inner.SequenceEqual(_sha1))
         throw new Exception("Data lost might have happened on the wire");
       //if euqals, we are good to go
     }

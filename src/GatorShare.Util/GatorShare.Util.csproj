@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -10,12 +10,13 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>GatorShare</RootNamespace>
     <AssemblyName>GatorShare.Util</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
     <OldToolsVersion>3.5</OldToolsVersion>
     <UpgradeBackupLocation />
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -34,33 +35,32 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'l4n|AnyCPU' ">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'UnitTest|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\l4n\</OutputPath>
-    <DefineConstants>LOG4NET</DefineConstants>
+    <OutputPath>bin\UnitTest\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;UNIT_TEST</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <Optimize>false</Optimize>
+    <CodeAnalysisIgnoreBuiltInRuleSets>false</CodeAnalysisIgnoreBuiltInRuleSets>
+    <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="log4net">
+      <HintPath>..\..\lib\log4net.dll</HintPath>
+    </Reference>
+    <Reference Include="Mono.Posix, Version=4.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL">
+      <HintPath>..\..\lib\Mono.Posix.dll</HintPath>
+    </Reference>
+    <Reference Include="nunit.framework, Version=2.5.10.11092, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL" />
     <Reference Include="System" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
     <Reference Include="System.Web" />
     <Reference Include="System.Xml" />
-    <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\log4net.dll</HintPath>
-    </Reference>
     <Reference Include="CookComputing.XmlRpcV2, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
       <HintPath>..\..\lib\CookComputing.XmlRpcV2.dll</HintPath>
-    </Reference>
-    <Reference Include="Mono.Posix, Version=4.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\Mono.Posix.dll</HintPath>
     </Reference>
     <Reference Include="JsonExSerializer, Version=3.1.0.269, Culture=neutral, PublicKeyToken=6be1316762335bd4">
       <SpecificVersion>False</SpecificVersion>
@@ -71,9 +71,11 @@
     <Compile Include="Base32.cs" />
     <Compile Include="ConfigurationUtil.cs" />
     <Compile Include="Environment.cs" />
+    <Compile Include="ILogger.cs" />
     <Compile Include="IOUtil.cs" />
     <Compile Include="IPAddresses.cs" />
     <Compile Include="JsonUtil.cs" />
+    <Compile Include="Log4NetLogger.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="NetUtil.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
