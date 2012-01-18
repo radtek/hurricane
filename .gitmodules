@@ -1,0 +1,3 @@
+[submodule "MonoTorrent"]
+	path = MonoTorrent
+	url = git@bitbucket.org:xujyan/monotorrent.git
