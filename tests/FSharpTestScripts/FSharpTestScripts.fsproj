@@ -8,7 +8,7 @@
     <ProjectGuid>{48929b85-8bd0-43df-b26c-1978b6df5ffb}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>FSharpScripts</RootNamespace>
-    <AssemblyName>FSharpScripts</AssemblyName>
+    <AssemblyName>FSharpTestScripts</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
@@ -79,22 +79,34 @@
     </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="FSharp.Core" />
-    <Reference Include="NHibernate.ByteCode.Castle">
-      <HintPath>..\..\..\gseries\lib\fluentnhibernate\NHibernate.ByteCode.Castle.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <ProjectReference Include="..\..\..\gseries\src\gSeries.ProvisionSupport\gSeries.ProvisionSupport.csproj">
-      <Name>gSeries.ProvisionSupport</Name>
-      <Project>{2c0bc97d-44be-4773-bf14-53b91c9a15a4}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <Reference Include="System.Data.SQLite">
-      <HintPath>..\..\..\gseries\lib\sqlite\System.Data.SQLite.dll</HintPath>
-    </Reference>
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <PropertyGroup>
     <PostBuildEvent>xcopy /Y $(SolutionDir)\lib\sqlite\SQLite.Interop.dll .</PostBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <Tailcalls>false</Tailcalls>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <WarningLevel>3</WarningLevel>
+    <DocumentationFile />
+    <StartArguments />
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <Tailcalls>true</Tailcalls>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <WarningLevel>3</WarningLevel>
+    <DocumentationFile>bin\Release\FSharpScripts.XML</DocumentationFile>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
 	     Other similar extension points exist, see Microsoft.Common.targets.

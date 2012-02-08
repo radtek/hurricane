@@ -91,6 +91,9 @@
     <Reference Include="NHibernate.ByteCode.Castle">
       <HintPath>..\..\lib\fluentnhibernate\NHibernate.ByteCode.Castle.dll</HintPath>
     </Reference>
+    <Reference Include="NHibernate.Caches.SysCache">
+      <HintPath>..\..\lib\nhcontrib\NHibernate.Caches.SysCache.dll</HintPath>
+    </Reference>
     <Reference Include="Remotion.Data.Linq">
       <HintPath>..\..\lib\fluentnhibernate\Remotion.Data.Linq.dll</HintPath>
     </Reference>
@@ -99,28 +102,32 @@
       <HintPath>..\..\lib\protobuf-net.dll</HintPath>
     </Reference>
     <Reference Include="System.Data" />
-    <Reference Include="System.Data.SQLite, Version=1.0.76.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\System.Data.SQLite.dll</HintPath>
+    <Reference Include="System.Data.SQLite">
+      <HintPath>..\..\lib\sqlite\System.Data.SQLite.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ChunkNotInDbException.cs" />
+    <Compile Include="FileSegmentIncompleteException.cs" />
     <Compile Include="ChunkDbHelper.cs" />
+    <Compile Include="ChunkMap.cs" />
+    <Compile Include="ProvisionSupportException.cs" />
+    <Compile Include="Dao.cs" />
     <Compile Include="DataModel\ChunkAccessStatsMap.cs" />
     <Compile Include="ChunkMapSerializer.cs" />
     <Compile Include="DataModel\DataChunkMap.cs" />
     <Compile Include="DataModel\ChunkMapDto.cs" />
+    <Compile Include="DeduplicationService.cs" />
     <Compile Include="FileHelper.cs" />
     <Compile Include="DataModel\DataChunk.cs" />
-    <Compile Include="DataChunkException.cs" />
+    <Compile Include="ChunkDbException.cs" />
     <Compile Include="DataModel\ManagedFile.cs" />
     <Compile Include="DataModel\ManagedFileMap.cs" />
     <Compile Include="NHSessionProvider.cs" />
     <Compile Include="NHTransactionProvider.cs" />
-    <Compile Include="VirtualDiskProfileHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ChunkDbService.cs" />
-    <Compile Include="VirtualDiskProfileService.cs" />
+    <Compile Include="FullProfileChunkMapBuilder.cs" />
     <Compile Include="DataModel\ChunkAccessStats.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

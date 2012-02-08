@@ -20,27 +20,28 @@ namespace GSeries.ProvisionSupport {
     /// <summary>
     /// This service class deals with the VM disk profile.
     /// </summary>
-    public class VirtualDiskProfileService {
+    public class FullProfileChunkMapBuilder {
         #region Fields
         readonly string _profileDbFile;
-        readonly string _dataFile;
         readonly ChunkDbService _chunkDbService;
-        static readonly ILog logger = LogManager.GetLogger(typeof(VirtualDiskProfileService));
+        FileHelper _fileHelper;
+        static readonly ILog logger = LogManager.GetLogger(typeof(FullProfileChunkMapBuilder));
         readonly ISessionFactory _sessionFactory;
+        string _datafilePath;
         #endregion
 
         #region Properties
-        public string DataFile {
-            get { return _dataFile; }
-        }
-        public string ProfileDbFile { get { return _profileDbFile; } } 
+        public string ProfileDbFile { get { return _profileDbFile; } }
+        public string DataFilePath { get { return _datafilePath; } } 
         #endregion
 
-        public VirtualDiskProfileService(string profileDbFile, string dataFile, ChunkDbService chunkDbService) {
+        public FullProfileChunkMapBuilder(string profileDbFile, string dataFilePath, 
+            ChunkDbService chunkDbService) {
             _profileDbFile = profileDbFile;
-            _dataFile = dataFile;
             _sessionFactory = CreateSessionFactory();
             _chunkDbService = chunkDbService;
+            _fileHelper = new FileHelper(_chunkDbService);
+            _datafilePath = dataFilePath;
         }
 
         /// <summary>
@@ -56,7 +57,7 @@ namespace GSeries.ProvisionSupport {
                 .BuildSessionFactory();
         }
 
-        public ChunkAccessStats[] GetChunksOrderedByEarliestRead() {
+        ChunkAccessStats[] GetChunksOrderedByEarliestRead() {
             using (var session = _sessionFactory.OpenSession()) {
                 var stats = session.CreateCriteria(typeof(ChunkAccessStats))
                     .AddOrder(Order.Asc(Projections.Property<ChunkAccessStats>(x => x.EarliestRead)))
@@ -65,15 +66,15 @@ namespace GSeries.ProvisionSupport {
             }
         }
 
-        public ChunkMapDto ToChunkMapDto() {
-            ManagedFile file = _chunkDbService.GetManagedFile(_dataFile);
+        public ChunkMapDto BuildChunkMapDto() {
+            ManagedFile file = _chunkDbService.GetManagedFile(DataFilePath);
             int totalChunkNumber = (int)(file.Size / DataChunk.ChunkSize);
             logger.DebugFormat("Total number of chunk for this file: {0}.", 
                 totalChunkNumber);
 
-            ChunkAccessStats[] chunks = GetChunksOrderedByEarliestRead();
+            ChunkAccessStats[] chunkStatss = GetChunksOrderedByEarliestRead();
             logger.DebugFormat("Brought in totally {0} chunks from profile.", 
-                chunks.Length);
+                chunkStatss.Length);
             
             // The hashes have two parts: in the profile and out of the profile.
             int[] fileIndices = new int[totalChunkNumber];
@@ -83,12 +84,13 @@ namespace GSeries.ProvisionSupport {
             // Number of chunks read directly from file instead of pulled from DB.
             int numDirectRead = 0;
             int fileIndicesCur = 0;
-            for (; fileIndicesCur < chunks.Length; fileIndicesCur++) {
-                var chunk = chunks[fileIndicesCur];
+            for (; fileIndicesCur < chunkStatss.Length; fileIndicesCur++) {
+                var chunk = chunkStatss[fileIndicesCur];
                 fileIndices[fileIndicesCur] = chunk.ChunkNumber;
                 indicesSet.Add(chunk.ChunkNumber);
                 bool readFile;
-                byte[] hash = GetHashFromChunkDbOrFile(chunk.ChunkNumber, out readFile);
+                byte[] hash = _fileHelper.GetHashFromChunkDbOrFile(DataFilePath, 
+                    chunk.ChunkNumber, out readFile);
                 if (readFile) numDirectRead++;
                 Buffer.BlockCopy(hash, 0, hashes, fileIndicesCur * DataChunk.HashSize, hash.Length);
             }
@@ -102,7 +104,8 @@ namespace GSeries.ProvisionSupport {
                     // This chunk is not in the profile
                     fileIndices[fileIndicesCur] = i;
                     bool readFile;
-                    byte[] hash = GetHashFromChunkDbOrFile(i, out readFile);
+                    byte[] hash = _fileHelper.GetHashFromChunkDbOrFile(DataFilePath, 
+                        i, out readFile);
                     if (readFile) numDirectRead++;
                     Buffer.BlockCopy(hash, 0, hashes, fileIndicesCur * DataChunk.HashSize, hash.Length);
                     fileIndicesCur++;
@@ -119,23 +122,6 @@ namespace GSeries.ProvisionSupport {
                 Hashes = hashes,
                 FileIndices = fileIndices
             };
-        }
-
-        private byte[] GetHashFromChunkDbOrFile(int chunkNumber, out bool readFile) {
-            DataChunk entry = _chunkDbService.GetChunkEntry(DataFile,
-                chunkNumber);
-            byte[] hash;
-            if (entry == null) {
-                // This chunk is not in ChunkDB maybe because it's a duplicate.
-                // Read directly from file.
-                hash = FileHelper.GetChunkHash(DataFile,
-                    chunkNumber * DataChunk.ChunkSize);
-                readFile = true;
-            } else {
-                hash = entry.Hash;
-                readFile = false;
-            }
-            return hash;
         }
     }
 }

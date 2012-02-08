@@ -23,7 +23,6 @@ namespace GSeries.ProvisionSupport {
     /// </remarks>
     public class ChunkDbHelper {
         readonly ISession _session;
-        readonly ITransaction _transaction;
         static readonly ILog logger = LogManager.GetLogger(typeof(ChunkDbHelper));
 
         /// <summary>
@@ -31,9 +30,8 @@ namespace GSeries.ProvisionSupport {
         /// </summary>
         /// <param name="session">The session.</param>
         /// <param name="transaction">The transaction.</param>
-        internal ChunkDbHelper(ISession session, ITransaction transaction) {
+        internal ChunkDbHelper(ISession session) {
             _session = session;
-            _transaction = transaction;
         }
 
         /// <summary>
@@ -51,13 +49,21 @@ namespace GSeries.ProvisionSupport {
             }
         }
 
-        public void AddChunkIfNotExists(DataChunk chunk) {
+        /// <summary>
+        /// Adds the chunk if not exists.
+        /// </summary>
+        /// <param name="chunk">The chunk.</param>
+        /// <returns>True if the chunk is added. False if already exists.</returns>
+        public bool AddChunkIfNotExists(DataChunk chunk) {
             ICriteria crit = _session.CreateCriteria(typeof(DataChunk));
             ICriterion hashEq = Expression.Eq("Hash", chunk.Hash);
             crit.Add(hashEq);
             if ((DataChunk)crit.UniqueResult() == null) {
                 // Save if no duplicate is found.
                 _session.Save(chunk);
+                return true;
+            } else {
+                return false;
             }
         }
 
@@ -88,10 +94,26 @@ namespace GSeries.ProvisionSupport {
         /// <param name="path">The path.</param>
         /// <returns>Null if the file isn't managed in the DB.</returns>
         public ManagedFile GetManagedFile(string path) {
-            return _session.CreateCriteria<ManagedFile>()
+            var ret = _session.CreateCriteria<ManagedFile>().SetCacheable(true)
+                .SetCacheRegion("ManagedFileRegion")
                 .Add(Expression.Eq(Projections.Property<ManagedFile>(
-                x => x.Path), path))
+                    x => x.Path), path))
                 .UniqueResult<ManagedFile>();
+            if (ret == null) {
+                throw new ChunkDbException(string.Format(
+                    "ManagedFile with a path {0} doesn't exist.", path));
+            }
+            return ret;
+        }
+
+        public bool TryGetManagedFile(string path, out ManagedFile file) {
+            try {
+                file = GetManagedFile(path);
+                return true;
+            } catch (ChunkDbException ex) {
+                file = null;
+                return false;
+            }
         }
 
         /// <summary>
@@ -99,24 +121,24 @@ namespace GSeries.ProvisionSupport {
         /// </summary>
         /// <param name="path">The path.</param>
         /// <returns></returns>
-        public ManagedFile GetOrCreateManagedFile(string path) {
-            ManagedFile file = GetManagedFile(path);
-            if (file == null) {
-                Stopwatch sw = new Stopwatch();
-                sw.Start();
-                byte[] fileHash = FileHelper.GetFileHash(path);
-                sw.Stop();
-                logger.DebugFormat("Computing file hash took {0} milliseconds.", 
-                    sw.ElapsedMilliseconds);
-                file = new ManagedFile {
-                    FileHash = fileHash,
-                    Size = new FileInfo(path).Length,
-                    Path = path
-                };
+        public ManagedFile CreateManagedFileFromLocalFile(string path) {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            byte[] fileHash = FileHelper.GetFileHash(path);
+            sw.Stop();
+            logger.DebugFormat("Computing file hash took {0} milliseconds.",
+                sw.ElapsedMilliseconds);
+            var file = new ManagedFile {
+                FileHash = fileHash,
+                Size = new FileInfo(path).Length,
+                Path = path
+            };
+            try {
                 _session.Save(file);
                 return file;
-            } else {
-                return file;
+            } catch (HibernateException ex) {
+                throw new ChunkDbException(
+                    string.Format("File {0} already exists in DB.", path), ex);
             }
         }
     }

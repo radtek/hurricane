@@ -24,11 +24,11 @@ namespace GSeries.ProvisionSupport {
         /// Gets or sets the index of the file.
         /// </summary>
         /// <value>
-        /// The index of the chunk in the file.
+        /// The index of the chunk in the file. Can be negative.
         /// </value>
-        /// <remarks>An integer (Int32) FileIndex can represent chunks in a file
-        /// smaller than 32 TB, should be enough.</remarks>
-        public virtual int FileIndex { get; set; }
+        /// <remarks>A negative value means it's the last chunk is the file.
+        /// </remarks>
+        public virtual int ChunkIndex { get; set; }
         public virtual int Count { get; set; }
     }
 }

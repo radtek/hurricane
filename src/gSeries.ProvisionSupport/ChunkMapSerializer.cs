@@ -14,14 +14,22 @@ namespace GSeries.ProvisionSupport {
     public class ChunkMapSerializer {
         public static void Serialize(string filePath, ChunkMapDto chunkMap) {
             using (var stream = File.OpenWrite(filePath)) {
-                Serializer.Serialize<ChunkMapDto>(stream, chunkMap);
+                Serialize(stream, chunkMap);
             }
         }
 
         public static ChunkMapDto Deserialize(string protoFile) {
             using (var stream = File.OpenRead(protoFile)) {
-                return Serializer.Deserialize<ChunkMapDto>(stream);
+                return Deserialize(stream);
             }
+        }
+
+        public static void Serialize(Stream stream, ChunkMapDto chunkMap) {
+            Serializer.Serialize<ChunkMapDto>(stream, chunkMap);
+        }
+
+        public static ChunkMapDto Deserialize(Stream stream) {
+            return Serializer.Deserialize<ChunkMapDto>(stream);
         }
     }
 }

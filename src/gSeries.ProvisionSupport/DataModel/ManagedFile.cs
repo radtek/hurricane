@@ -21,7 +21,24 @@ namespace GSeries.ProvisionSupport {
         /// The file hash.
         /// </value>
         public virtual byte[] FileHash { get; set; }
+        public virtual byte[] InfoHash { get; set; }
         public virtual string Path { get; set; }
+
+        /// <summary>
+        /// Gets or sets the size.
+        /// </summary>
+        /// <value>
+        /// The real size of the file. Not after padding.
+        /// </value>
         public virtual long Size { get; set; }
+        /// <summary>
+        /// Gets or sets the chunk map.
+        /// The chunk map is stored in binary format. (ProtocolBuffer)
+        /// </summary>
+        /// <value>
+        /// The chunk map.
+        /// </value>
+        public virtual byte[] ChunkMap { get; set; }
+        public virtual byte[] TorrentFile { get; set; }
     }
 }

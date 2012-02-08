@@ -15,7 +15,12 @@ namespace GSeries.ProvisionSupport {
             Id(x => x.Id);
             Map(x => x.FileHash).Length(20);
             Map(x => x.Path).Unique();
-            Map(x => x.Size);
+            Map(x => x.Size).Not.Nullable();
+            Map(x => x.ChunkMap);
+            Map(x => x.TorrentFile);
+            Map(x => x.InfoHash);
+
+            Cache.ReadWrite().IncludeAll();
         }
     }
 }

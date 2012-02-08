@@ -19,27 +19,54 @@ namespace GSeries.ProvisionSupport {
     public class FileHelper {
         #region Fields
         static readonly ILog logger = LogManager.GetLogger(typeof(FileHelper));
-        readonly ChunkDbService _chunkDb; 
+        readonly ChunkDbService _chunkDbService; 
         #endregion
 
-        public FileHelper(ChunkDbService chunkDb) {
-            _chunkDb = chunkDb;
+        public FileHelper(ChunkDbService chunkDbService) {
+            _chunkDbService = chunkDbService;
         }
 
         #region Member Methods
+        /// <summary>
+        /// Gets the hash from chunk db or file.
+        /// </summary>
+        /// <param name="filePath">The file path.</param>
+        /// <param name="chunkNumber">The chunk number.</param>
+        /// <param name="readFile">Is set to <c>true</c> if the chunk hash is read 
+        /// from file instead Db.</param>
+        /// <returns></returns>
+        public byte[] GetHashFromChunkDbOrFile(string filePath, int chunkNumber, 
+            out bool readFile) {
+            DataChunk entry = _chunkDbService.GetChunkEntry(filePath,
+                chunkNumber);
+            byte[] hash;
+            if (entry == null) {
+                // This chunk is not in ChunkDB maybe because it's a duplicate.
+                // Read directly from file.
+                hash = FileHelper.GetChunkHash(filePath,
+                    chunkNumber * DataChunk.ChunkSize);
+                readFile = true;
+            } else {
+                hash = entry.Hash;
+                readFile = false;
+            }
+            return hash;
+        }
+
         /// <summary>
         /// Reads the chunk from local file system by querying the chunk db.
         /// </summary>
         /// <param name="hash">The hash.</param>
         /// <returns></returns>
         public byte[] GetChunk(byte[] hash) {
-            DataChunk entry = _chunkDb.GetChunkEntry(hash);
+            DataChunk entry = _chunkDbService.GetChunkEntry(hash);
             if (entry == null) {
-                throw new DataChunkException(
+                throw new ChunkDbException(
                     "Cannot find the data chunk by the hash.");
             }
             int readLength;
-            return ReadChunk(entry.File.Path, entry.FileIndex * DataChunk.ChunkSize, out readLength);
+            return ReadChunk(entry.File.Path, 
+                entry.ChunkIndex * DataChunk.ChunkSize, out readLength);
         }
 
         public void AddChunk(string filePath, int fileIndex) {  
@@ -48,9 +75,9 @@ namespace GSeries.ProvisionSupport {
             byte[] chunk = ReadChunk(filePath, fileIndex, out readLength);
             byte[] hash = sha.ComputeHash(chunk);
             try {
-                _chunkDb.AddChunk(hash, filePath, fileIndex);
+                _chunkDbService.AddChunk(hash, filePath, fileIndex);
             } catch (DuplicateNameException ex) {
-                throw new DataChunkException(
+                throw new ChunkDbException(
                     "Cannot add chunk to ChunkDB because duplicate exists.", ex);
             }
         }
@@ -72,15 +99,28 @@ namespace GSeries.ProvisionSupport {
             int readLength;
             byte[] chunk = ReadChunk(filePath, offset, out readLength);
             if (readLength == 0) {
-                throw new DataChunkException("Cannot read this chunk from file.");
+                throw new ChunkDbException("Cannot read this chunk from file.");
             }
             return sha.ComputeHash(chunk);
         }
 
         public static byte[] GetFileHash(string filePath) {
+            if (!File.Exists(filePath)) {
+                throw new ArgumentException(string.Format(
+                    "File path {0} doesn't exist.", filePath));
+            }
             SHA1 sha = new SHA1CryptoServiceProvider();
-            return sha.ComputeHash(File.OpenRead(filePath));
+            using (File.OpenRead(filePath)) {
+                return sha.ComputeHash(File.OpenRead(filePath));
+            }
         }
+
+        public static int SizeOfLastChunk(long fileSize) {
+            long numChunks;
+            long remainder = Math.DivRem(fileSize, (long)DataChunk.ChunkSize, out numChunks);
+            return remainder == 0 ? DataChunk.ChunkSize : (int)remainder;
+        }
+
         #endregion
     }
 }

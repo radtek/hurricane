@@ -9,6 +9,7 @@ using System.Net;
 using System.Collections;
 using GatorShare.External;
 using GatorShare.External.DictionaryService;
+using MonoTorrent;
 
 namespace GatorShare.Services.BitTorrent {
   /// <summary>
@@ -56,11 +57,11 @@ namespace GatorShare.Services.BitTorrent {
       TorrentCreator creator = new TorrentCreator();
       creator.Comment = "This torrent file is automatically created.";
       creator.CreatedBy = "GatorShare";
-      creator.Path = dataPath;
-      creator.Announces.Add(new List<string>());
-      creator.Announces[0].Add(TrackerUrlPrefix);
-      return creator.Create();
-    }
+      creator.Announces.Add(new RawTrackerTier { 
+          TrackerUrlPrefix
+      });
+      return creator.Create(new TorrentFileSource(dataPath));
+    }   
 
     /// <summary>
     /// Writes the torrent file.

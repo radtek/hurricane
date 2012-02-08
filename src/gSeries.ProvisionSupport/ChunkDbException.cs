@@ -10,13 +10,14 @@ namespace GSeries.ProvisionSupport {
     using System.Text;
 
     /// <summary>
-    /// The base class for exceptions generated from the data chunk management
+    /// The exception generated from the data chunk management
     /// component.
     /// </summary>
-    public class DataChunkException : Exception {
-        public DataChunkException() : base() { }
-        public DataChunkException(string msg) : base(msg) { }
-        public DataChunkException(string msg, Exception innerException) : 
+    public class ChunkDbException : ProvisionSupportException {
+        public ChunkDbException() : base() { }
+        public ChunkDbException(string msg) : base(msg) { }
+        public ChunkDbException(string msg, Exception innerException) : 
             base(msg, innerException) { }
+        public ChunkDbException(Exception innerException) : base(innerException) { }
     }
 }

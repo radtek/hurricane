@@ -17,11 +17,13 @@ namespace GSeries.ProvisionSupport {
         public DataChunkMap() {
             Id(x => x.Id).GeneratedBy.HiLo("1000");
             Map(x => x.Hash)
-                .Length(20);
-                //.Unique();
+                .Length(20)
+                // Invalid for MySQL. Use AddAuxiliaryDatabaseObject instead.
+                // OK for SQLite
+                .Unique();
             References<ManagedFile>(x => x.File).Cascade.All()
-                .UniqueKey("PathFileIndex_Index");
-            Map(x => x.FileIndex).UniqueKey("PathFileIndex_Index");
+                .UniqueKey("PathChunkIndex_Index");
+            Map(x => x.ChunkIndex).UniqueKey("PathChunkIndex_Index");
             Map(x => x.Count);
             BatchSize(500);
         }
