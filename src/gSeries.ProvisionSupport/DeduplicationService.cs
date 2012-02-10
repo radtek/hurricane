@@ -65,13 +65,20 @@ namespace GSeries.ProvisionSupport {
             }
 
             // Adjust the first and last chunks.
-            ret[0] = Tuple.Create<string, long, int>(ret[0].Item1, 
-                ret[0].Item2 + bytesToSkipInStartChunk,  
-                DataChunk.ChunkSize - (int)bytesToSkipInStartChunk);
-            ret[ret.Count - 1] = Tuple.Create<string, long, int>(
-                ret[ret.Count - 1].Item1, 
-                ret[ret.Count - 1].Item2,
-                (int)countInLastChunk);
+            if (ret.Count == 1) {
+                // Thus start == end.
+                ret[0] = Tuple.Create<string, long, int>(ret[0].Item1,
+                    ret[0].Item2 + bytesToSkipInStartChunk,
+                    (int)(countInLastChunk - bytesToSkipInStartChunk));
+            } else {
+                ret[0] = Tuple.Create<string, long, int>(ret[0].Item1,
+                    ret[0].Item2 + bytesToSkipInStartChunk,
+                    DataChunk.ChunkSize - (int)bytesToSkipInStartChunk);
+                ret[ret.Count - 1] = Tuple.Create<string, long, int>(
+                    ret[ret.Count - 1].Item1,
+                    ret[ret.Count - 1].Item2,
+                    (int)countInLastChunk);
+            }
             return ret;
         }
 

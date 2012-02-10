@@ -3,7 +3,7 @@
 // This software may be used and distributed according to the terms of the
 // MIT license: http://www.opensource.org/licenses/mit-license.php
 
-namespace gSeries {
+namespace GSeries {
   using System;
   using System.Collections.Generic;
   using System.Linq;

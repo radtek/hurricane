@@ -31,10 +31,9 @@ namespace GSeries {
         }
 
 
-        public static void TestAddFileWithBasicChunkMap(string filePath) {
-            var dbFilePath = Path.Combine(Path.GetTempPath(), "ChunkDbWithChunkMap.db");
-            logger.DebugFormat("DB file path: {0}", dbFilePath);
-            var dbs = new ChunkDbService(dbFilePath, true);
+        public static void TestAddFileWithBasicChunkMap(string db, string filePath) {
+            logger.DebugFormat("DB file path: {0}", db);
+            var dbs = new ChunkDbService(db, true);
             dbs.AddFileWithBasicChunkMap(filePath);
             logger.Debug("Data file processing finished.");
         }

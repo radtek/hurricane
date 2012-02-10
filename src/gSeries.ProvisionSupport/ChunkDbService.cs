@@ -137,6 +137,8 @@ namespace GSeries.ProvisionSupport {
         }
 
         public void AddFileWithBasicChunkMap(string filePath) {
+            FileUtil.PadFileWithZeros(filePath);
+
             var fileIndices = new List<int>();
             var hashes = new MemoryStream();
             int eofIndex = 0;
@@ -167,16 +169,16 @@ namespace GSeries.ProvisionSupport {
                         EofChunkSize = eofChunkSize
                     };
                     hashes.Dispose();
-                    var bytes = new MemoryStream();
-                    ChunkMapSerializer.Serialize(bytes, dto);
+                    var chunkMapBytes = new MemoryStream();
+                    ChunkMapSerializer.Serialize(chunkMapBytes, dto);
                     if (logger.IsDebugEnabled) {
                         var tempFilePath = Path.Combine(Path.GetTempPath(), 
                             Path.GetTempFileName());
-                        File.WriteAllBytes(tempFilePath, bytes.ToArray());
+                        File.WriteAllBytes(tempFilePath, chunkMapBytes.ToArray());
                         logger.DebugFormat("ChunkMap is logged to file {0}", tempFilePath);
                     }
-                    file.ChunkMap = bytes.ToArray();
-                    bytes.Dispose();
+                    file.ChunkMap = chunkMapBytes.ToArray();
+                    chunkMapBytes.Dispose();
                     // Have the file committed to DB.
                     transaction.Commit();
                 }

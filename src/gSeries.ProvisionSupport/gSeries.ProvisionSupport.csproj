@@ -118,7 +118,7 @@
     <Compile Include="DataModel\DataChunkMap.cs" />
     <Compile Include="DataModel\ChunkMapDto.cs" />
     <Compile Include="DeduplicationService.cs" />
-    <Compile Include="FileHelper.cs" />
+    <Compile Include="FileUtil.cs" />
     <Compile Include="DataModel\DataChunk.cs" />
     <Compile Include="ChunkDbException.cs" />
     <Compile Include="DataModel\ManagedFile.cs" />

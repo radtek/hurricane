@@ -124,7 +124,7 @@ namespace GSeries.ProvisionSupport {
         public ManagedFile CreateManagedFileFromLocalFile(string path) {
             Stopwatch sw = new Stopwatch();
             sw.Start();
-            byte[] fileHash = FileHelper.GetFileHash(path);
+            byte[] fileHash = FileUtil.GetFileHash(path);
             sw.Stop();
             logger.DebugFormat("Computing file hash took {0} milliseconds.",
                 sw.ElapsedMilliseconds);

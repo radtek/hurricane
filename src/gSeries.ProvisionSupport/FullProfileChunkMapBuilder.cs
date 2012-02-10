@@ -24,7 +24,7 @@ namespace GSeries.ProvisionSupport {
         #region Fields
         readonly string _profileDbFile;
         readonly ChunkDbService _chunkDbService;
-        FileHelper _fileHelper;
+        FileUtil _fileHelper;
         static readonly ILog logger = LogManager.GetLogger(typeof(FullProfileChunkMapBuilder));
         readonly ISessionFactory _sessionFactory;
         string _datafilePath;
@@ -40,7 +40,7 @@ namespace GSeries.ProvisionSupport {
             _profileDbFile = profileDbFile;
             _sessionFactory = CreateSessionFactory();
             _chunkDbService = chunkDbService;
-            _fileHelper = new FileHelper(_chunkDbService);
+            _fileHelper = new FileUtil(_chunkDbService);
             _datafilePath = dataFilePath;
         }
 
