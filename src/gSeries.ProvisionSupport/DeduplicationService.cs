@@ -106,5 +106,14 @@ namespace GSeries.ProvisionSupport {
         public void AddFileToDownload(string path, byte[] chunkMap, byte[] torrent, long fileSize) {
             _chunkDbService.AddFileToDownload(path, chunkMap, torrent, fileSize);
         }
+
+        public bool FileExistsInDb(string path) {
+            try {
+                _chunkDbService.GetManagedFile(path);
+            } catch (ChunkDbException ex) {
+                return false;
+            }
+            return true;
+        }
     }
 }

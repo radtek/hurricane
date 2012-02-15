@@ -104,6 +104,7 @@
     <Compile Include="SimpleTestProgram.cs" />
     <Compile Include="StreamingTestProgram.cs" />
     <Compile Include="TestIncompletePieces.cs" />
+    <Compile Include="VirtualDiskDownloadServiceTest.cs" />
     <Compile Include="VirtualDiskProfileServiceTest.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -132,6 +133,10 @@
     <ProjectReference Include="..\..\MonoTorrent\src\MonoTorrent\MonoTorrent.csproj">
       <Project>{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}</Project>
       <Name>MonoTorrent</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\gSeries.DataDistributionService\gSeries.DataDistributionService.csproj">
+      <Project>{24E8ABB6-69D8-42F9-A8F6-EC9F6FC51ADB}</Project>
+      <Name>gSeries.DataDistributionService</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\src\gSeries.ProvisionSupport\gSeries.ProvisionSupport.csproj">
       <Project>{2C0BC97D-44BE-4773-BF14-53B91C9A15A4}</Project>
