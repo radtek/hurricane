@@ -34,8 +34,9 @@ namespace GSeries.DataDistributionService {
                     logger.DebugFormat("Open connections: {0}", torrentManager.OpenConnections);
                     if (e.OldState == TorrentState.Hashing) {
                         logger.Debug("Hashing Mode completed.");
-                        logger.DebugFormat("{0} pieces already available out of {1} in total.", 
-                            torrentManager.Bitfield.TrueCount, torrentManager.Torrent.Pieces.Count);
+                        logger.DebugFormat("{0} pieces ({2} percent) already available out of {1} in total.", 
+                            torrentManager.Bitfield.TrueCount, 
+                            torrentManager.Torrent.Pieces.Count, torrentManager.Bitfield.PercentComplete);
                     }
                     break;
                 case TorrentState.Seeding:

@@ -134,6 +134,10 @@
       <Project>{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}</Project>
       <Name>MonoTorrent</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\src\GatorShare.Util\GatorShare.Util.csproj">
+      <Project>{2253759E-5110-4DBA-9969-32A76F3DB5B1}</Project>
+      <Name>GatorShare.Util</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\src\gSeries.DataDistributionService\gSeries.DataDistributionService.csproj">
       <Project>{24E8ABB6-69D8-42F9-A8F6-EC9F6FC51ADB}</Project>
       <Name>gSeries.DataDistributionService</Name>

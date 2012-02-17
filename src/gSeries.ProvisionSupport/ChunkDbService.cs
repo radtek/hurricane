@@ -283,8 +283,9 @@ namespace GSeries.ProvisionSupport {
         /// <param name="filePath">The file path.</param>
         /// <param name="chunkIndices">The chunk indices.</param>
         public IList<Tuple<string, int, int>> GetChunkLocations(string filePath, int[] chunkIndices) {
-            logger.DebugFormat("Going to get chunks {0}.", string.Join(",", 
-                System.Array.ConvertAll<int, string>(chunkIndices, x => x.ToString())));
+            logger.DebugFormat("Going to get chunks {0} for file {1}.", string.Join(",", 
+                System.Array.ConvertAll<int, string>(chunkIndices, x => x.ToString())), filePath);
+
             var sessionProvider = new NHSessionProvider(_sessionFactory);
             using (sessionProvider) {
                 var helper = new ChunkDbHelper(sessionProvider.CurrentSession);
