@@ -19,7 +19,7 @@ namespace GSeries {
     using MonoTorrent.Client.Encryption;
     using MonoTorrent.Common;
     using System.Net;
-    using GatorShare;
+    using GSeries;
 
     /// <summary>
     /// TODO: Update summary.
@@ -48,7 +48,6 @@ namespace GSeries {
             var ip = NetUtil.GetLocalIPByInterface("Local Area Connection");
             engineSettings.ReportedAddress = new IPEndPoint(ip, port);
             var engine = new ClientEngine(engineSettings, new DedupDiskWriter(ds));
-            //engine.ChangeListenEndpoint(new IPEndPoint(IPAddress.Any, port));
             var vd = new VirtualDiskDownloadService(engine);
             vd.StartDownloadingFile(Torrent.Load(torrentPath), savePath);
             Console.Read();

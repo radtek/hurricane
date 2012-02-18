@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -8,7 +8,7 @@
     <ProjectGuid>{89CD31DB-4FC0-46A7-960A-747EE95EAEA3}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>GatorShare</RootNamespace>
+    <RootNamespace>GSClientApp</RootNamespace>
     <AssemblyName>GSClientApp</AssemblyName>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -16,7 +16,7 @@
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
     <IsWebBootstrapper>false</IsWebBootstrapper>
-    <StartupObject>GatorShareApp.GSClientApp</StartupObject>
+    <StartupObject>GSClientApp.GSClientApp</StartupObject>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
@@ -84,20 +84,6 @@
     <Compile Include="GSClientApp.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\GatorShare.Fuse\GatorShare.Fuse.csproj">
-      <Project>{EF23BEB3-1D68-4667-8B9D-AF61BF62D4F0}</Project>
-      <Name>GatorShare.Fuse</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\GatorShare.Util\GatorShare.Util.csproj">
-      <Project>{2253759E-5110-4DBA-9969-32A76F3DB5B1}</Project>
-      <Name>GatorShare.Util</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\GatorShare\GatorShare.csproj">
-      <Project>{BF49E836-A893-4487-BDC6-3CF146CCBC01}</Project>
-      <Name>GatorShare</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
       <Visible>False</Visible>
     </BootstrapperPackage>
@@ -116,6 +102,20 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\gSeries.Fuse\gSeries.Fuse.csproj">
+      <Project>{EF23BEB3-1D68-4667-8B9D-AF61BF62D4F0}</Project>
+      <Name>gSeries.Fuse</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\gSeries.GatorShare\gSeries.GatorShare.csproj">
+      <Project>{BF49E836-A893-4487-BDC6-3CF146CCBC01}</Project>
+      <Name>gSeries.GatorShare</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\gSeries.Util\gSeries.Util.csproj">
+      <Project>{2253759E-5110-4DBA-9969-32A76F3DB5B1}</Project>
+      <Name>gSeries.Util</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

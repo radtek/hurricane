@@ -1,0 +1,164 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{BF49E836-A893-4487-BDC6-3CF146CCBC01}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <NoStandardLibraries>false</NoStandardLibraries>
+    <AssemblyName>gSeries.GatorShare</AssemblyName>
+    <RootNamespace>GSeries</RootNamespace>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <ProductVersion>10.0.0</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <OutputType>Library</OutputType>
+    <RootNamespace>GatorShare</RootNamespace>
+    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <OutputType>Library</OutputType>
+    <DebugSymbols>true</DebugSymbols>
+    <RootNamespace>GatorShare</RootNamespace>
+    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.Practices.ObjectBuilder2, Version=2.2.0.0, Culture=neutral, PublicKeyToken=null">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\Microsoft.Practices.ObjectBuilder2.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Practices.Unity, Version=1.2.0.0, Culture=neutral, PublicKeyToken=null">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\Microsoft.Practices.Unity.dll</HintPath>
+    </Reference>
+    <Reference Include="Mono.Fuse, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\Mono.Fuse.dll</HintPath>
+    </Reference>
+    <Reference Include="nunit.framework, Version=2.4.8.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\nunit.framework.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core">
+    </Reference>
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Web.Routing">
+    </Reference>
+    <Reference Include="Mono.Posix, Version=4.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\lib\Mono.Posix.dll</HintPath>
+    </Reference>
+    <Reference Include="Brunet, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>..\..\lib\Brunet.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Bootstrapper.cs" />
+    <Compile Include="Common\DictionaryData.cs" />
+    <Compile Include="Common\DictionaryDataDecorator.cs" />
+    <Compile Include="Common\DictionaryDataUtil.cs" />
+    <Compile Include="Common\Enums.cs" />
+    <Compile Include="Common\FingerprintedData.cs" />
+    <Compile Include="Common\FragmentableData.cs" />
+    <Compile Include="Common\FragmentationInfo.cs" />
+    <Compile Include="Common\IDictionaryData.cs" />
+    <Compile Include="Common\IDto.cs" />
+    <Compile Include="Common\ISerializer.cs" />
+    <Compile Include="Common\RegularData.cs" />
+    <Compile Include="Exceptions\DependencyException.cs" />
+    <Compile Include="External\DictionaryService\DhtServiceBase.cs" />
+    <Compile Include="Filesystem\BitTorrentFilesysEventHandler.cs" />
+    <Compile Include="Filesystem\FilesysContext.cs" />
+    <Compile Include="Filesystem\FilesysEventDispatcher.cs" />
+    <Compile Include="Filesystem\FilesysEventHandlerBase.cs" />
+    <Compile Include="Filesystem\FilesysManager.cs" />
+    <Compile Include="Filesystem\FilesysEventArgs.cs" />
+    <Compile Include="Filesystem\PathFactory.cs" />
+    <Compile Include="Filesystem\IFilesysEventHandler.cs" />
+    <Compile Include="Filesystem\IFushareFilesys.cs" />
+    <Compile Include="Filesystem\NopFilesysEventHandler.cs" />
+    <Compile Include="Filesystem\OpenFileInfo.cs" />
+    <Compile Include="Filesystem\UnityFilesysEventDispatcher.cs" />
+    <Compile Include="Filesystem\VirtualFile.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\BitTorrent\BitTorrentCache.cs" />
+    <Compile Include="Services\BitTorrent\BitTorrentServiceInfo.cs" />
+    <Compile Include="Services\BitTorrent\CacheRegistry.cs" />
+    <Compile Include="Services\BitTorrent\DataMetaInfo.cs" />
+    <Compile Include="Services\BitTorrent\HttpPieceInfoServer.cs" />
+    <Compile Include="Services\BitTorrent\IPieceInfoServer.cs" />
+    <Compile Include="Services\BitTorrent\PieceLevelTorrentManager.cs" />
+    <Compile Include="Services\BitTorrent\TorrentDataService.cs" />
+    <Compile Include="Services\BitTorrent\TorrentHelper.cs" />
+    <Compile Include="External\DictionaryService\DictionaryServiceDataEntry.cs" />
+    <Compile Include="External\DictionaryService\DictionaryServiceData.cs" />
+    <Compile Include="External\DictionaryService\DictionaryKeyException.cs" />
+    <Compile Include="External\DictionaryService\DictionaryServiceException.cs" />
+    <Compile Include="External\DictionaryService\DictionaryKeyNotFoundException.cs" />
+    <Compile Include="External\DictionaryService\ServiceUtil.cs" />
+    <Compile Include="Services\Dict\DictService.cs" />
+    <Compile Include="Services\Dict\IDictService.cs" />
+    <Compile Include="Services\BitTorrent\TorrentFolderWatcher.cs" />
+    <Compile Include="Services\BitTorrent\BitTorrentManager.cs" />
+    <Compile Include="Services\BitTorrent\BitTorrentService.cs" />
+    <Compile Include="Services\BitTorrent\DictionaryServiceTracker.cs" />
+    <Compile Include="Services\BitTorrent\TorrentFolderWatcherHelper.cs" />
+    <Compile Include="Common\AdrSerializer.cs" />
+    <Compile Include="Filesystem\Enums.cs" />
+    <Compile Include="Filesystem\FilesysPath.cs" />
+    <Compile Include="Filesystem\RedirectFS-FH.cs" />
+    <Compile Include="Services\BitTorrent\IBitTorrentService.cs" />
+    <Compile Include="External\DictionaryService\DictionaryServiceFactory.cs" />
+    <Compile Include="External\DictionaryService\IDict.cs" />
+    <Compile Include="Services\BitTorrent\DictionaryServiceTrackerListener.cs" />
+    <Compile Include="Services\BitTorrent\DictionaryServiceProxy.cs" />
+    <Compile Include="Services\BitTorrent\PeerEntry.cs" />
+    <Compile Include="External\DictionaryService\DictionaryServiceBase.cs" />
+    <Compile Include="Services\ServiceException.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Common\default.build" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\MonoTorrent\src\MonoTorrent\MonoTorrent.csproj">
+      <Project>{411A9E0E-FDC6-4E25-828A-0C2CD1CD96F8}</Project>
+      <Name>MonoTorrent</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\gSeries.Util\gSeries.Util.csproj">
+      <Project>{2253759E-5110-4DBA-9969-32A76F3DB5B1}</Project>
+      <Name>gSeries.Util</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Util\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="External\README.txt" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <ProjectExtensions>
+    <VisualStudio AllowExistingFolder="true" />
+  </ProjectExtensions>
+</Project>

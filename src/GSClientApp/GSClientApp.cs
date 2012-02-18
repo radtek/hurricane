@@ -4,14 +4,14 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Text;
 using System.Threading;
-using GatorShare;
-using GatorShare.Filesystem;
+using GSeries;
+using GSeries.Filesystem;
 using Microsoft.Practices.Unity;
 using NDesk.Options;
 using System.IO;
 using System.Collections.Specialized;
 
-namespace GatorShareApp {
+namespace GSClientApp {
   /// <summary>
   /// Program entry point.
   /// </summary>

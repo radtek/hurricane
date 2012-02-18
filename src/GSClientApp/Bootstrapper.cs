@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.Practices.Unity;
-using GatorShare.Filesystem;
-using GatorShare;
+using GSeries.Filesystem;
+using GSeries;
 using System.Configuration;
 
-namespace GatorShareApp {
+namespace GSClientApp {
   public class Bootstrapper {
     public static void ConfigureUnityContainer(IUnityContainer container, 
       string shadowDirPath) {
