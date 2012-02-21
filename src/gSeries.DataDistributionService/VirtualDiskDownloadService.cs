@@ -59,6 +59,15 @@ namespace GSeries.DataDistributionService {
                 new EventHandler<PieceHashedEventArgs>(
                     TorrentEventHandlers.HandlePieceHashed);
 
+            tm.PeerConnected += delegate(object o, PeerConnectionEventArgs e) {
+                // Only log three connections.
+                if (e.TorrentManager.OpenConnections < 4) {
+                    logger.DebugFormat(
+                        "Peer ({0}) Connected. Currently {1} open connection.", 
+                        e.PeerID.Uri, e.TorrentManager.OpenConnections);
+                }
+            };
+
             tm.Start();
             logger.DebugFormat("Torrent: {0}. Torrent manager started.", tm.Torrent.Name);
         }

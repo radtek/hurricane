@@ -75,7 +75,6 @@ namespace GSeries.DataDistributionService {
             } else {
                 logger.DebugFormat("Announce failed: {0}", e.Tracker.FailureMessage);
             }
-
         }
 
         private static void AppendSeperator(StringBuilder sb) {

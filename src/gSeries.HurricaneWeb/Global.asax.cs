@@ -4,16 +4,19 @@ using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.Routing;
+using Ninject.Web.Mvc;
+using Ninject;
+using GSeries.ProvisionSupport;
+using System.Web.Configuration;
+using System.Reflection;
+using System.IO;
+using log4net.Config;
 
-namespace gSeries.HurricaneWeb {
+namespace GSeries.Web {
     // Note: For instructions on enabling IIS6 or IIS7 classic mode, 
     // visit http://go.microsoft.com/?LinkId=9394801
 
-    public class MvcApplication : System.Web.HttpApplication {
-        public static void RegisterGlobalFilters(GlobalFilterCollection filters) {
-            filters.Add(new HandleErrorAttribute());
-        }
-
+    public class HurricaneWebApplication : NinjectHttpApplication {
         public static void RegisterRoutes(RouteCollection routes) {
             routes.IgnoreRoute("{resource}.axd/{*pathInfo}");
 
@@ -25,11 +28,23 @@ namespace gSeries.HurricaneWeb {
 
         }
 
-        protected void Application_Start() {
+        protected override void OnApplicationStarted() {
+            base.OnApplicationStarted();
+            XmlConfigurator.Configure(new FileInfo(WebConfigurationManager.AppSettings["Log4NetConfig"]));
             AreaRegistration.RegisterAllAreas();
-
-            RegisterGlobalFilters(GlobalFilters.Filters);
             RegisterRoutes(RouteTable.Routes);
+        }
+
+        protected override Ninject.IKernel CreateKernel() {
+            var kernel = new StandardKernel();
+            kernel.Load(Assembly.GetExecutingAssembly());
+            RegisterServices(kernel);
+            return kernel;
+        }
+
+        private static void RegisterServices(IKernel kernel) {
+            kernel.Bind<LocalFileService>().ToConstant(new LocalFileService(
+                WebConfigurationManager.AppSettings["LocalFileService.BaseDir"]));
         }
     }
 }

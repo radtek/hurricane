@@ -315,6 +315,8 @@ namespace GSeries.ProvisionSupport {
                             };
                         }
 
+                        logger.DebugFormat("Chunk {0} maps to chunk {1} in file {2}.", 
+                            chunkIndex, chunkInfo.ChunkIndex, chunkInfo.File.Path);
                         var fileTuple = Tuple.Create<string, int, int>(
                             chunkInfo.File.Path, 
                             chunkInfo.ChunkIndex,

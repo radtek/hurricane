@@ -4,10 +4,11 @@ using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 
-namespace gSeries.HurricaneWeb.Controllers {
+namespace GSeries.Web.Controllers {
+    [HandleError]
     public class HomeController : Controller {
         public ActionResult Index() {
-            ViewBag.Message = "Welcome to ASP.NET MVC!";
+            ViewData["Message"] = "Welcome to ASP.NET MVC!";
 
             return View();
         }

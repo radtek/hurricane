@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("gSeries.HurricaneWeb")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Jiangyan Xu")]
+[assembly: AssemblyCompany("Xu, Jiang Yan")]
 [assembly: AssemblyProduct("gSeries.HurricaneWeb")]
-[assembly: AssemblyCopyright("Copyright © Jiangyan Xu 2012")]
+[assembly: AssemblyCopyright("Copyright © Xu, Jiang Yan 2012")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("efed67bc-d04d-4bd8-b680-7f902e3547eb")]
+[assembly: Guid("d3866f49-fd97-4946-91ba-3d86b5464cad")]
 
 // Version information for an assembly consists of the following four values:
 //
