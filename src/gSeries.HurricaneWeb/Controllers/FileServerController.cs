@@ -33,7 +33,7 @@ namespace GSeries.Web.Controllers {
         }
 
 
-        public ActionResult GetFileRange(string id) {
+        public ActionResult FileRange(string id) {
             if (string.IsNullOrEmpty(id)) {
                 throw new HttpException((int)HttpStatusCode.BadRequest, 
                     "File name is not provided.");

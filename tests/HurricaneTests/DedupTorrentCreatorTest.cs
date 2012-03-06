@@ -45,21 +45,22 @@ namespace GSeries {
             };
             var filename = Path.GetFileName(dataFile);
             creator.GetrightHttpSeeds.Add(string.Format(
-                "http://{0}:49645/FileServer/GetFileRange/{1}", ip.ToString(), 
+                "http://{0}:49645/FileServer/FileRange/{1}", ip.ToString(), 
                 filename));
             creator.Announces.Add(tier);
             var binaryTorrent = creator.Create(new TorrentFileSource(dataFile));
             var torrent = Torrent.Load(binaryTorrent);
             string infoHash = torrent.InfoHash.ToHex();
             File.WriteAllBytes(savePath, binaryTorrent.Encode());
-
+            
+            // Now read from the real file.
             var creator1 = new TorrentCreator();
             creator1.Announces.Add(tier);
+            creator1.GetrightHttpSeeds.Add(string.Format(
+                "http://{0}:49645/FileServer/FileRange/{1}", ip.ToString(),
+                filename));
             var binary1 = creator1.Create(new TorrentFileSource(dataFile));
             string infoHash1 = Torrent.Load(binary1).InfoHash.ToHex();
-            creator1.GetrightHttpSeeds.Add(string.Format(
-                "http://{0}:49645/FileServer/GetFileRange/{1}", ip.ToString(),
-                filename));
             File.WriteAllBytes(savePath1, binary1.Encode());
 
             Assert.AreEqual(infoHash, infoHash1);

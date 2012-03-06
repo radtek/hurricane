@@ -37,16 +37,18 @@ namespace GSeries {
             logger.DebugFormat("ChunkMap: {0}", chunkMap);
             var dto = ChunkMapSerializer.Deserialize(chunkMap);
             var cm = new ChunkMap(dto);
-            var fileIndices = dto.FileIndices.Reverse();
-            var l = cm.HashesAsList;
+            cm.FileIndices = dto.FileIndices.Reverse().ToArray();
+            var l = cm.CopyHashesAsList();
             l.Reverse();
-            cm.HashesAsList = l;
-            cm.ChunkMapDto.FileIndices = fileIndices.ToArray();
-            cm.ChunkMapDto.EofChunkIndex = 0;
+            cm.SetHashesAsList(l);
+            cm.EofChunkIndex = 0;
+            cm.GenerateChunkIndices();
+
+            var newDto = cm.ConvertToDto();
+            
             logger.DebugFormat("New ChunkMap: {0}", cm);
-            using (var stream = File.OpenWrite(newChunkMap)) {
-                ChunkMapSerializer.Serialize(stream, cm.ChunkMapDto);
-            }
+            ChunkMapSerializer.Serialize(newChunkMap, newDto);
+            ChunkMapSerializer.SerializeToXml(newChunkMap + ".xml", cm);
         }
 
         public static void TestRegisterFilePart(string db, string file, string offset, string count) {
@@ -61,7 +63,7 @@ namespace GSeries {
             var dbs = new ChunkDbService(db, false);
             var ds = new DeduplicationService(dbs);
             IList<Tuple<string, long, int>> result = 
-                ds.GetDedupFileParts(path, long.Parse(offset), int.Parse(count));
+                ds.GetDedupFileSourceLocations(path, long.Parse(offset), int.Parse(count));
             result.ToList().ForEach(x => logger.Debug(x));
         }
     }

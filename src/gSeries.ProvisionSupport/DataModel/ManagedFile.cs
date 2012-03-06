@@ -8,6 +8,7 @@ namespace GSeries.ProvisionSupport {
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
+    using System.IO;
 
     /// <summary>
     /// A file that is managed in the system (DB).
@@ -38,7 +39,7 @@ namespace GSeries.ProvisionSupport {
         /// <value>
         /// The chunk map.
         /// </value>
-        public virtual byte[] ChunkMap { get; set; }
+        public virtual ChunkMap ChunkMap { get; set; }
         public virtual byte[] TorrentFile { get; set; }
     }
 }

@@ -48,5 +48,14 @@ namespace GSeries {
             }
         }
 
+        public static void TestAddFile(string db, string filePath, string chunkMapDto) {
+            var dbs = new ChunkDbService(db, false);
+            dbs.AddFile(filePath, File.ReadAllBytes(chunkMapDto));
+        }
+
+        public static void TestAddTorrent(string db, string filePath, string torrent) {
+            var dbs = new ChunkDbService(db, false);
+            dbs.AddTorrent(filePath, File.ReadAllBytes(torrent));
+        }
     }
 }

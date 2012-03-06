@@ -10,11 +10,19 @@ namespace GSeries.ProvisionSupport {
     using System.Text;
     using System.IO;
     using ProtoBuf;
+    using System.Xml.Serialization;
 
     public class ChunkMapSerializer {
         public static void Serialize(string filePath, ChunkMapDto chunkMap) {
             using (var stream = File.OpenWrite(filePath)) {
                 Serialize(stream, chunkMap);
+            }
+        }
+
+        public static void SerializeToXml(string filePath, ChunkMap chunkMap) {
+            var serializer = new XmlSerializer(typeof(ChunkMap));
+            using (var stream = File.OpenWrite(filePath)) {
+                serializer.Serialize(stream, chunkMap);
             }
         }
 

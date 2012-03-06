@@ -8,7 +8,7 @@ namespace GSeries.ProvisionSupport {
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
-    using ProtoBuf;
+    using System.Runtime.Serialization;
 
     /// <summary>
     /// Data transfer object for the chunk map implemented using ProtoBuf.
@@ -19,29 +19,29 @@ namespace GSeries.ProvisionSupport {
     /// The ith chunk in the map has the value of fileIndices[i] & Hashes[20 * i].
     /// <seealso cref="GSeries.BitTorrent.ChunkMap"/>
     /// </remarks>
-    [ProtoContract]
+    [DataContract]
     public class ChunkMapDto {
         /// <summary>
         /// File index is the index of this chunk in the original file.
         /// </summary>
-        [ProtoMember(1)]
+        [DataMember(Order=1)]
         public int[] FileIndices;
         /// <summary>
         /// Hashes concatenated according to the chunk indices.
         /// </summary>
-        [ProtoMember(2)]
+        [DataMember(Order = 2)]
         public byte[] Hashes;
 
         /// <summary>
         /// The size of the End-of-file chunk could be smaller than regular chunk size.
         /// </summary>
-        [ProtoMember(3)]
+        [DataMember(Order = 3)]
         public int EofChunkSize;
 
         /// <summary>
         /// The index of the EoF file chunk in the FileIndices array.
         /// </summary>
-        [ProtoMember(4)]
+        [DataMember(Order = 4)]
         public int EofChunkIndex;
     }
 }

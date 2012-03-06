@@ -22,9 +22,12 @@ namespace GSeries.DataDistributionService {
             MethodBase.GetCurrentMethod().DeclaringType);
         ClientEngine _clientEngine;
         TorrentSettings torrentDefaults = new TorrentSettings(4, 150, 0, 0);
+        FileInfoTable<TorrentManager> _torrentManagerTable;
 
-        public VirtualDiskDownloadService(ClientEngine torrentClientEngine) {
+        public VirtualDiskDownloadService(ClientEngine torrentClientEngine, 
+            FileInfoTable<TorrentManager> torrentManagerTable) {
             _clientEngine = torrentClientEngine;
+            _torrentManagerTable = torrentManagerTable;
         }
 
         public void Start() {
@@ -67,6 +70,10 @@ namespace GSeries.DataDistributionService {
                         e.PeerID.Uri, e.TorrentManager.OpenConnections);
                 }
             };
+
+            foreach (var file in tm.Torrent.Files) {
+                _torrentManagerTable[file.FullPath] = tm;
+            }
 
             tm.Start();
             logger.DebugFormat("Torrent: {0}. Torrent manager started.", tm.Torrent.Name);

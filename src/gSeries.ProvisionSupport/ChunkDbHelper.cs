@@ -93,6 +93,8 @@ namespace GSeries.ProvisionSupport {
         /// </summary>
         /// <param name="path">The path.</param>
         /// <returns>Null if the file isn't managed in the DB.</returns>
+        /// <exception cref="ChunkDbException">Thrown when file doesn't exist.
+        /// </exception>
         public ManagedFile GetManagedFile(string path) {
             var ret = _session.CreateCriteria<ManagedFile>().SetCacheable(true)
                 .SetCacheRegion("ManagedFileRegion")
@@ -100,8 +102,10 @@ namespace GSeries.ProvisionSupport {
                     x => x.Path), path))
                 .UniqueResult<ManagedFile>();
             if (ret == null) {
-                throw new ChunkDbException(string.Format(
-                    "ManagedFile with a path {0} doesn't exist.", path));
+                throw new FileNotFoundInDbException(string.Format(
+                    "ManagedFile with path {0} doesn't exist.", path)) {
+                    File = path
+                };
             }
             return ret;
         }

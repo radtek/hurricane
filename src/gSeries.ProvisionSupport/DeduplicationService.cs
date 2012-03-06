@@ -21,6 +21,80 @@ namespace GSeries.ProvisionSupport {
             _chunkDbService = chunkDbService;
         }
 
+        public List<Tuple<long, int>> MapFileIndicesToChunkIndices(
+            string path, long offset, int count) {
+            List<Tuple<string, long, int>> chunkList = 
+                MapChunks(path, offset, count, 
+                delegate(string filePath, int[] fileIndices) {
+                    List<Tuple<string, int, int>> ret =
+                        _chunkDbService.GetChunkIndices(filePath, fileIndices);
+                    return ret;
+            });
+
+            return chunkList.ConvertAll<Tuple<long, int>>(x => 
+                Tuple.Create<long, int>(x.Item2, x.Item3));
+        }
+
+        public List<Tuple<string, long, int>> GetDedupFileSourceLocations(string path, 
+            long offset, int count) {
+            return MapChunks(path, offset, count, this.MapChunksToSourceLocations);
+        }
+
+        /// <summary>
+        /// Registers the file part so that other downloads can find it.
+        /// </summary>
+        /// <param name="filePath">The file path.</param>
+        /// <param name="offset">The offset.</param>
+        /// <param name="count">The count.</param>
+        /// <remarks>The registration process does not involve reading the file.
+        /// </remarks>
+        public void RegisterFilePart(string filePath, long offset, int count) {
+            int firstChunk = (int)Math.Ceiling((double)offset / DataChunk.ChunkSize);
+            int lastChunk = (int)Math.Floor((double)(offset + count) / DataChunk.ChunkSize) - 1;
+
+            _chunkDbService.AddChunks(filePath, 
+                Enumerable.Range(firstChunk, lastChunk - firstChunk + 1).ToArray());
+        }
+
+        /// <summary>
+        /// Adds a file with chunk map and torrent information to the DB.
+        /// </summary>
+        /// <param name="path">The path.</param>
+        /// <param name="chunkMap">The chunk map.</param>
+        /// <remarks>This usually happens after the destination node downloads 
+        /// the torrent and chunk map of the file.</remarks>
+        public void AddFileToDownload(string path, byte[] chunkMap, byte[] torrent, long fileSize) {
+            _chunkDbService.AddFileToDownload(path, chunkMap, torrent, fileSize);
+        }
+
+        /// <summary>
+        /// Adds the file with chunk map to the DB.
+        /// </summary>
+        /// <param name="path">The path.</param>
+        /// <param name="chunkMapDto">The chunk map.</param>
+        /// <remarks>This usually happens on the source node to add/update 
+        /// chunk map for a file.</remarks>
+        public void AddFile(string path, byte[] chunkMapDto) {
+            _chunkDbService.AddFile(path, chunkMapDto);
+        }
+
+        public bool CheckFileExists(string path) {
+            if (File.Exists(path)) {
+                return true;
+            }
+            try {
+                _chunkDbService.GetManagedFile(path);
+            } catch (ChunkDbException ex) {
+                return false;
+            }
+            return true;
+        }
+
+        public ManagedFile GetManagedFileInfo(string path) {
+            return _chunkDbService.GetManagedFile(path);
+        }
+
+        #region Private Methods
         /// <summary>
         /// Translate information from the original file to where the data 
         /// segments are actually stored.
@@ -31,7 +105,8 @@ namespace GSeries.ProvisionSupport {
         /// <remarks>All chunks overlap with (offset, count) are returned with 
         /// offset and count adjusted.</remarks>
         /// <returns>List of tuples (path, offset, count)</returns>
-        public IList<Tuple<string, long, int>> GetDedupFileParts(string path, long offset, int count) {
+        List<Tuple<string, long, int>> MapChunks(string path, long offset, int count,
+            Func<string, int[], List<Tuple<string, int, int>>> chunkMapper) {
             long bytesToSkipInStartChunk;
             int firstChunk = (int)Math.DivRem(offset,
                 (long)DataChunk.ChunkSize, out bytesToSkipInStartChunk);
@@ -46,16 +121,8 @@ namespace GSeries.ProvisionSupport {
                 countInLastChunk = DataChunk.ChunkSize;
             }
 
-            IList<Tuple<string, int, int>> chunkLocationList;
-            try {
-                chunkLocationList = _chunkDbService
-                        .GetChunkLocations(path, Enumerable.Range((int)firstChunk,
-                            (int)(lastChunk - firstChunk + 1)).ToArray<int>());
-            } catch (ChunkNotInDbException ex) {
-                throw new FileSegmentIncompleteException(ex) {
-                    FirstMissingChunk = ex.ChunkIndex
-                };
-            }
+            List<Tuple<string, int, int>> chunkLocationList = chunkMapper(path,
+                Enumerable.Range((int)firstChunk, (int)(lastChunk - firstChunk + 1)).ToArray<int>());
 
             // Usually not a long list.
             var ret = new List<Tuple<string, long, int>>();
@@ -82,38 +149,19 @@ namespace GSeries.ProvisionSupport {
             return ret;
         }
 
-        /// <summary>
-        /// Registers the file part so that other downloads can find it.
-        /// </summary>
-        /// <param name="filePath">The file path.</param>
-        /// <param name="offset">The offset.</param>
-        /// <param name="count">The count.</param>
-        /// <remarks>The registration process does not involve reading the file.
-        /// </remarks>
-        public void RegisterFilePart(string filePath, long offset, int count) {
-            int firstChunk = (int)Math.Ceiling((double)offset / DataChunk.ChunkSize);
-            int lastChunk = (int)Math.Floor((double)(offset + count) / DataChunk.ChunkSize) - 1;
-
-            _chunkDbService.AddChunks(filePath, 
-                Enumerable.Range(firstChunk, lastChunk - firstChunk + 1).ToArray());
-        }
-
-        /// <summary>
-        /// Adds the chunk map.
-        /// </summary>
-        /// <param name="path">The path.</param>
-        /// <param name="chunkMap">The chunk map.</param>
-        public void AddFileToDownload(string path, byte[] chunkMap, byte[] torrent, long fileSize) {
-            _chunkDbService.AddFileToDownload(path, chunkMap, torrent, fileSize);
-        }
-
-        public bool FileExistsInDb(string path) {
+        private List<Tuple<string, int, int>> MapChunksToSourceLocations(
+            string path, int[] chunkIndices) {
+            List<Tuple<string, int, int>> chunkLocationList;
             try {
-                _chunkDbService.GetManagedFile(path);
-            } catch (ChunkDbException ex) {
-                return false;
+                chunkLocationList = _chunkDbService
+                        .GetChunkLocations(path, chunkIndices);
+            } catch (ChunkNotInDbException ex) {
+                throw new FileSegmentIncompleteException(ex) {
+                    FirstMissingChunk = ex.ChunkIndex
+                };
             }
-            return true;
+            return chunkLocationList;
         }
+        #endregion
     }
 }

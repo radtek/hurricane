@@ -19,7 +19,7 @@ namespace GSeries.Web {
         public override void OnActionExecuting(ActionExecutingContext filterContext) {
             ILog logger = LogManager.GetLogger(filterContext.Controller.GetType());
 
-            logger.DebugFormat("Received request ({2}){0} from {1}",
+            logger.DebugFormat("Received request ({2}) {0} from {1}",
               filterContext.HttpContext.Request.RawUrl,
               filterContext.HttpContext.Request.UserHostAddress,
               filterContext.HttpContext.Request.HttpMethod);
@@ -31,7 +31,7 @@ namespace GSeries.Web {
         public override void OnActionExecuted(ActionExecutedContext filterContext) {
             ILog logger = LogManager.GetLogger(filterContext.Controller.GetType());
 
-            logger.DebugFormat("Finished serving request ({2}){0} from {1}",
+            logger.DebugFormat("Finished serving request ({2}) {0} from {1}",
               filterContext.HttpContext.Request.RawUrl,
               filterContext.HttpContext.Request.UserHostAddress,
               filterContext.HttpContext.Request.HttpMethod);

@@ -53,6 +53,39 @@ namespace GSeries.ProvisionSupport {
         } 
         #endregion
 
+        public void AddFile(string path, byte[] chunkMapDto) {
+            var txnProvider = new NHTransactionProvider(
+                new NHSessionProvider(_sessionFactory));
+            using (txnProvider) {
+                using (var transaction = txnProvider.BeginTransaction()) {
+                    var cm = ChunkMap.Create(chunkMapDto);
+                    ManagedFile managedFile =
+                        new ManagedFile {
+                            Path = path,
+                            ChunkMap = cm,
+                            Size = cm.FileSize
+                        };
+                    var session = txnProvider.SessionProvider.CurrentSession;
+                    session.Save(managedFile);
+                    transaction.Commit();
+                }
+            }
+        }
+
+        public void AddTorrent(string path, byte[] torrent) {
+            var txnProvider = new NHTransactionProvider(
+                    new NHSessionProvider(_sessionFactory));
+            using (txnProvider) {
+                using (var transaction = txnProvider.BeginTransaction()) {
+                    var session = txnProvider.SessionProvider.CurrentSession;
+                    var mf = new Dao<ManagedFile>(session)
+                        .UniqueResultByExample(new ManagedFile { Path = path });
+                    mf.TorrentFile = torrent;
+                    transaction.Commit();
+                }
+            }
+        }
+
         public void AddFileToDownload(string path, byte[] chunkMap, 
             byte[] torrent, long fileSize) {
             var txnProvider = new NHTransactionProvider(
@@ -62,7 +95,7 @@ namespace GSeries.ProvisionSupport {
                     ManagedFile managedFile =
                         new ManagedFile {
                             Path = path,
-                            ChunkMap = chunkMap,
+                            ChunkMap = ChunkMap.Create(chunkMap),
                             TorrentFile = torrent,
                             Size = fileSize
                         };
@@ -100,6 +133,11 @@ namespace GSeries.ProvisionSupport {
             }   // Dispose session.
         }
 
+        /// <summary>
+        /// Register the chunks in the given file to the DB.
+        /// </summary>
+        /// <param name="filePath">The file path.</param>
+        /// <param name="chunks">The chunks.</param>
         public void AddChunks(string filePath, int[] chunks) {
             logger.DebugFormat("Adding chunks {0} for file {1}.", 
                 string.Join(",", System.Array.ConvertAll<int, string>(chunks, 
@@ -111,7 +149,7 @@ namespace GSeries.ProvisionSupport {
                     var helper = new ChunkDbHelper(
                         txnProvider.SessionProvider.CurrentSession);
                     ManagedFile file = helper.GetManagedFile(filePath);
-                    var chunkMap = ChunkMap.Create(file.ChunkMap);
+                    var chunkMap = file.ChunkMap;
                     int numAlreadyExist = 0;
                     foreach (var chunkIndex in chunks) {
                         byte[] hash = chunkMap.HashAt(chunkIndex);
@@ -137,7 +175,6 @@ namespace GSeries.ProvisionSupport {
         }
 
         public void AddFileWithBasicChunkMap(string filePath) {
-            FileUtil.PadFileWithZeros(filePath);
 
             var fileIndices = new List<int>();
             var hashes = new MemoryStream();
@@ -151,7 +188,7 @@ namespace GSeries.ProvisionSupport {
                 }, 
                 (i, s) => { eofIndex = i; eofChunkSize = s; });
 
-            logger.DebugFormat("(eofIndex, eofChunkSize) = ({0}, {1})", 
+            logger.DebugFormat("(EofIndex, EofChunkSize) = ({0}, {1})", 
                 eofIndex, eofChunkSize);
 
             var txnProvider = new NHTransactionProvider(
@@ -169,20 +206,21 @@ namespace GSeries.ProvisionSupport {
                         EofChunkSize = eofChunkSize
                     };
                     hashes.Dispose();
-                    var chunkMapBytes = new MemoryStream();
-                    ChunkMapSerializer.Serialize(chunkMapBytes, dto);
+                    file.ChunkMap = new ChunkMap(dto);
+
                     if (logger.IsDebugEnabled) {
-                        var tempFilePath = Path.Combine(Path.GetTempPath(), 
+                        var tempFilePath = Path.Combine(Path.GetTempPath(),
                             Path.GetTempFileName());
-                        File.WriteAllBytes(tempFilePath, chunkMapBytes.ToArray());
+                        ChunkMapSerializer.SerializeToXml(tempFilePath + ".xml", file.ChunkMap);
+                        ChunkMapSerializer.Serialize(tempFilePath, dto);
                         logger.DebugFormat("ChunkMap is logged to file {0}", tempFilePath);
                     }
-                    file.ChunkMap = chunkMapBytes.ToArray();
-                    chunkMapBytes.Dispose();
+
                     // Have the file committed to DB.
                     transaction.Commit();
                 }
                 logger.DebugFormat("ChunkMap added to file.");
+                FileUtil.PadFileWithZeros(filePath);
             }
         }
 
@@ -259,7 +297,7 @@ namespace GSeries.ProvisionSupport {
                         if (isEofChunk) break;
                     }
                     transaction.Commit();
-                    logger.DebugFormat("File {0} added to ChunkDb.", file);
+                    logger.DebugFormat("File {0} added to ChunkDb.", filePath);
                     logger.DebugFormat("Number of duplicates {0}", duplicates);
                 }
             }
@@ -278,12 +316,45 @@ namespace GSeries.ProvisionSupport {
         }
 
         /// <summary>
+        /// Gets a list of the tuples <path, chunk index, chunk size> for each input (virtual) file chunk.
+        /// </summary>
+        /// <param name="filePath">The file path.</param>
+        /// <param name="fileIndices">The file indices.</param>
+        public List<Tuple<string, int, int>> GetChunkIndices(string filePath, int[] fileIndices) {
+            logger.DebugFormat("Going to get chunks indices for file indices {0} for file {1}.", string.Join(",",
+                System.Array.ConvertAll<int, string>(fileIndices, x => x.ToString())), filePath);
+            var sessionProvider = new NHSessionProvider(_sessionFactory);
+            using (sessionProvider) {
+                var helper = new ChunkDbHelper(sessionProvider.CurrentSession);
+                var txnProvider = new NHTransactionProvider(sessionProvider);
+                ManagedFile file;
+                using (var transaction = txnProvider.BeginTransaction()) {
+                    file = helper.GetManagedFile(filePath);
+                }
+                var chunkMap = file.ChunkMap;
+                var eofChunk = chunkMap.EofChunk;
+                var ret = new List<Tuple<string, int, int>>();
+                foreach (int fileIndex in fileIndices) {
+                    var entry = chunkMap.GetByFileIndex(fileIndex);
+                    logger.DebugFormat("File index {0} maps to chunk index {1}", 
+                        fileIndex, entry.ChunkIndex);
+                    var fileTuple = Tuple.Create<string, int, int>(
+                        filePath,
+                        entry.ChunkIndex,
+                        entry.ChunkSize);
+                    ret.Add(fileTuple);
+                }
+                return ret;
+            }
+        }
+
+        /// <summary>
         /// Gets a list of the tuples <path, chunk index, chunk size> for each input chunk.
         /// </summary>
         /// <param name="filePath">The file path.</param>
         /// <param name="chunkIndices">The chunk indices.</param>
-        public IList<Tuple<string, int, int>> GetChunkLocations(string filePath, int[] chunkIndices) {
-            logger.DebugFormat("Going to get chunks {0} for file {1}.", string.Join(",", 
+        public List<Tuple<string, int, int>> GetChunkLocations(string filePath, int[] chunkIndices) {
+            logger.DebugFormat("Going to get deduplicated locations of data chunks {0} for file {1}.", string.Join(",", 
                 System.Array.ConvertAll<int, string>(chunkIndices, x => x.ToString())), filePath);
 
             var sessionProvider = new NHSessionProvider(_sessionFactory);
@@ -294,7 +365,7 @@ namespace GSeries.ProvisionSupport {
                 using (var transaction = txnProvider.BeginTransaction()) {
                     file = helper.GetManagedFile(filePath);
                 }
-                var chunkMap = ChunkMap.Create(file.ChunkMap);
+                var chunkMap = file.ChunkMap;
                 var eofChunk = chunkMap.EofChunk;
                 var ret = new List<Tuple<string, int, int>>();
                 using (var transaction = txnProvider.BeginTransaction()) {
@@ -315,7 +386,7 @@ namespace GSeries.ProvisionSupport {
                             };
                         }
 
-                        logger.DebugFormat("Chunk {0} maps to chunk {1} in file {2}.", 
+                        logger.DebugFormat("Chunk index {0} maps to chunk {1} in file {2}.", 
                             chunkIndex, chunkInfo.ChunkIndex, chunkInfo.File.Path);
                         var fileTuple = Tuple.Create<string, int, int>(
                             chunkInfo.File.Path, 

@@ -48,7 +48,7 @@ namespace GSeries {
             var ip = NetUtil.GetLocalIPByInterface("Local Area Connection");
             engineSettings.ReportedAddress = new IPEndPoint(ip, port);
             var engine = new ClientEngine(engineSettings, new DedupDiskWriter(ds));
-            var vd = new VirtualDiskDownloadService(engine);
+            var vd = new VirtualDiskDownloadService(engine, new FileInfoTable<TorrentManager>());
             vd.StartDownloadingFile(Torrent.Load(torrentPath), savePath);
             Console.Read();
         }
