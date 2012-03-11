@@ -75,6 +75,7 @@
     <Reference Include="protobuf-net">
       <HintPath>..\..\packages\protobuf-net.2.0.0.480\lib\net40\protobuf-net.dll</HintPath>
     </Reference>
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\MonoTorrent\src\MonoTorrent\gSeries.MonoTorrent.csproj">
@@ -93,6 +94,7 @@
     <Compile Include="FileService.cs" />
     <Compile Include="HurricaneServiceManager.cs" />
     <Compile Include="IFileService.cs" />
+    <Compile Include="ManualFileServiceClient.cs" />
     <Compile Include="NinjectWebServiceHost.cs" />
     <Compile Include="PathStatusDto.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

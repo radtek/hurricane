@@ -10,6 +10,7 @@ namespace GSeries.DataDistributionService {
     using System.Text;
     using System.ServiceModel;
     using System.ServiceModel.Description;
+    using System.ServiceModel.Channels;
 
     /// <summary>
     /// TODO: Update summary.
@@ -18,6 +19,8 @@ namespace GSeries.DataDistributionService {
         public T Service { get { return base.Channel; } }
 
         public WcfProxy(ServiceEndpoint endpoint) : base(endpoint) { }
+        public WcfProxy(Binding binding, EndpointAddress remoteAddress) : 
+            base(binding, remoteAddress) { }
 
         public void Dispose() {
             try {

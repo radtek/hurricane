@@ -32,7 +32,8 @@ namespace GSeries.DataDistributionService {
                 new WebHttpBinding(), "http://localhost:18081/FileService/");
             ServiceEndpoint se1 = _serviceHost.AddServiceEndpoint(typeof(IFileService),
                 new NetNamedPipeBinding(), "net.pipe://localhost/FileService/");
-            se1.Behaviors.Add(new ProtoEndpointBehavior());
+            se.Behaviors.Add(new WebHttpBehavior());
+            //se.Behaviors.Add(new ProtoEndpointBehavior());
             WebHttpServiceEndpoint = se;
             NetNamedPipeServiceEndpoint = se1;
         }

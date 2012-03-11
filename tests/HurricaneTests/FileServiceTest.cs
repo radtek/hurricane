@@ -70,23 +70,28 @@ namespace GSeries {
 
             var m = new HurricaneServiceManager();
             m.Start();
+       
+            var client = new ManualFileServiceClient("http://localhost:18081/FileService/");
+            string tstmsg = "tstmsg";
+            var resp = client.Echo(tstmsg);
+            Assert.AreEqual(resp, tstmsg);
+            
+            byte[] resultData = null;
 
-            //var fs = kernel.Get<FileService>();
-            //var resultData = fs.Read(filePath, 0, 100);
-
-            byte[] resultData;
-            var p = new WcfProxy<IFileService>(m.NetNamedPipeServiceEndpoint);
             try {
-                var pathStatus = p.Service.GetPathStatus(filePath);
+                var pathStatus = client.GetPathStatus(filePath);
                 logger.DebugFormat("File size: {0}", pathStatus.FileSize);
-                resultData = p.Service.Read(filePath, 0, 100);
-
-            } catch (FaultException<ArgumentException> ex) {
-                Console.WriteLine(ex);
-                return;
+            } catch (Exception ex) {
+                logger.Error(ex);
             }
 
-            var actualData = IOUtil.Read(origianlFile, 0, 100);
+            try {
+                resultData = client.Read(filePath, 0, 49253);
+            } catch (CommunicationException ex) {
+                logger.Error(ex);
+            }
+
+            var actualData = IOUtil.Read(origianlFile, 0, 49252);
 
             Assert.IsTrue(actualData.SequenceEqual(resultData),
                 "File part should match.");

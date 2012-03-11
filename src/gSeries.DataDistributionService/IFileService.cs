@@ -12,21 +12,25 @@ namespace GSeries.DataDistributionService {
     [ServiceContract]
     public interface IFileService {
         [OperationContract]
-        [FaultContract(typeof(DataDistributionServiceException))]
-        [WebGet(ResponseFormat = WebMessageFormat.Json)]
+        [WebGet(UriTemplate = "/PathStatus/{path}", ResponseFormat = WebMessageFormat.Json)]
         PathStatusDto GetPathStatus(string path);
 
         [OperationContract]
-        [FaultContract(typeof(DataDistributionServiceException))]
         [WebGet(ResponseFormat = WebMessageFormat.Json,
             BodyStyle = WebMessageBodyStyle.WrappedRequest)]
         byte[] Read(string path, long offset, int count);
 
+        [OperationContract(Name = "RestRead")]
+        [WebGet(UriTemplate = "/File/{path}/{offset}/{count}", ResponseFormat = WebMessageFormat.Json)]
+        byte[] Read(string path, string offset, string count);
+
         [OperationContract]
         [WebGet(UriTemplate = "/Echo/{message}",
-            ResponseFormat = WebMessageFormat.Json,
-            BodyStyle = WebMessageBodyStyle.WrappedRequest)]
-        [FaultContract(typeof(DataDistributionServiceException))]
+            ResponseFormat = WebMessageFormat.Json)]
         string Echo(string message);
+
+        [OperationContract]
+        [FaultContract(typeof(string))]
+        void Error();
     }
 }

@@ -11,6 +11,7 @@ namespace GSeries.ProvisionSupport {
     using System.IO;
     using System.Reflection;
     using log4net;
+    using CuttingEdge.Conditions;
 
     public class DeduplicationService {
         ChunkDbService _chunkDbService;
@@ -23,8 +24,20 @@ namespace GSeries.ProvisionSupport {
 
         public List<Tuple<long, int>> MapFileIndicesToChunkIndices(
             string path, long offset, int count) {
-            List<Tuple<string, long, int>> chunkList = 
-                MapChunks(path, offset, count, 
+
+            var fileInfo = GetManagedFileInfo(path);
+            Condition.Requires<long>(offset).IsLessOrEqual(fileInfo.Size);
+
+            int realCount = Math.Min((int)(fileInfo.Size - offset), count);
+
+            if (realCount < count) {
+                logger.DebugFormat(
+                    "Can only read less ({0}) than requested count {1}.", 
+                    realCount, count);
+            }
+
+            List<Tuple<string, long, int>> chunkList =
+                MapChunks(path, offset, realCount, 
                 delegate(string filePath, int[] fileIndices) {
                     List<Tuple<string, int, int>> ret =
                         _chunkDbService.GetChunkIndices(filePath, fileIndices);

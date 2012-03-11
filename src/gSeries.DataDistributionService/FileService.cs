@@ -21,6 +21,8 @@ namespace GSeries.DataDistributionService {
     using MonoTorrent.Common;
     using Ninject;
     using System.Threading;
+    using System.Net;
+    using System.Security.Cryptography;
 
     [ServiceBehavior(IncludeExceptionDetailInFaults = true)]
     public class FileService : IFileService {
@@ -38,13 +40,18 @@ namespace GSeries.DataDistributionService {
             _dedupService = dedupService;
         }
 
+        public string ToServerPath(string requestPath) {
+            requestPath = requestPath.TrimStart('/');
+            return Path.Combine(_baseDir, requestPath);
+        }
+
         #region IFileService Members
         public PathStatusDto GetPathStatus(string path) {
             logger.DebugFormat("Instance {1} received GetPathStatus request for path {0}", path, this.GetHashCode());
 
-            string realPath = Path.Combine(_baseDir, path);
+            string serverPath = ToServerPath(path);
 
-            if (Directory.Exists(realPath)) {
+            if (Directory.Exists(serverPath)) {
                 return new PathStatusDto {
                     PathType = PathStatusDto.PathTypeEnum.Directory,
                     FileSize = -1
@@ -53,10 +60,10 @@ namespace GSeries.DataDistributionService {
 
             ManagedFile mf;
             try {
-                mf = _dedupService.GetManagedFileInfo(realPath);
+                mf = _dedupService.GetManagedFileInfo(serverPath);
             } catch (FileNotFoundInDbException ex) {
-                throw new FaultException<DataDistributionServiceException>(
-                    new DataDistributionServiceException("File cannot be found.", ex));
+                WebOperationContext.Current.OutgoingResponse.StatusCode = HttpStatusCode.NotFound;
+                return null;
             }
 
             return new PathStatusDto {
@@ -65,34 +72,65 @@ namespace GSeries.DataDistributionService {
             };
         }
 
+        public byte[] Read(string path, string offsetStr, string countStr) {
+            long offset;
+            int count;
+            try {
+                offset = long.Parse(offsetStr);
+                count = int.Parse(countStr);
+            } catch (Exception) {
+                WebOperationContext.Current.OutgoingResponse.StatusCode = HttpStatusCode.BadRequest;
+                WebOperationContext.Current.OutgoingResponse.StatusDescription = "Invalid offset or count";
+                return null;
+            }
+            return Read(path, offset, count);
+        }
+
         public byte[] Read(string path, long offset, int count) {
             logger.DebugFormat("Instance {1} received Read request for path {0}", path, this.GetHashCode());
-            string realPath = Path.Combine(_baseDir, path);
+            string serverPath = ToServerPath(path);
 
             try {
                 // Translate offset, count based on the (virtual) file indices to
                 // file parts based on chunk indices.
                 List<Tuple<long, int>> chunkList =
-                    _dedupService.MapFileIndicesToChunkIndices(path, offset, count);
+                    _dedupService.MapFileIndicesToChunkIndices(serverPath, offset, count);
 
                 logger.DebugFormat("To serve request for virtual file segment " +
                     "(offset, count)=({0}, {1}), the following real file " +
-                    "segments are needed: [{2}]", offset, count, string.Join(", ", 
-                    chunkList.ConvertAll(x => string.Format("({0}, {1})", 
+                    "segments are needed: [{2}]", offset, count, string.Join(", ",
+                    chunkList.ConvertAll(x => string.Format("({0}, {1})",
                         x.Item1, x.Item2)).ToArray()));
 
-                return _dDiskManager.ReadFile(realPath, chunkList);
+                var content = _dDiskManager.ReadFile(serverPath, chunkList);
+                return content;
+
+            } catch (FileNotFoundInDbException ex) {
+                logger.ErrorFormat("File not found.", ex);
+                WebOperationContext.Current.OutgoingResponse.StatusCode = HttpStatusCode.NotFound;
+                WebOperationContext.Current.OutgoingResponse.StatusDescription = "[FileService] File not found in service.";
+                return null;
+            } catch(ArgumentException ex) {
+                logger.ErrorFormat("Some invalid argument within the request.", ex);
+                WebOperationContext.Current.OutgoingResponse.StatusCode = HttpStatusCode.BadRequest;
+                WebOperationContext.Current.OutgoingResponse.StatusDescription = ex.Message;
+                return null;
             } catch (Exception ex) {
                 // TODO: Add more catches.
-                throw new FaultException<DataDistributionServiceException>(
-                    new DataDistributionServiceException(
-                        "Error occurred while reading the file.", ex));
+                logger.ErrorFormat("Error occurred while reading the file.", ex);
+                WebOperationContext.Current.OutgoingResponse.StatusCode = HttpStatusCode.InternalServerError;
+                WebOperationContext.Current.OutgoingResponse.StatusDescription = ex.Message;
+                return null;
             }
         }
 
         public string Echo(string message) {
             return message;
-            //throw new FaultException<ArgumentException>(new ArgumentException("test"), "test reason");
+        }
+
+        public void Error() {
+            WebOperationContext.Current.OutgoingResponse.StatusCode = HttpStatusCode.NotImplemented;
+            WebOperationContext.Current.OutgoingResponse.StatusDescription = "The error you asked for.";
         }
         #endregion
     }

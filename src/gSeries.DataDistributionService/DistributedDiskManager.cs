@@ -55,6 +55,7 @@ namespace GSeries.DataDistributionService {
                     waitHandle.Set();
                 });
                 waitHandle.WaitOne();
+                waitHandle.Close();
             }
 
             // Now request the rest.
