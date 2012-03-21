@@ -49,7 +49,10 @@ namespace GSeries {
             engineSettings.ReportedAddress = new IPEndPoint(ip, port);
             var engine = new ClientEngine(engineSettings, new DedupDiskWriter(ds));
             var vd = new VirtualDiskDownloadService(engine, new FileInfoTable<TorrentManager>());
-            vd.StartDownloadingFile(Torrent.Load(torrentPath), savePath);
+            var torrent = Torrent.Load(torrentPath);
+            logger.DebugFormat("Loaded torrent file: {0}, piece length: {1}.", 
+                torrent.Name, torrent.PieceLength);
+            vd.StartDownloadingFile(torrent, savePath);
             Console.Read();
         }
     }

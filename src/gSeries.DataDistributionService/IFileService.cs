@@ -9,6 +9,10 @@ using System.ServiceModel.Channels;
 using System.IO;
 
 namespace GSeries.DataDistributionService {
+    /// <summary>
+    /// A service that provides access to files in the Hurricane distributed 
+    /// system as if they are hosted on a web server locally.
+    /// </summary>
     [ServiceContract]
     public interface IFileService {
         [OperationContract]
@@ -25,8 +29,7 @@ namespace GSeries.DataDistributionService {
         byte[] Read(string path, string offset, string count);
 
         [OperationContract]
-        [WebGet(UriTemplate = "/Echo/{message}",
-            ResponseFormat = WebMessageFormat.Json)]
+        [WebGet(UriTemplate = "/Echo/{message}", ResponseFormat = WebMessageFormat.Json)]
         string Echo(string message);
 
         [OperationContract]

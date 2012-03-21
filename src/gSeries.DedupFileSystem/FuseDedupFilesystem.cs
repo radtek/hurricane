@@ -10,7 +10,6 @@ namespace GSeries.DedupFileSystem {
     using System.Text;
     using Mono.Fuse;
     using Mono.Unix.Native;
-    using GSeries.Filesystem;
     using GSeries.DataDistributionService;
     using System.ServiceModel;
     using GSeries.ProvisionSupport;

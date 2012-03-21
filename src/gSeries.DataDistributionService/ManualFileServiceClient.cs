@@ -1,8 +1,7 @@
-﻿// -----------------------------------------------------------------------
-// <copyright file="ManualFileServiceClient.cs" company="Xu, Jiang Yan">
-// TODO: Update copyright text.
-// </copyright>
-// -----------------------------------------------------------------------
+﻿// Copyright (c) 2012 XU, Jiang Yan <me@jxu.me>
+//
+// This software may be used and distributed according to the terms of the
+// MIT license: http://www.opensource.org/licenses/mit-license.php
 
 namespace GSeries.DataDistributionService {
     using System;
@@ -18,7 +17,7 @@ namespace GSeries.DataDistributionService {
     using System.Security.Cryptography;
 
     /// <summary>
-    /// TODO: Update summary.
+    /// A Wcf web service client implemented using WebClient.
     /// </summary>
     public class ManualFileServiceClient : IFileService {
         static readonly ILog logger = LogManager.GetLogger(
@@ -26,12 +25,28 @@ namespace GSeries.DataDistributionService {
         string _baseUri;
 
         public ManualFileServiceClient(string baseUri) {
-            _baseUri = baseUri;
+            _baseUri = baseUri.TrimEnd('/');
         }
 
+        class CustomWebClient : WebClient {
+            int _timeout;
+            public CustomWebClient() {
+                _timeout = 300000;
+            }
+
+            protected override WebRequest GetWebRequest(Uri address) {
+                var result = base.GetWebRequest(address);
+                result.Timeout = this._timeout;
+                return result;
+            }
+        }
+
+        public WebClient MakeWebClient() {
+            return new CustomWebClient();
+        }
 
         public PathStatusDto GetPathStatus(string path) {
-            using (var wc = new WebClient()) {
+            using (var wc = MakeWebClient()) {
                 try {
                     byte[] data = wc.DownloadData(string.Format("{0}/PathStatus/{1}", _baseUri, path));
                     using (var stream = new MemoryStream(data)) {
@@ -53,7 +68,7 @@ namespace GSeries.DataDistributionService {
         }
 
         public byte[] Read(string path, string offset, string count) {
-            using (var wc = new WebClient()) {
+            using (var wc = MakeWebClient()) {
                 try {
                     byte[] data = wc.DownloadData(string.Format("{0}/File/{1}/{2}/{3}", _baseUri, path, offset, count));
                     using (var stream = new MemoryStream(data)) {
@@ -81,7 +96,7 @@ namespace GSeries.DataDistributionService {
         }
 
         public string Echo(string message) {
-            using (var wc = new WebClient()) {
+            using (var wc = MakeWebClient()) {
                 try {
                     byte[] data = wc.DownloadData(string.Format("{0}/Echo/{1}", _baseUri, message));
                     using (var stream = new MemoryStream(data)) {
@@ -96,7 +111,7 @@ namespace GSeries.DataDistributionService {
         }
 
         public void Error() {
-            using (var wc = new WebClient()) {
+            using (var wc = MakeWebClient()) {
                 wc.DownloadData(string.Format("{0}/Error", _baseUri));
             }
         }

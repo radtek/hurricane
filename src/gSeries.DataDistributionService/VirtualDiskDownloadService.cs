@@ -42,7 +42,7 @@ namespace GSeries.DataDistributionService {
         /// <param name="savePath">The save path.</param>
         public void StartDownloadingFile(Torrent torrent, string savePath) {
             TorrentSettings torrentDefaults = new TorrentSettings(4, 150, 0, 0);
-            var tm = new TorrentManager(torrent, savePath, torrentDefaults, "");
+            var tm = new TorrentManager(torrent, savePath, torrentDefaults, "", true);
             _clientEngine.Register(tm);
 
             tm.TrackerManager.CurrentTracker.AnnounceComplete += 
@@ -71,12 +71,15 @@ namespace GSeries.DataDistributionService {
                 }
             };
 
+            // We really only deal with one file.
             foreach (var file in tm.Torrent.Files) {
                 _torrentManagerTable[file.FullPath] = tm;
             }
 
             tm.Start();
-            logger.DebugFormat("Torrent: {0}. Torrent manager started.", tm.Torrent.Name);
+            logger.DebugFormat(
+                "Starting to download torrent: {0}. Torrent manager started.", 
+                tm.Torrent.Name);
         }
     }
 }

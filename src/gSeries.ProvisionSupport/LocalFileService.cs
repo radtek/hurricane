@@ -10,6 +10,8 @@ namespace GSeries.ProvisionSupport {
     using System.Text;
     using System.IO;
     using CuttingEdge.Conditions;
+    using log4net;
+    using System.Reflection;
 
     /// <summary>
     /// Currently this class only serves original file stored in its entirety 
@@ -17,6 +19,8 @@ namespace GSeries.ProvisionSupport {
     /// </summary>
     public class LocalFileService {
         readonly string _baseDir;
+        static readonly ILog logger = LogManager.GetLogger(
+            MethodBase.GetCurrentMethod().DeclaringType);
 
         public LocalFileService(string baseDir) {
             _baseDir = baseDir;

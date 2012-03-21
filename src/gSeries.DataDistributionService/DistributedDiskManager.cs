@@ -13,6 +13,7 @@ namespace GSeries.DataDistributionService {
     using log4net;
     using System.Reflection;
     using System.IO;
+    using GSeries.BitTorrent;
 
     /// <summary>
     /// A disk manager that transparently locate data on local disk or download
@@ -24,43 +25,69 @@ namespace GSeries.DataDistributionService {
         DiskManager _diskManager;
         FileInfoTable<TorrentManager> _torrentManagerTable;
 
-        public DistributedDiskManager(DiskManager diskManager, 
+        public DistributedDiskManager(DiskManager diskManager,
             FileInfoTable<TorrentManager> tmTable) {
             _diskManager = diskManager;
             _torrentManagerTable = tmTable;
         }
 
-        public byte[] ReadFile(string path, List<Tuple<long, int>> readList) {
+        public byte[] ReadReorderedFile(string path, List<Tuple<long, int>> readList) {
             var readResults = new byte[readList.Count][];
-            var failedItems = new List<int>();
-            TorrentManager tm = _torrentManagerTable[path];
-
-            for (int i = 0; i < readList.Count(); i++) {
-                var tuple = readList[i];
-                AutoResetEvent waitHandle = new AutoResetEvent(false);
-                long offset = tuple.Item1;
-                int count = tuple.Item2;
-                byte[] buffer = new byte[count];
-                bool successful = false;
-                _diskManager.QueueRead(tm, offset, buffer, count, delegate(bool succ) {
-                    // DiskManager with DedupDiskWriter reads data according to 
-                    // mappings for deduplicated data.
-                    successful = succ;
-                    if (succ) {
-                        logger.DebugFormat("Read (offset, count) = ({0}, {1}) successful.", offset, count);
-                        readResults[i] = buffer;
-                    } else {
-                        failedItems.Add(i);
-                    }
-                    waitHandle.Set();
-                });
-                waitHandle.WaitOne();
-                waitHandle.Close();
+            TorrentManager tm;
+            try {
+                tm = _torrentManagerTable[path];
+            } catch (KeyNotFoundException ex) {
+                throw new InvalidOperationException(
+                    "TorrentManagerTable should have the torrent manager " +
+                    "registered.", ex);
             }
 
-            // Now request the rest.
-            if (failedItems.Count != 0)
-                throw new Exception("Not all chunks are on the host.");
+            int i = 0;
+            var expandedReadList = readList.ConvertAll<Tuple<int, long, int>>(x => Tuple.Create<int, long, int>(i++, x.Item1, x.Item2));
+            var failedItems = Read(expandedReadList, readResults, tm);
+            logger.DebugFormat("{0} items failed to be read from disk and " +
+                "thus will be requested on-demand.", failedItems.Count);
+
+            if (failedItems.Count > 0) {
+                // Now request the rest.
+                var pieces2Request = new HashSet<int>();
+                foreach (int item in failedItems) {
+                    var tuple = readList[item];
+                    long offset = tuple.Item1;
+                    int count = tuple.Item2;
+
+                    // Assume count <= 16KB and doesn't cross piece boundary.
+                    int pieceIndex = (int)(offset / tm.Torrent.PieceLength);
+                    pieces2Request.Add(pieceIndex);
+                    tm.OnDemandPicker.AddOnDemand(pieceIndex);
+                }
+                logger.DebugFormat("There are {0} pieces in total that we need " +
+                    "to request on-demand.", pieces2Request.Count);
+
+                // Wait for results.
+                // TODO: What if the wanted pieces are downloaded between the above
+                // and the following actions?
+                var wh = new AutoResetEvent(false);
+                EventHandler<PieceHashedEventArgs> dl = delegate(object sender, PieceHashedEventArgs e) {
+                    if (e.HashPassed) {
+                        pieces2Request.Remove(e.PieceIndex);
+                    }
+                    if (pieces2Request.Count == 0)
+                        wh.Set();
+                };
+                tm.PieceHashed += dl;
+                wh.WaitOne();
+                logger.DebugFormat("All pending pieces have been downloaded for this read.");
+                tm.PieceHashed -= dl;
+
+                // Read them.
+                var newReadList = failedItems.ConvertAll<Tuple<int, long, int>>(x => expandedReadList[x]);
+                var newFailedList = Read(newReadList, readResults, tm);
+
+                if (newFailedList.Count != 0) {
+                    throw new DataDistributionServiceException("Don't know that's going on.");
+                }
+            }
 
             using (var stream = new MemoryStream()) {
                 foreach (var bytes in readResults) {
@@ -69,5 +96,42 @@ namespace GSeries.DataDistributionService {
                 return stream.ToArray();
             }
         }
+
+        /// <summary>
+        /// Reads the specified read list.
+        /// </summary>
+        /// <param name="readList">The read list. The first tuple item specifies 
+        /// where in the result array to put the read result.</param>
+        /// <param name="readResults">The read results.</param>
+        /// <param name="tm">The tm.</param>
+        /// <returns>The list of indices of failed items in the readlist.</returns>
+        private List<int> Read(List<Tuple<int, long, int>> readList, byte[][] readResults, TorrentManager tm) {
+            var failedItems = new List<int>();
+            for (int i = 0; i < readList.Count(); i++) {
+                var tuple = readList[i];
+                AutoResetEvent waitHandle = new AutoResetEvent(false);
+                int resultIndex = tuple.Item1;
+                long offset = tuple.Item2;
+                int count = tuple.Item3;
+                byte[] buffer = new byte[count];
+                bool successful = false;
+                _diskManager.QueueRead(tm, offset, buffer, count, delegate(bool succ) {
+                    // DiskManager with DedupDiskWriter reads data according to 
+                    // mappings for deduplicated data.
+                    successful = succ;
+                    if (succ) {
+                        logger.DebugFormat("Read (offset, count) = ({0}, {1}) successful.", offset, count);
+                        readResults[resultIndex] = buffer;
+                    } else {
+                        failedItems.Add(i);
+                    }
+                    waitHandle.Set();
+                });
+                waitHandle.WaitOne();
+                waitHandle.Close();
+            }
+            return failedItems;
+        }
+
     }
 }

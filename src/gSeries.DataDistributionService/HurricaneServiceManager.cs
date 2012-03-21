@@ -17,7 +17,7 @@ namespace GSeries.DataDistributionService {
     using Ninject.Extensions.Wcf;
 
     /// <summary>
-    /// TODO: Update summary.
+    /// Manages the lifespan of <see cref="FileService"/>.
     /// </summary>
     public class HurricaneServiceManager {
         static readonly ILog logger = LogManager.GetLogger(
@@ -29,7 +29,7 @@ namespace GSeries.DataDistributionService {
         public HurricaneServiceManager() {
             _serviceHost = new NinjectWebServiceHost(typeof(FileService));
             ServiceEndpoint se = _serviceHost.AddServiceEndpoint(typeof(IFileService),
-                new WebHttpBinding(), "http://localhost:18081/FileService/");
+                new WebHttpBinding(), "http://0.0.0.0:18081/FileService/");
             ServiceEndpoint se1 = _serviceHost.AddServiceEndpoint(typeof(IFileService),
                 new NetNamedPipeBinding(), "net.pipe://localhost/FileService/");
             se.Behaviors.Add(new WebHttpBehavior());

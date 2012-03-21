@@ -23,6 +23,7 @@ namespace GSeries {
     using log4net;
     using System.Reflection;
     using NUnit.Framework;
+    using System.Threading;
 
     /// <summary>
     /// TODO: Update summary.
@@ -64,14 +65,19 @@ namespace GSeries {
             kernel.Bind<VirtualDiskDownloadService>().ToSelf();
             var vd = kernel.Get<VirtualDiskDownloadService>();
 
-            vd.StartDownloadingFile(Torrent.Load(torrentPath), baseDir);
+            var torrent = Torrent.Load(torrentPath);
+            logger.DebugFormat("Loaded torrent file: {0}, piece length: {1}.",
+                torrent.Name, torrent.PieceLength);
+            vd.StartDownloadingFile(torrent, baseDir);
 
             KernelContainer.Kernel = kernel;
 
             var m = new HurricaneServiceManager();
             m.Start();
-       
-            var client = new ManualFileServiceClient("http://localhost:18081/FileService/");
+
+            var url = string.Format("http://{0}:18081/FileService/", ip.ToString());
+            logger.DebugFormat("Contacting service at {0}", url);
+            var client = new ManualFileServiceClient(url);
             string tstmsg = "tstmsg";
             var resp = client.Echo(tstmsg);
             Assert.AreEqual(resp, tstmsg);
@@ -86,8 +92,9 @@ namespace GSeries {
             }
 
             try {
+                // can only read 49352.
                 resultData = client.Read(filePath, 0, 49253);
-            } catch (CommunicationException ex) {
+            } catch (Exception ex) {
                 logger.Error(ex);
             }
 

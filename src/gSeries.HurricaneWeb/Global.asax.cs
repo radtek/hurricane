@@ -29,10 +29,12 @@ namespace GSeries.Web {
         }
 
         protected override void OnApplicationStarted() {
+            Console.WriteLine("Web application starting.");
             base.OnApplicationStarted();
             XmlConfigurator.Configure(new FileInfo(WebConfigurationManager.AppSettings["Log4NetConfig"]));
             AreaRegistration.RegisterAllAreas();
             RegisterRoutes(RouteTable.Routes);
+            Console.WriteLine("Web application started.");
         }
 
         protected override Ninject.IKernel CreateKernel() {

@@ -102,7 +102,7 @@ namespace GSeries.DataDistributionService {
                     chunkList.ConvertAll(x => string.Format("({0}, {1})",
                         x.Item1, x.Item2)).ToArray()));
 
-                var content = _dDiskManager.ReadFile(serverPath, chunkList);
+                var content = _dDiskManager.ReadReorderedFile(serverPath, chunkList);
                 return content;
 
             } catch (FileNotFoundInDbException ex) {
