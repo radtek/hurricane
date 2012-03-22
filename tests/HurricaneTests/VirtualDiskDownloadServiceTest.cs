@@ -52,7 +52,8 @@ namespace GSeries {
             var torrent = Torrent.Load(torrentPath);
             logger.DebugFormat("Loaded torrent file: {0}, piece length: {1}.", 
                 torrent.Name, torrent.PieceLength);
-            vd.StartDownloadingFile(torrent, savePath);
+            var filePath = Path.Combine(savePath, torrent.Name);
+            vd.StartDownloadingFile(torrent, savePath, dbs.GetManagedFile(filePath).ChunkMap.LastPieceInProfile);
             Console.Read();
         }
     }

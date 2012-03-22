@@ -203,7 +203,8 @@ namespace GSeries.ProvisionSupport {
                         FileIndices = fileIndices.ToArray(),
                         Hashes = hashes.ToArray(),
                         EofChunkIndex = eofIndex,
-                        EofChunkSize = eofChunkSize
+                        EofChunkSize = eofChunkSize,
+                        LastPieceInProfile = 0
                     };
                     hashes.Dispose();
                     file.ChunkMap = new ChunkMap(dto);

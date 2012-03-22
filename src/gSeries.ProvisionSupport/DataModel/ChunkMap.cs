@@ -52,6 +52,13 @@ namespace GSeries.ProvisionSupport {
         /// </summary>
         public int[] ChunkIndices;
 
+        /// <summary>
+        /// If it equals 0. Then the file doesn't have a profile and should be 
+        /// downloaded through randomly through BitTorrent optimization. If -1,
+        /// the the entire file needs to be downloaded through a sliding window.
+        /// </summary>
+        public int LastPieceInProfile;
+
         #endregion
 
 
@@ -70,6 +77,7 @@ namespace GSeries.ProvisionSupport {
             EofChunkIndex = dto.EofChunkIndex;
             EofChunkSize = dto.EofChunkSize;
             Hashes = dto.Hashes;
+            LastPieceInProfile = dto.LastPieceInProfile;
 
             GenerateChunkIndices();
         }
@@ -91,7 +99,8 @@ namespace GSeries.ProvisionSupport {
                 Hashes = this.Hashes,
                 FileIndices = this.FileIndices,
                 EofChunkIndex = EofChunkIndex,
-                EofChunkSize = EofChunkSize
+                EofChunkSize = EofChunkSize,
+                LastPieceInProfile = LastPieceInProfile
             };
         }
 

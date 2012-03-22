@@ -68,7 +68,7 @@ namespace GSeries {
             var torrent = Torrent.Load(torrentPath);
             logger.DebugFormat("Loaded torrent file: {0}, piece length: {1}.",
                 torrent.Name, torrent.PieceLength);
-            vd.StartDownloadingFile(torrent, baseDir);
+            vd.StartDownloadingFile(torrent, baseDir, -1);
 
             KernelContainer.Kernel = kernel;
 

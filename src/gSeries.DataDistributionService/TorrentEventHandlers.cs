@@ -35,7 +35,9 @@ namespace GSeries.DataDistributionService {
                     if (e.OldState == TorrentState.Hashing) {
                         logger.Debug("Hashing Mode completed.");
 
-                        logger.DebugFormat("{0} chunks already available.", torrentManager.DedupManager.TotalChunksAvailable);
+                        logger.DebugFormat("{0} chunks out of {1} already available.", 
+                            torrentManager.DedupManager.TotalChunksAvailable,
+                            torrentManager.DedupManager.TotalChunks);
 
                         logger.DebugFormat("{0} pieces ({2} percent) already available out of {1} in total.", 
                             torrentManager.Bitfield.TrueCount, 
@@ -97,22 +99,41 @@ namespace GSeries.DataDistributionService {
             AppendFormat(sb, "Total Downloaded:   {0:0.00} MB", manager.Monitor.DataBytesDownloaded / (1024.0 * 1024.0));
             AppendFormat(sb, "Total Uploaded:     {0:0.00} MB", manager.Monitor.DataBytesUploaded / (1024.0 * 1024.0));
             MonoTorrent.Client.Tracker.Tracker tracker = manager.TrackerManager.CurrentTracker;
-            //AppendFormat(sb, "Tracker Status:     {0}", tracker == null ? "<no tracker>" : tracker.State.ToString());
+            AppendFormat(sb, "Tracker Status:     {0}", tracker == null ? "<no tracker>" : tracker.Status.ToString());
             AppendFormat(sb, "Warning Message:    {0}", tracker == null ? "<no tracker>" : tracker.WarningMessage);
             AppendFormat(sb, "Failure Message:    {0}", tracker == null ? "<no tracker>" : tracker.FailureMessage);
-            //if (manager.PieceManager != null)
-            //    AppendFormat(sb, "Current Requests:   {0}", manager.PieceManager.CurrentRequestCount());
+            if (manager.PieceManager != null)
+                AppendFormat(sb, "Current Requests:   {0}", manager.PieceManager.CurrentRequestCount());
 
-            //foreach (PeerId p in manager.GetPeers())
-            //    AppendFormat(sb, "\t{2} - {1:0.00}/{3:0.00}kB/sec - {0}", p.Peer.ConnectionUri,
-            //                                                              p.Monitor.DownloadSpeed / 1024.0,
-            //                                                              p.AmRequestingPiecesCount,
-            //                                                              p.Monitor.UploadSpeed / 1024.0);
+            foreach (PeerId p in manager.GetPeers())
+                AppendFormat(sb, "\t{2} - {1:0.00}/{3:0.00}kB/sec - {0}", p.Peer.ConnectionUri,
+                                                                          p.Monitor.DownloadSpeed / 1024.0,
+                                                                          p.AmRequestingPiecesCount,
+                                                                          p.Monitor.UploadSpeed / 1024.0);
 
             AppendFormat(sb, "", null);
             if (manager.Torrent != null)
                 foreach (TorrentFile file in manager.Torrent.Files)
                     AppendFormat(sb, "{1:0.00}% - {0}", file.Path, file.BitField.PercentComplete);
+
+            AppendFormat(sb, "Piece downloading sequence: [{0}].",
+                string.Join(",", manager.TorrentStats.PieceDownloadSequence.ConvertAll<string>(x => x.ToString())));
+
+            AppendFormat(sb, "Prediction missies: {0}.", manager.TorrentStats.OnDemandRequests.Count);
+
+            var peerDict = new Dictionary<PeerId, int>();
+            foreach (var piece in manager.TorrentStats.Pieces) {
+                foreach (var block in piece.Blocks) {
+                    if (!block.Deduplicated) {
+                        var peerId = block.RequestedOff;
+                        if (!peerDict.ContainsKey(peerId)) peerDict[peerId] = 1;
+                        else peerDict[peerId] = peerDict[peerId] + 1;
+                    }
+                }
+            }
+            AppendFormat(sb, "Peers this torrent are downloaded from (peer, blocks): [{0}].",
+                string.Join(",", peerDict.ToList().ConvertAll<string>(x => string.Format("({0}, {1})", x.Key, x.Value))));
+
             return sb.ToString();
         }
 

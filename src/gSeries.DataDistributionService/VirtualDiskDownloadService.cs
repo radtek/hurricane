@@ -40,9 +40,9 @@ namespace GSeries.DataDistributionService {
         /// </summary>
         /// <param name="torrent">The torrent.</param>
         /// <param name="savePath">The save path.</param>
-        public void StartDownloadingFile(Torrent torrent, string savePath) {
+        public void StartDownloadingFile(Torrent torrent, string savePath, int lastPieceInProfile) {
             TorrentSettings torrentDefaults = new TorrentSettings(4, 150, 0, 0);
-            var tm = new TorrentManager(torrent, savePath, torrentDefaults, "", true);
+            var tm = new TorrentManager(torrent, savePath, torrentDefaults, "", lastPieceInProfile);
             _clientEngine.Register(tm);
 
             tm.TrackerManager.CurrentTracker.AnnounceComplete += 

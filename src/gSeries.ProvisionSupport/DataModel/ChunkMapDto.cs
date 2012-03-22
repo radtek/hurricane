@@ -43,5 +43,8 @@ namespace GSeries.ProvisionSupport {
         /// </summary>
         [DataMember(Order = 4)]
         public int EofChunkIndex;
+
+        [DataMember(Order = 5)]
+        public int LastPieceInProfile;
     }
 }

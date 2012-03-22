@@ -46,8 +46,7 @@ namespace MonoTorrentExperiments {
       Debug.WriteLine(string.Format("Base Dir is {0}", baseDir));
       var torrent = Torrent.Load(Path.Combine(baseDir, TorrentFileName));
       var torrentManager = new TorrentManager(torrent, Path.Combine(baseDir, 
-        "Downloads"), torrentDefaultSettings);
-      var sbtm = new StreamBitTorrentManager(torrentManager);
+        "Downloads"), torrentDefaultSettings, "", -1);
 
       clientEngine.Register(torrentManager);
       torrentManager.Start();
