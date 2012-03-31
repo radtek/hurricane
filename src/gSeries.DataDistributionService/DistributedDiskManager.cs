@@ -48,45 +48,53 @@ namespace GSeries.DataDistributionService {
             logger.DebugFormat("{0} items failed to be read from disk and " +
                 "thus will be requested on-demand.", failedItems.Count);
 
-            if (failedItems.Count > 0) {
-                // Now request the rest.
-                var pieces2Request = new HashSet<int>();
-                foreach (int item in failedItems) {
-                    var tuple = readList[item];
-                    long offset = tuple.Item1;
-                    int count = tuple.Item2;
-
-                    // Assume count <= 16KB and doesn't cross piece boundary.
-                    int pieceIndex = (int)(offset / tm.Torrent.PieceLength);
-                    pieces2Request.Add(pieceIndex);
-                    tm.OnDemandPicker.AddOnDemand(pieceIndex);
+            var wh = new AutoResetEvent(false);
+            var pieces2Request = new HashSet<int>();
+            // Wait for results.
+            // TODO: What if the wanted pieces are downloaded between the above
+            // and the following actions?
+            EventHandler<PieceHashedEventArgs> dl = delegate(object sender, PieceHashedEventArgs e) {
+                if (e.HashPassed) {
+                    pieces2Request.Remove(e.PieceIndex);
                 }
-                logger.DebugFormat("There are {0} pieces in total that we need " +
-                    "to request on-demand.", pieces2Request.Count);
+                if (pieces2Request.Count == 0)
+                    wh.Set();
+            };
 
-                // Wait for results.
-                // TODO: What if the wanted pieces are downloaded between the above
-                // and the following actions?
-                var wh = new AutoResetEvent(false);
-                EventHandler<PieceHashedEventArgs> dl = delegate(object sender, PieceHashedEventArgs e) {
-                    if (e.HashPassed) {
-                        pieces2Request.Remove(e.PieceIndex);
+            lock (tm.OnDemandPicker.SyncRoot) {
+                if (failedItems.Count > 0) {
+                    // Now request the rest.
+                    foreach (int item in failedItems) {
+                        var tuple = readList[item];
+                        long offset = tuple.Item1;
+                        int count = tuple.Item2;
+
+                        // Assume count <= 16KB and doesn't cross piece boundary.
+                        int pieceIndex = (int)(offset / tm.Torrent.PieceLength);
+                        pieces2Request.Add(pieceIndex);
+                        tm.OnDemandPicker.AddOnDemand(pieceIndex);
                     }
-                    if (pieces2Request.Count == 0)
-                        wh.Set();
-                };
-                tm.PieceHashed += dl;
-                wh.WaitOne();
-                logger.DebugFormat("All pending pieces have been downloaded for this read.");
-                tm.PieceHashed -= dl;
+                    logger.DebugFormat("There are {0} pieces in total that we need " +
+                        "to request on-demand.", pieces2Request.Count);
 
-                // Read them.
-                var newReadList = failedItems.ConvertAll<Tuple<int, long, int>>(x => expandedReadList[x]);
-                var newFailedList = Read(newReadList, readResults, tm);
 
-                if (newFailedList.Count != 0) {
-                    throw new DataDistributionServiceException("Don't know that's going on.");
+                    tm.PieceHashed += dl;
                 }
+            }
+            if (wh.WaitOne(40000)) {
+                logger.DebugFormat("All pending pieces have been downloaded for this read.");
+            } else {
+                logger.ErrorFormat("Pieces cannot be downloaded in time.");
+            }
+            
+            tm.PieceHashed -= dl;
+
+            // Read them.
+            var newReadList = failedItems.ConvertAll<Tuple<int, long, int>>(x => expandedReadList[x]);
+            var newFailedList = Read(newReadList, readResults, tm);
+
+            if (newFailedList.Count != 0) {
+                throw new DataDistributionServiceException("On-demand pieces still cannot be read.");
             }
 
             using (var stream = new MemoryStream()) {

@@ -43,6 +43,9 @@ namespace GSeries.DataDistributionService {
         public void StartDownloadingFile(Torrent torrent, string savePath, int lastPieceInProfile) {
             TorrentSettings torrentDefaults = new TorrentSettings(4, 150, 0, 0);
             var tm = new TorrentManager(torrent, savePath, torrentDefaults, "", lastPieceInProfile);
+            // There is no need to scrape since we manage the tracker.
+            tm.TrackerManager.CurrentTracker.CanScrape = false;
+
             _clientEngine.Register(tm);
 
             tm.TrackerManager.CurrentTracker.AnnounceComplete += 
@@ -69,6 +72,10 @@ namespace GSeries.DataDistributionService {
                         "Peer ({0}) Connected. Currently {1} open connection.", 
                         e.PeerID.Uri, e.TorrentManager.OpenConnections);
                 }
+            };
+
+            tm.PieceManager.BlockReceived += delegate(object o, BlockEventArgs e) {
+                logger.DebugFormat("Block {0} from piece {1} is received.", e.Block.StartOffset / Piece.BlockSize, e.Piece.Index);
             };
 
             // We really only deal with one file.
