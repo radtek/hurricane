@@ -114,4 +114,8 @@
   <ProjectExtensions>
     <VisualStudio AllowExistingFolder="true" />
   </ProjectExtensions>
+  <PropertyGroup>
+    <BaseIntermediateOutputPath>$(SolutionDir)\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+    <IntermediateOutputPath>$(BaseIntermediateOutputPath)\$(Configuration)\</IntermediateOutputPath>
+  </PropertyGroup>
 </Project>

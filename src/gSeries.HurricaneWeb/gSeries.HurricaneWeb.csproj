@@ -20,6 +20,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>$(SolutionDir)\build\$(MSBuildProjectName)\</OutputPath>
+    <OutDir>$(OutputPath)</OutDir>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -28,6 +29,7 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>$(SolutionDir)\build\$(MSBuildProjectName)\</OutputPath>
+    <OutDir>$(OutputPath)</OutDir>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -173,4 +175,8 @@
       </Properties>
     </MonoDevelop>
   </ProjectExtensions>
+  <PropertyGroup>
+    <BaseIntermediateOutputPath>$(SolutionDir)\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+    <IntermediateOutputPath>$(BaseIntermediateOutputPath)\$(Configuration)\</IntermediateOutputPath>
+  </PropertyGroup>
 </Project>
