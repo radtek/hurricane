@@ -22,7 +22,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>$(SolutionDir)\build\$(MSBuildProjectName)\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <OutputType>Exe</OutputType>
     <RootNamespace>Fushare</RootNamespace>
@@ -32,7 +32,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>$(SolutionDir)\build\$(MSBuildProjectName)\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <OutputType>Exe</OutputType>
     <DebugSymbols>true</DebugSymbols>
@@ -42,7 +42,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'l4n|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\l4n\</OutputPath>
+    <OutputPath>$(SolutionDir)\build\$(MSBuildProjectName)\l4n\</OutputPath>
     <DefineConstants>TRACE;LOG4NET</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -54,7 +54,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'unit|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\unit\</OutputPath>
+    <OutputPath>$(SolutionDir)\build\$(MSBuildProjectName)\unit\</OutputPath>
     <DefineConstants>TRACE;DEBUG;TRACKER_NUNIT</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -66,7 +66,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'l4npf|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\l4npf\</OutputPath>
+    <OutputPath>$(SolutionDir)\build\$(MSBuildProjectName)\l4npf\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
