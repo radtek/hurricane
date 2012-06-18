@@ -231,7 +231,7 @@ namespace GSeries.ProvisionSupport {
         /// <param name="filePath">The file path.</param>
         /// <param name="forEachChunk">(index, hash)</param>
         /// <param name="forEofChunk">(index, chunk size)</param>
-        public void AddFileAllChunks(string filePath, Action<int, byte[]> forEachChunk, Action<int, int> forEofChunk) {
+        void AddFileAllChunks(string filePath, Action<int, byte[]> forEachChunk, Action<int, int> forEofChunk) {
             var txnProvider = new NHTransactionProvider(
                 new NHSessionProvider(_sessionFactory));
 

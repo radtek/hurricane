@@ -12,9 +12,9 @@ namespace GSeries.ProvisionSupport {
     /// <summary>
     /// Stats object about the access pattern on a chunk.
     /// </summary>
-    public class ChunkAccessStats {
+    public class AccessProfile {
         public virtual int Id { get; private set; }
-        public virtual int ChunkNumber { get; private set; }
+        public virtual int ChunkIndex { get; private set; }
         public virtual int ReadCount { get; private set; }
         /// <summary>
         /// Gets the the time (milliseconds since the start) of the earliest 

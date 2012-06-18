@@ -53,15 +53,15 @@ namespace GSeries.ProvisionSupport {
                 .Database(SQLiteConfiguration.Standard
                     .UsingFile(ProfileDbFile))
                 .Mappings(m =>
-                    m.FluentMappings.Add<ChunkAccessStatsMap>())
+                    m.FluentMappings.Add<AccessProfileMap>())
                 .BuildSessionFactory();
         }
 
-        ChunkAccessStats[] GetChunksOrderedByEarliestRead() {
+        AccessProfile[] GetChunksOrderedByEarliestRead() {
             using (var session = _sessionFactory.OpenSession()) {
-                var stats = session.CreateCriteria(typeof(ChunkAccessStats))
-                    .AddOrder(Order.Asc(Projections.Property<ChunkAccessStats>(x => x.EarliestRead)))
-                    .List<ChunkAccessStats>();
+                var stats = session.CreateCriteria(typeof(AccessProfile))
+                    .AddOrder(Order.Asc(Projections.Property<AccessProfile>(x => x.EarliestRead)))
+                    .List<AccessProfile>();
                 return stats.ToArray();
             }
         }
@@ -72,9 +72,9 @@ namespace GSeries.ProvisionSupport {
             logger.DebugFormat("Total number of chunk for this file: {0}.", 
                 totalChunkNumber);
 
-            ChunkAccessStats[] chunkStatss = GetChunksOrderedByEarliestRead();
+            AccessProfile[] chunkStatsArr = GetChunksOrderedByEarliestRead();
             logger.DebugFormat("Brought in totally {0} chunks from profile.", 
-                chunkStatss.Length);
+                chunkStatsArr.Length);
             
             // The hashes have two parts: in the profile and out of the profile.
             int[] fileIndices = new int[totalChunkNumber];
@@ -84,13 +84,13 @@ namespace GSeries.ProvisionSupport {
             // Number of chunks read directly from file instead of pulled from DB.
             int numDirectRead = 0;
             int fileIndicesCur = 0;
-            for (; fileIndicesCur < chunkStatss.Length; fileIndicesCur++) {
-                var chunk = chunkStatss[fileIndicesCur];
-                fileIndices[fileIndicesCur] = chunk.ChunkNumber;
-                indicesSet.Add(chunk.ChunkNumber);
+            for (; fileIndicesCur < chunkStatsArr.Length; fileIndicesCur++) {
+                var chunk = chunkStatsArr[fileIndicesCur];
+                fileIndices[fileIndicesCur] = chunk.ChunkIndex;
+                indicesSet.Add(chunk.ChunkIndex);
                 bool readFile;
                 byte[] hash = _fileHelper.GetHashFromChunkDbOrFile(DataFilePath, 
-                    chunk.ChunkNumber, out readFile);
+                    chunk.ChunkIndex, out readFile);
                 if (readFile) numDirectRead++;
                 Buffer.BlockCopy(hash, 0, hashes, fileIndicesCur * DataChunk.HashSize, hash.Length);
             }

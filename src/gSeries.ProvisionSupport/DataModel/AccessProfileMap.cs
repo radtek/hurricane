@@ -11,14 +11,14 @@ namespace GSeries.ProvisionSupport {
     using FluentNHibernate.Mapping;
 
     /// <summary>
-    /// The Chunk Access is created in Python.
+    /// Maps <see cref=""/> created in Python.
     /// </summary>
-    public class ChunkAccessStatsMap : ClassMap<ChunkAccessStats> {
-        public ChunkAccessStatsMap() {
-            Table("block_access");
+    public class AccessProfileMap : ClassMap<AccessProfile> {
+        public AccessProfileMap() {
+            Table("profile");
             Id(x => x.Id).Column("id");
-            Map(x => x.ChunkNumber).Column("blocknumber");
-            Map(x => x.ReadCount).Column("reads");
+            Map(x => x.ChunkIndex).Column("chunk_index");
+            Map(x => x.ReadCount).Column("read_count");
             Map(x => x.EarliestRead).Column("earliest_read");
         }
     }

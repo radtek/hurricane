@@ -118,7 +118,7 @@
     <Compile Include="LocalFileService.cs" />
     <Compile Include="Exceptions\ProvisionSupportException.cs" />
     <Compile Include="Dao.cs" />
-    <Compile Include="DataModel\ChunkAccessStatsMap.cs" />
+    <Compile Include="DataModel\AccessProfileMap.cs" />
     <Compile Include="ChunkMapSerializer.cs" />
     <Compile Include="DataModel\DataChunkMap.cs" />
     <Compile Include="DataModel\ChunkMapDto.cs" />
@@ -133,7 +133,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ChunkDbService.cs" />
     <Compile Include="FullProfileChunkMapBuilder.cs" />
-    <Compile Include="DataModel\ChunkAccessStats.cs" />
+    <Compile Include="DataModel\AccessProfile.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
